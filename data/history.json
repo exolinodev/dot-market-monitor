@@ -10,5 +10,11 @@
     "generated_at_utc": "2026-09-12T17:51:26.450511+00:00",
     "btc_dominance": 58.18917794651624,
     "dot_peer_median_24h_pp": -2.01914
+  },
+  {
+    "unix": 1789235555.056185,
+    "generated_at_utc": "2026-09-12T17:52:35.056185+00:00",
+    "btc_dominance": 58.18917794651624,
+    "dot_peer_median_24h_pp": -1.929035
   }
 ]
