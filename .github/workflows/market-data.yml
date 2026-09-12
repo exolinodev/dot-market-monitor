@@ -1,0 +1,61 @@
+name: Update DOT market data
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "requirements.txt"
+      - ".github/workflows/market-data.yml"
+  schedule:
+    - cron: "55 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dot-market-data
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Collect market data and indicators
+        env:
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        run: python src/main.py
+
+      - name: Show snapshot
+        run: cat data/latest.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit fresh snapshot
+        run: |
+          git config user.name "dot-market-bot"
+          git config user.email "dot-market-bot@users.noreply.github.com"
+          git add data/latest.json data/latest.md data/history.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "data: hourly market snapshot"
+          git push

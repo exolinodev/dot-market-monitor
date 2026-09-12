@@ -1,0 +1,2101 @@
+{
+  "breadth": {
+    "coins": {
+      "ADA": {
+        "change_24h_pct": -0.1007,
+        "change_7d_pct": -4.3,
+        "market_cap": 7791869324,
+        "price_usd": 0.20769,
+        "volume_24h": 289348290
+      },
+      "AVAX": {
+        "change_24h_pct": -1.90976,
+        "change_7d_pct": -1.9,
+        "market_cap": 3278200894,
+        "price_usd": 7.41,
+        "volume_24h": 181588676
+      },
+      "BNB": {
+        "change_24h_pct": 0.31777,
+        "change_7d_pct": -4.9,
+        "market_cap": 97259792934,
+        "price_usd": 730.36,
+        "volume_24h": 839269809
+      },
+      "DOGE": {
+        "change_24h_pct": -0.26781,
+        "change_7d_pct": -2.9,
+        "market_cap": 13239010838,
+        "price_usd": 0.08492,
+        "volume_24h": 427301988
+      },
+      "DOT": {
+        "change_24h_pct": -2.26921,
+        "change_7d_pct": 14.0,
+        "market_cap": 1760352411,
+        "price_usd": 1.034,
+        "volume_24h": 117325686
+      },
+      "ETH": {
+        "change_24h_pct": -1.71708,
+        "change_7d_pct": 2.9,
+        "market_cap": 308198843192,
+        "price_usd": 2525.22,
+        "volume_24h": 10684776317
+      },
+      "LINK": {
+        "change_24h_pct": -1.842,
+        "change_7d_pct": -3.5,
+        "market_cap": 8605803200,
+        "price_usd": 11.5,
+        "volume_24h": 294173442
+      },
+      "SOL": {
+        "change_24h_pct": 0.032,
+        "change_7d_pct": -0.9,
+        "market_cap": 59857042869,
+        "price_usd": 102.03,
+        "volume_24h": 2509335592
+      },
+      "XRP": {
+        "change_24h_pct": -0.23233,
+        "change_7d_pct": -3.0,
+        "market_cap": 85951792257,
+        "price_usd": 1.37,
+        "volume_24h": 1320807106
+      }
+    },
+    "dot_relative_strength_24h": "laggard",
+    "dot_relative_strength_7d": "leader",
+    "dot_vs_peer_median_24h_pp": -2.01914,
+    "dot_vs_peer_median_7d_pp": 16.95,
+    "event_outliers_24h": [],
+    "peer_median_24h_pct": -0.25007,
+    "peer_median_7d_pct": -2.95
+  },
+  "collection_completed_at_utc": "2026-09-12T17:51:32.906458+00:00",
+  "dominance_history": {
+    "btc_dominance_change_24h_pp": null,
+    "btc_dominance_change_7d_pp": null,
+    "history_points": 2
+  },
+  "errors": [],
+  "generated_at_unix": 1789235486.450511,
+  "generated_at_utc": "2026-09-12T17:51:26.450511+00:00",
+  "global_market": {
+    "active_cryptocurrencies": 21138,
+    "btc_dominance": 58.18917794651624,
+    "eth_dominance": 11.568800947356124,
+    "market_cap_change_24h_pct": -3.5098643137938916,
+    "total_market_cap_usd": 2659353627265.099,
+    "total_volume_usd": 56978568189.145836
+  },
+  "kraken_time": {
+    "age_seconds": 0.45051097869873047,
+    "rfc1123": "Sat, 12 Sep 26 17:51:26 +0000",
+    "unix": 1789235486,
+    "utc": "2026-09-12T17:51:26+00:00"
+  },
+  "markets": {
+    "BTCUSD": {
+      "spot": {
+        "latest_trade_age_seconds": 2.3800220489501953,
+        "latest_trade_price": 77177.4,
+        "latest_trade_utc": "2026-09-12T17:51:27.435133219+00:00",
+        "ticker": {
+          "ask": 77177.4,
+          "bid": 77177.3,
+          "high_24h": 77574.5,
+          "high_today": 77490.0,
+          "last": 77177.4,
+          "last_volume": 0.00012198,
+          "low_24h": 76821.1,
+          "low_today": 77148.1,
+          "open_today": 77210.9,
+          "trades_24h": 57953,
+          "trades_today": 33816,
+          "volume_24h": 1007.51249865,
+          "volume_today": 466.84029015,
+          "vwap_24h": 77234.15875,
+          "vwap_today": 77309.62947
+        },
+        "ticker_ask": 77177.4,
+        "ticker_bid": 77177.3,
+        "ticker_last": 77177.4,
+        "verification": "latest_trade_le_120s",
+        "verified_price": 77177.4
+      },
+      "timeframes": {
+        "1d": {
+          "interval_minutes": 1440,
+          "last_closed": {
+            "asof_utc": "2026-09-11T00:00:00+00:00",
+            "close": 77210.9,
+            "ema_state": {
+              "price_vs_ema200_pct": 5.912500340549376,
+              "price_vs_ema20_pct": 0.27120081430282994,
+              "price_vs_ema50_pct": 5.983838437947053,
+              "stack": "mixed"
+            },
+            "high": 79832.3,
+            "indicators": {
+              "atr14": 2338.6580116260775,
+              "dema20": 80070.05274729284,
+              "ema20": 77002.06975978143,
+              "ema200": 72900.64888633286,
+              "ema50": 72851.57920111238,
+              "macd": 2022.9575436575396,
+              "macd_hist": -738.5731405188176,
+              "macd_signal": 2761.530684176357,
+              "rsi14": 54.891243640675846,
+              "session_vwap_utc": null,
+              "stoch_rsi": 10.37581815307492,
+              "stoch_rsi_d": 1.1528686836749913,
+              "stoch_rsi_k": 3.4586060510249594,
+              "volume_ratio20": 1.3338340535501219,
+              "volume_sma20": 2512.790465575,
+              "volume_z20": 0.8141648412232251
+            },
+            "low": 76000.0,
+            "open": 76542.0,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 82288.1,
+                "time": "2026-09-03T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 76236.9,
+                "time": "2026-09-02T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 81461.0,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 76853.0,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 115480,
+            "volume": 3351.64549242,
+            "vwap": 77679.8
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T00:00:00+00:00",
+            "close": 77177.4,
+            "ema_state": {
+              "price_vs_ema200_pct": 5.804785320447858,
+              "price_vs_ema20_pct": 0.20596554122236377,
+              "price_vs_ema50_pct": 5.691743867393817,
+              "stack": "bullish"
+            },
+            "high": 77490.0,
+            "indicators": {
+              "atr14": 2196.0324393670717,
+              "dema20": 79809.66983060804,
+              "ema20": 77018.76787789748,
+              "ema200": 72943.20362378229,
+              "ema50": 73021.21923244132,
+              "macd": 1805.2069063285599,
+              "macd_hist": -765.059022278238,
+              "macd_signal": 2570.265928606798,
+              "rsi14": 54.76028713896544,
+              "session_vwap_utc": null,
+              "stoch_rsi": 9.726587465231473,
+              "stoch_rsi_d": 3.386469307931252,
+              "stoch_rsi_k": 6.700801872768783,
+              "volume_ratio20": 0.19327520406139917,
+              "volume_sma20": 2415.417396231,
+              "volume_z20": -1.735310603495805
+            },
+            "low": 77148.1,
+            "open": 77210.9,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 82288.1,
+                "time": "2026-09-03T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 76236.9,
+                "time": "2026-09-02T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 81461.0,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 76853.0,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 33816,
+            "volume": 466.84029015,
+            "vwap": 77309.6
+          },
+          "source_rows": 721
+        },
+        "1h": {
+          "interval_minutes": 60,
+          "last_closed": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 77344.6,
+            "ema_state": {
+              "price_vs_ema200_pct": -1.0875661357180655,
+              "price_vs_ema20_pct": 0.005806013894660289,
+              "price_vs_ema50_pct": -0.16235475859673887,
+              "stack": "mixed"
+            },
+            "high": 77398.5,
+            "indicators": {
+              "atr14": 228.18927703962845,
+              "dema20": 77319.1634989473,
+              "ema20": 77340.10962248918,
+              "ema200": 78195.02258545652,
+              "ema50": 77470.37684330794,
+              "macd": -11.664793589065084,
+              "macd_hist": 18.016109545939084,
+              "macd_signal": -29.68090313500417,
+              "rsi14": 49.68232559920216,
+              "session_vwap_utc": 77310.36159446783,
+              "stoch_rsi": 48.85787501754935,
+              "stoch_rsi_d": 83.58084926537383,
+              "stoch_rsi_k": 69.67847850213234,
+              "volume_ratio20": 0.45194982633443176,
+              "volume_sma20": 28.068348964499997,
+              "volume_z20": -0.9241033323355997
+            },
+            "low": 77323.1,
+            "open": 77366.5,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 77490.0,
+                "time": "2026-09-12T14:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 77241.7,
+                "time": "2026-09-12T13:00:00+00:00"
+              },
+              "low_state": "HL",
+              "previous_pivot_high": {
+                "price": 77371.0,
+                "time": "2026-09-12T10:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 77148.1,
+                "time": "2026-09-12T05:00:00+00:00"
+              },
+              "trend": "bullish"
+            },
+            "trade_count": 1943,
+            "volume": 12.68548544,
+            "vwap": 77354.5
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:00:00+00:00",
+            "close": 77177.4,
+            "ema_state": {
+              "price_vs_ema200_pct": -1.2886081921310133,
+              "price_vs_ema20_pct": -0.19038371013311295,
+              "price_vs_ema50_pct": -0.36340252773963133,
+              "stack": "bearish"
+            },
+            "high": 77380.9,
+            "indicators": {
+              "atr14": 226.7829001082264,
+              "dema20": 77291.64188305075,
+              "ema20": 77324.6134679664,
+              "ema200": 78184.89698759129,
+              "ema50": 77458.88755533508,
+              "macd": -23.713154904311523,
+              "macd_hist": 4.774198584554117,
+              "macd_signal": -28.48735348886564,
+              "rsi14": 44.42341740972735,
+              "session_vwap_utc": 77309.57635730552,
+              "stoch_rsi": 0.0,
+              "stoch_rsi_d": 64.24982572240465,
+              "stoch_rsi_k": 36.34514516879901,
+              "volume_ratio20": 0.5143884725168006,
+              "volume_sma20": 27.033748738499998,
+              "volume_z20": -0.7791009164247082
+            },
+            "low": 77172.4,
+            "open": 77344.6,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 77490.0,
+                "time": "2026-09-12T14:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 77241.7,
+                "time": "2026-09-12T13:00:00+00:00"
+              },
+              "low_state": "HL",
+              "previous_pivot_high": {
+                "price": 77371.0,
+                "time": "2026-09-12T10:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 77148.1,
+                "time": "2026-09-12T05:00:00+00:00"
+              },
+              "trend": "bullish"
+            },
+            "trade_count": 1852,
+            "volume": 13.90584872,
+            "vwap": 77284.0
+          },
+          "source_rows": 721
+        },
+        "4h": {
+          "interval_minutes": 240,
+          "last_closed": {
+            "asof_utc": "2026-09-12T12:00:00+00:00",
+            "close": 77366.4,
+            "ema_state": {
+              "price_vs_ema200_pct": 3.292396482795512,
+              "price_vs_ema20_pct": -0.32964829990205224,
+              "price_vs_ema50_pct": -1.0082992206189911,
+              "stack": "mixed"
+            },
+            "high": 77490.0,
+            "indicators": {
+              "atr14": 743.5739346816977,
+              "dema20": 77053.44923515238,
+              "ema20": 77622.2805281061,
+              "ema200": 74900.38244285117,
+              "ema50": 78154.43051374934,
+              "macd": -400.797872602212,
+              "macd_hist": 56.52577511940808,
+              "macd_signal": -457.3236477216201,
+              "rsi14": 43.199085447235746,
+              "session_vwap_utc": 77309.08110921097,
+              "stoch_rsi": 87.73126769787044,
+              "stoch_rsi_d": 80.39353630846632,
+              "stoch_rsi_k": 83.63063625809374,
+              "volume_ratio20": 0.3681547068977026,
+              "volume_sma20": 416.832380803,
+              "volume_z20": -0.6632434889003532
+            },
+            "low": 77241.7,
+            "open": 77337.7,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 79832.3,
+                "time": "2026-09-11T12:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 76000.0,
+                "time": "2026-09-11T12:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 79739.1,
+                "time": "2026-09-09T08:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 76466.0,
+                "time": "2026-09-10T20:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 9296,
+            "volume": 153.45880298,
+            "vwap": 77369.5
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 77177.4,
+            "ema_state": {
+              "price_vs_ema200_pct": 3.00890178251334,
+              "price_vs_ema20_pct": -0.5188339984553814,
+              "price_vs_ema50_pct": -1.2016926142983553,
+              "stack": "mixed"
+            },
+            "high": 77398.5,
+            "indicators": {
+              "atr14": 706.6115107758626,
+              "dema20": 77026.91969332828,
+              "ema20": 77579.91095400076,
+              "ema200": 74923.03933396708,
+              "ema50": 78116.11559164152,
+              "macd": -388.14099847980833,
+              "macd_hist": 55.34611939344944,
+              "macd_signal": -443.4871178732578,
+              "rsi14": 40.86920843841845,
+              "session_vwap_utc": 77309.5720432839,
+              "stoch_rsi": 74.75336297051138,
+              "stoch_rsi_d": 82.24112154859992,
+              "stoch_rsi_k": 82.55065988223947,
+              "volume_ratio20": 0.06541865785166151,
+              "volume_sma20": 406.4793597615,
+              "volume_z20": -0.9394499468766059
+            },
+            "low": 77172.4,
+            "open": 77366.5,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 79832.3,
+                "time": "2026-09-11T12:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 76000.0,
+                "time": "2026-09-11T12:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 79739.1,
+                "time": "2026-09-09T08:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 76466.0,
+                "time": "2026-09-10T20:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 3795,
+            "volume": 26.59133416,
+            "vwap": 77317.7
+          },
+          "source_rows": 721
+        }
+      },
+      "trade_flow": {
+        "15m": {
+          "buy_share": 0.7621896061788497,
+          "buy_volume": 3.7061952600000003,
+          "delta": 2.5498271500000005,
+          "sell_volume": 1.1563681099999998,
+          "trade_count": 567,
+          "window_complete": true
+        },
+        "5m": {
+          "buy_share": 0.6916622698876694,
+          "buy_volume": 1.4987031300000002,
+          "delta": 0.8305927800000003,
+          "sell_volume": 0.66811035,
+          "trade_count": 177,
+          "window_complete": true
+        },
+        "60m": {
+          "buy_share": 0.6418017502370428,
+          "buy_volume": 4.9926015,
+          "delta": 2.20616298,
+          "sell_volume": 2.78643852,
+          "trade_count": 1000,
+          "window_complete": false
+        },
+        "asof_utc": "2026-09-12T17:51:29.815298+00:00",
+        "earliest_trade_utc": "2026-09-12T17:23:35.127425193+00:00",
+        "latest_price": 77177.4,
+        "latest_trade_utc": "2026-09-12T17:51:27.435133219+00:00"
+      }
+    },
+    "DOTBTC": {
+      "kraken_pair": "DOTXBT",
+      "spot": {
+        "latest_spread_age_seconds": 2.1465671062469482,
+        "latest_spread_ask": 1.3509e-05,
+        "latest_spread_bid": 1.3379e-05,
+        "latest_spread_utc": "2026-09-12T17:51:29+00:00",
+        "latest_trade_age_seconds": 2592.387181043625,
+        "latest_trade_price": 1.3478e-05,
+        "latest_trade_utc": "2026-09-12T17:08:18.759386063+00:00",
+        "ticker": {
+          "ask": 1.351e-05,
+          "bid": 1.3379e-05,
+          "high_24h": 1.365e-05,
+          "high_today": 1.365e-05,
+          "last": 1.3478e-05,
+          "last_volume": 6.7e-07,
+          "low_24h": 1.3373e-05,
+          "low_today": 1.3373e-05,
+          "open_today": 1.3482e-05,
+          "trades_24h": 43,
+          "trades_today": 36,
+          "volume_24h": 6445.99504544,
+          "volume_today": 5718.56408961,
+          "vwap_24h": 1.3545e-05,
+          "vwap_today": 1.35623e-05
+        },
+        "ticker_ask": 1.351e-05,
+        "ticker_bid": 1.3379e-05,
+        "ticker_last": 1.3478e-05,
+        "verification": "ticker_inside_fresh_spread",
+        "verified_price": 1.3478e-05
+      },
+      "spot_last": 1.3478e-05,
+      "timeframes": {
+        "1d": {
+          "interval_minutes": 1440,
+          "last_closed": {
+            "asof_utc": "2026-09-11T00:00:00+00:00",
+            "close": 1.3393e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": -15.80487153154312,
+              "price_vs_ema20_pct": 6.672578117533767,
+              "price_vs_ema50_pct": 7.470969914120507,
+              "stack": "mixed"
+            },
+            "high": 1.5e-05,
+            "indicators": {
+              "atr14": 8.82945329368368e-07,
+              "dema20": 1.3182405960209939e-05,
+              "ema20": 1.2555241690365213e-05,
+              "ema200": 1.5907096103568028e-05,
+              "ema50": 1.2461969972637519e-05,
+              "macd": 5.803977758935372e-07,
+              "macd_hist": 3.8681074370544573e-07,
+              "macd_signal": 1.9358703218809148e-07,
+              "rsi14": 56.54719466775501,
+              "session_vwap_utc": null,
+              "stoch_rsi": 53.03274463000036,
+              "stoch_rsi_d": 77.79140064970308,
+              "stoch_rsi_k": 64.04507293062045,
+              "volume_ratio20": 0.8360987518448731,
+              "volume_sma20": 10275.693011504502,
+              "volume_z20": -0.14029476877193145
+            },
+            "low": 1.3393e-05,
+            "open": 1.45e-05,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 1.625e-05,
+                "time": "2026-09-08T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.065e-05,
+                "time": "2026-09-04T00:00:00+00:00"
+              },
+              "low_state": "HL",
+              "previous_pivot_high": {
+                "price": 1.15e-05,
+                "time": "2026-09-02T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.049e-05,
+                "time": "2026-08-31T00:00:00+00:00"
+              },
+              "trend": "bullish"
+            },
+            "trade_count": 114,
+            "volume": 8591.49410126,
+            "vwap": 1.4015e-05
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T00:00:00+00:00",
+            "close": 1.3478e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": -15.141580299069823,
+              "price_vs_ema20_pct": 6.603404373998645,
+              "price_vs_ema50_pct": 7.8083523728631254,
+              "stack": "mixed"
+            },
+            "high": 1.365e-05,
+            "indicators": {
+              "atr14": 8.396635201277703e-07,
+              "dema20": 1.329006982741471e-05,
+              "ema20": 1.2643123434139955e-05,
+              "ema200": 1.5882925993084763e-05,
+              "ema50": 1.2501814287436048e-05,
+              "macd": 5.756301914866789e-07,
+              "macd_hist": 3.056345274388699e-07,
+              "macd_signal": 2.69995664047809e-07,
+              "rsi14": 57.03132837684633,
+              "session_vwap_utc": null,
+              "stoch_rsi": 53.92413338803733,
+              "stoch_rsi_d": 67.60134802666836,
+              "stoch_rsi_k": 59.05814642876437,
+              "volume_ratio20": 0.5497754510437526,
+              "volume_sma20": 10401.635938369503,
+              "volume_z20": -0.39212267933813305
+            },
+            "low": 1.3373e-05,
+            "open": 1.3482e-05,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 1.625e-05,
+                "time": "2026-09-08T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.065e-05,
+                "time": "2026-09-04T00:00:00+00:00"
+              },
+              "low_state": "HL",
+              "previous_pivot_high": {
+                "price": 1.15e-05,
+                "time": "2026-09-02T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.049e-05,
+                "time": "2026-08-31T00:00:00+00:00"
+              },
+              "trend": "bullish"
+            },
+            "trade_count": 36,
+            "volume": 5718.56408961,
+            "vwap": 1.3562e-05
+          },
+          "source_rows": 721
+        },
+        "1h": {
+          "interval_minutes": 60,
+          "last_closed": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 1.3514e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": 1.4599784742553856,
+              "price_vs_ema20_pct": -0.3684461237833059,
+              "price_vs_ema50_pct": -2.0799508240077036,
+              "stack": "mixed"
+            },
+            "high": 1.3514e-05,
+            "indicators": {
+              "atr14": 7.431916255632033e-08,
+              "dema20": 1.3388212906078223e-05,
+              "ema20": 1.3563975943595075e-05,
+              "ema200": 1.3319537617908192e-05,
+              "ema50": 1.380105516053327e-05,
+              "macd": -1.225355850535256e-07,
+              "macd_hist": 1.6231282046199717e-08,
+              "macd_signal": -1.3876686709972533e-07,
+              "rsi14": 42.548650955282284,
+              "session_vwap_utc": 1.3564718572651511e-05,
+              "stoch_rsi": 100.0,
+              "stoch_rsi_d": 20.58223584624144,
+              "stoch_rsi_k": 33.33333333333332,
+              "volume_ratio20": 0.21228305647396187,
+              "volume_sma20": 309.34749146149977,
+              "volume_z20": -0.31973548584521294
+            },
+            "low": 1.342e-05,
+            "open": 1.342e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.3621e-05,
+                "time": "2026-09-12T07:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.3373e-05,
+                "time": "2026-09-12T14:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.3621e-05,
+                "time": "2026-09-12T04:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.3528e-05,
+                "time": "2026-09-12T08:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 7,
+            "volume": 65.669231,
+            "vwap": 1.3496e-05
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:00:00+00:00",
+            "close": 1.3478e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": 1.1777216061277684,
+              "price_vs_ema20_pct": -0.5738342903905291,
+              "price_vs_ema50_pct": -2.2510707436240507,
+              "stack": "mixed"
+            },
+            "high": 1.3479e-05,
+            "indicators": {
+              "atr14": 7.158207951658311e-08,
+              "dema20": 1.3389355699928792e-05,
+              "ema20": 1.3555787758490782e-05,
+              "ema200": 1.332111435802851e-05,
+              "ema50": 1.3788386330708436e-05,
+              "macd": -1.1506132419485893e-07,
+              "macd_hist": 1.8964434323893113e-08,
+              "macd_signal": -1.3402575851875205e-07,
+              "rsi14": 40.66835655135744,
+              "session_vwap_utc": 1.3561735508273955e-05,
+              "stoch_rsi": 83.80918847977635,
+              "stoch_rsi_d": 31.53435427553069,
+              "stoch_rsi_k": 61.26972949325877,
+              "volume_ratio20": 0.6170807728805848,
+              "volume_sma20": 318.7832419274998,
+              "volume_z20": -0.16072206747377446
+            },
+            "low": 1.3478e-05,
+            "open": 1.3479e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.3621e-05,
+                "time": "2026-09-12T07:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.3373e-05,
+                "time": "2026-09-12T14:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.3621e-05,
+                "time": "2026-09-12T04:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.3528e-05,
+                "time": "2026-09-12T08:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 3,
+            "volume": 196.71500931,
+            "vwap": 1.3478e-05
+          },
+          "source_rows": 721
+        },
+        "1w": {
+          "interval_minutes": 10080,
+          "last_closed": {
+            "asof_utc": "2026-09-03T00:00:00+00:00",
+            "close": 1.4388e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": -86.65051982378655,
+              "price_vs_ema20_pct": 0.6296716930898949,
+              "price_vs_ema50_pct": -33.51025900831313,
+              "stack": "mixed"
+            },
+            "high": 1.625e-05,
+            "indicators": {
+              "atr14": 2.0372794593345684e-06,
+              "dema20": 1.1027085571015712e-05,
+              "ema20": 1.4297969731911593e-05,
+              "ema200": 0.00010777947762817784,
+              "ema50": 2.1639428557555837e-05,
+              "macd": -2.336603517475374e-06,
+              "macd_hist": 3.393115695890159e-07,
+              "macd_signal": -2.67591508706439e-06,
+              "rsi14": 45.67559475593116,
+              "session_vwap_utc": null,
+              "stoch_rsi": 100.0,
+              "stoch_rsi_d": 23.271803738242777,
+              "stoch_rsi_k": 40.804831187369224,
+              "volume_ratio20": 1.0840155997368024,
+              "volume_sma20": 116084.8775104835,
+              "volume_z20": 0.08059993348216464
+            },
+            "low": 1.065e-05,
+            "open": 1.1231e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.743e-05,
+                "time": "2026-06-04T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.1764e-05,
+                "time": "2026-07-23T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.768e-05,
+                "time": "2026-05-07T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.528e-05,
+                "time": "2026-04-30T00:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 1320,
+            "volume": 125837.8181149,
+            "vwap": 1.331e-05
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-10T00:00:00+00:00",
+            "close": 1.3478e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": -87.3850108910281,
+              "price_vs_ema20_pct": -5.217185471078145,
+              "price_vs_ema50_pct": -36.78050337815342,
+              "stack": "bearish"
+            },
+            "high": 1.5e-05,
+            "indicators": {
+              "atr14": 2.0079737836678134e-06,
+              "dema20": 1.1189851004586458e-05,
+              "ema20": 1.421987737649144e-05,
+              "ema200": 0.00010684115446769847,
+              "ema50": 2.1319372535690905e-05,
+              "macd": -2.1309948060878615e-06,
+              "macd_hist": 4.359362247812232e-07,
+              "macd_signal": -2.5669310308690847e-06,
+              "rsi14": 42.90501872792374,
+              "session_vwap_utc": null,
+              "stoch_rsi": 82.90654880163125,
+              "stoch_rsi_d": 40.3274570064202,
+              "stoch_rsi_k": 67.63490048630514,
+              "volume_ratio20": 0.17614395168148594,
+              "volume_sma20": 115099.87084882101,
+              "volume_z20": -0.7791884020717945
+            },
+            "low": 1.3373e-05,
+            "open": 1.4384e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.743e-05,
+                "time": "2026-06-04T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.049e-05,
+                "time": "2026-08-27T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.768e-05,
+                "time": "2026-05-07T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.1764e-05,
+                "time": "2026-07-23T00:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 215,
+            "volume": 20274.14608934,
+            "vwap": 1.3939e-05
+          },
+          "source_rows": 318
+        },
+        "4h": {
+          "interval_minutes": 240,
+          "last_closed": {
+            "asof_utc": "2026-09-12T12:00:00+00:00",
+            "close": 1.3373e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": 8.340062355738919,
+              "price_vs_ema20_pct": -3.4187721750151723,
+              "price_vs_ema50_pct": 0.397167137265253,
+              "stack": "mixed"
+            },
+            "high": 1.3519e-05,
+            "indicators": {
+              "atr14": 3.2467177521334795e-07,
+              "dema20": 1.3924261158182766e-05,
+              "ema20": 1.3846376051703607e-05,
+              "ema200": 1.2343540984949058e-05,
+              "ema50": 1.332009695225378e-05,
+              "macd": -4.691228802217366e-09,
+              "macd_hist": -1.833568952904433e-07,
+              "macd_signal": 1.7866566648822593e-07,
+              "rsi14": 43.70204290892133,
+              "session_vwap_utc": 1.3565708966103128e-05,
+              "stoch_rsi": 0.0,
+              "stoch_rsi_d": 9.079949611609917,
+              "stoch_rsi_k": 7.7126359230419546,
+              "volume_ratio20": 0.2682587894538824,
+              "volume_sma20": 1154.60043289,
+              "volume_z20": -0.47437477682209617
+            },
+            "low": 1.3373e-05,
+            "open": 1.34e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.365e-05,
+                "time": "2026-09-12T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.3393e-05,
+                "time": "2026-09-11T20:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.5e-05,
+                "time": "2026-09-11T04:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.398e-05,
+                "time": "2026-09-10T12:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 4,
+            "volume": 309.73171443,
+            "vwap": 1.3444e-05
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 1.3478e-05,
+            "ema_state": {
+              "price_vs_ema200_pct": 9.09094616715076,
+              "price_vs_ema20_pct": -2.413189173681185,
+              "price_vs_ema50_pct": 1.1384322279154313,
+              "stack": "mixed"
+            },
+            "high": 1.3514e-05,
+            "indicators": {
+              "atr14": 3.115523626981088e-07,
+              "dema20": 1.3850017941383643e-05,
+              "ema20": 1.3811292618208026e-05,
+              "ema200": 1.2354829134352551e-05,
+              "ema50": 1.3326289228635985e-05,
+              "macd": -2.8612451425832672e-08,
+              "macd_hist": -1.6582249433124688e-07,
+              "macd_signal": 1.372100429054142e-07,
+              "rsi14": 45.50897216777779,
+              "session_vwap_utc": 1.3561914039807343e-05,
+              "stoch_rsi": 8.128821498780201,
+              "stoch_rsi_d": 8.404355735166396,
+              "stoch_rsi_k": 6.0610856064622425,
+              "volume_ratio20": 0.22599633557654045,
+              "volume_sma20": 1161.0110386995,
+              "volume_z20": -0.5055400217233348
+            },
+            "low": 1.342e-05,
+            "open": 1.342e-05,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.365e-05,
+                "time": "2026-09-12T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.3393e-05,
+                "time": "2026-09-11T20:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.5e-05,
+                "time": "2026-09-11T04:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.398e-05,
+                "time": "2026-09-10T12:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 10,
+            "volume": 262.38424031,
+            "vwap": 1.3483e-05
+          },
+          "source_rows": 721
+        }
+      },
+      "trade_flow": {
+        "15m": {
+          "buy_share": null,
+          "buy_volume": 0.0,
+          "delta": 0.0,
+          "sell_volume": 0.0,
+          "trade_count": 0,
+          "window_complete": true
+        },
+        "5m": {
+          "buy_share": null,
+          "buy_volume": 0.0,
+          "delta": 0.0,
+          "sell_volume": 0.0,
+          "trade_count": 0,
+          "window_complete": true
+        },
+        "60m": {
+          "buy_share": 0.0,
+          "buy_volume": 0.0,
+          "delta": -196.71500931,
+          "sell_volume": 196.71500931,
+          "trade_count": 3,
+          "window_complete": true
+        },
+        "asof_utc": "2026-09-12T17:51:31.146740+00:00",
+        "earliest_trade_utc": "2026-09-07T00:25:41.912948132+00:00",
+        "latest_price": 1.3478e-05,
+        "latest_trade_utc": "2026-09-12T17:08:18.759386063+00:00"
+      }
+    },
+    "DOTUSD": {
+      "orderbook": {
+        "best_ask": 1.0341,
+        "best_bid": 1.0339,
+        "depth_0.25pct": {
+          "ask_volume": 25325.769,
+          "bid_volume": 52512.667,
+          "imbalance": 0.3492734360695531
+        },
+        "depth_0.5pct": {
+          "ask_volume": 71712.944,
+          "bid_volume": 128417.443,
+          "imbalance": 0.2833377771862301
+        },
+        "depth_1pct": {
+          "ask_volume": 305985.865,
+          "bid_volume": 429328.921,
+          "imbalance": 0.16774184111129786
+        },
+        "depth_2pct": {
+          "ask_volume": 486818.532,
+          "bid_volume": 519391.783,
+          "imbalance": 0.03237220938248878
+        },
+        "largest_ask_wall_within_2pct": {
+          "price": 1.0407,
+          "time": 1789235444,
+          "volume": 68071.576
+        },
+        "largest_bid_wall_within_2pct": {
+          "price": 1.0259,
+          "time": 1789235318,
+          "volume": 68611.389
+        },
+        "spread_bps": 1.9340489314377525
+      },
+      "perp": {
+        "age_seconds": 0.0,
+        "ask": 1.0339,
+        "bid": 1.0335,
+        "change_24h_pct": -2.19,
+        "fresh_le_120s": true,
+        "funding_rate": -1.4758663763e-05,
+        "funding_rate_prediction": -3.740237466958e-06,
+        "high_24h": 1.0595,
+        "index_price": 1.03391,
+        "last": 1.034,
+        "low_24h": 1.0304,
+        "mark_fresh_le_120s": true,
+        "mark_price": 1.03384126397,
+        "open_24h": 1.0572,
+        "open_interest": 3912338.9,
+        "price_source": "futures_ticker_markPrice",
+        "raw": {
+          "ask": 1.0339,
+          "askSize": 300.6,
+          "bid": 1.0335,
+          "bidSize": 82.6,
+          "change24h": -2.19,
+          "fundingRate": -1.4758663763e-05,
+          "fundingRatePrediction": -3.740237466958e-06,
+          "high24h": 1.0595,
+          "indexPrice": 1.03391,
+          "last": 1.034,
+          "lastSize": 68.7,
+          "lastTime": "2026-09-12T17:49:53.228579Z",
+          "low24h": 1.0304,
+          "markPrice": 1.03384126397,
+          "open24h": 1.0572,
+          "openInterest": 3912338.9,
+          "pair": "DOT:USD",
+          "postOnly": false,
+          "suspended": false,
+          "symbol": "PF_DOTUSD",
+          "tag": "perpetual",
+          "vol24h": 907276,
+          "volumeQuote": 946990.62729,
+          "vwap24h": 1.04377348
+        },
+        "server_time_unix": 1789235487.029,
+        "server_time_utc": "2026-09-12T17:51:27.029000+00:00",
+        "symbol": "PF_DOTUSD",
+        "volume_24h": 907276.0
+      },
+      "spot": {
+        "latest_trade_age_seconds": 19.287595987319946,
+        "latest_trade_price": 1.0341,
+        "latest_trade_utc": "2026-09-12T17:51:07.533910513+00:00",
+        "ticker": {
+          "ask": 1.0341,
+          "bid": 1.0339,
+          "high_24h": 1.059,
+          "high_today": 1.059,
+          "last": 1.0341,
+          "last_volume": 5.85,
+          "low_24h": 1.0304,
+          "low_today": 1.033,
+          "open_today": 1.0408,
+          "trades_24h": 8411,
+          "trades_today": 6157,
+          "volume_24h": 901563.13264298,
+          "volume_today": 732619.0111584,
+          "vwap_24h": 1.04558,
+          "vwap_today": 1.04648
+        },
+        "ticker_ask": 1.0341,
+        "ticker_bid": 1.0339,
+        "ticker_last": 1.0341,
+        "verification": "latest_trade_le_120s",
+        "verified_price": 1.0341
+      },
+      "spot_perp_basis_pct": -0.025020407117293253,
+      "timeframes": {
+        "15m": {
+          "interval_minutes": 15,
+          "last_closed": {
+            "asof_utc": "2026-09-12T17:30:00+00:00",
+            "close": 1.0349,
+            "ema_state": {
+              "price_vs_ema200_pct": -3.0756201836863006,
+              "price_vs_ema20_pct": -0.3371104064498476,
+              "price_vs_ema50_pct": -0.6955044415391742,
+              "stack": "bearish"
+            },
+            "high": 1.037,
+            "indicators": {
+              "atr14": 0.0038724366914544995,
+              "dema20": 1.0360522596924355,
+              "ema20": 1.038400556336042,
+              "ema200": 1.0677396151115863,
+              "ema50": 1.0421481869275007,
+              "macd": -0.0016958777842563943,
+              "macd_hist": 5.6824389958819166e-05,
+              "macd_signal": -0.0017527021742152135,
+              "rsi14": 38.12545639519749,
+              "session_vwap_utc": 1.0464708190097267,
+              "stoch_rsi": 34.32618265143909,
+              "stoch_rsi_d": 61.867250805123426,
+              "stoch_rsi_k": 45.69344692566326,
+              "volume_ratio20": 0.36591002929444155,
+              "volume_sma20": 7283.4602020035,
+              "volume_z20": -0.6013012436493567
+            },
+            "low": 1.0341,
+            "open": 1.0348,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0445,
+                "time": "2026-09-12T16:30:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0342,
+                "time": "2026-09-12T16:15:00+00:00"
+              },
+              "low_state": "HL",
+              "previous_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:15:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0333,
+                "time": "2026-09-12T15:15:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 49,
+            "volume": 2665.09113588,
+            "vwap": 1.0346
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:45:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -3.1201742473632055,
+              "price_vs_ema20_pct": -0.374856778028021,
+              "price_vs_ema50_pct": -0.7422086776242565,
+              "stack": "bearish"
+            },
+            "high": 1.036,
+            "indicators": {
+              "atr14": 0.0037529769277791767,
+              "dema20": 1.0354957607177147,
+              "ema20": 1.0379909795421332,
+              "ema200": 1.0674048925731627,
+              "ema50": 1.0418325717538732,
+              "macd": -0.0018365089757270692,
+              "macd_hist": -6.704544120948448e-05,
+              "macd_signal": -0.0017694635345175847,
+              "rsi14": 36.53117437356024,
+              "session_vwap_utc": 1.0464305174748334,
+              "stoch_rsi": 14.153226764036459,
+              "stoch_rsi_d": 43.45200738261851,
+              "stoch_rsi_k": 24.218126833873992,
+              "volume_ratio20": 0.34697477730259646,
+              "volume_sma20": 7291.225516383,
+              "volume_z20": -0.6203125135999588
+            },
+            "low": 1.0338,
+            "open": 1.0355,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0445,
+                "time": "2026-09-12T16:30:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.033,
+                "time": "2026-09-12T17:15:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:15:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0342,
+                "time": "2026-09-12T16:15:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 27,
+            "volume": 2529.87134981,
+            "vwap": 1.0348
+          },
+          "source_rows": 721
+        },
+        "1d": {
+          "interval_minutes": 1440,
+          "last_closed": {
+            "asof_utc": "2026-09-11T00:00:00+00:00",
+            "close": 1.0407,
+            "ema_state": {
+              "price_vs_ema200_pct": -13.442458831296245,
+              "price_vs_ema20_pct": 7.774064341750209,
+              "price_vs_ema50_pct": 14.96135572824393,
+              "stack": "mixed"
+            },
+            "high": 1.1642,
+            "indicators": {
+              "atr14": 0.07923737722994152,
+              "dema20": 1.0517990852581875,
+              "ema20": 0.9656312085437859,
+              "ema200": 1.2023215839410668,
+              "ema50": 0.9052607229685955,
+              "macd": 0.06961249544686232,
+              "macd_hist": 0.02046241949114086,
+              "macd_signal": 0.04915007595572146,
+              "rsi14": 58.8065834458874,
+              "session_vwap_utc": null,
+              "stoch_rsi": 31.971181717941388,
+              "stoch_rsi_d": 65.93820684067286,
+              "stoch_rsi_k": 45.00915061026919,
+              "volume_ratio20": 1.1898521593865454,
+              "volume_sma20": 1319108.1659594441,
+              "volume_z20": 0.18639229825450393
+            },
+            "low": 1.0304,
+            "open": 1.0965,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 1.2822,
+                "time": "2026-09-08T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 0.8077,
+                "time": "2026-08-30T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 0.8953,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 0.8307,
+                "time": "2026-08-26T00:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 14865,
+            "volume": 1569543.69973127,
+            "vwap": 1.0912
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T00:00:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -13.871490542630472,
+              "price_vs_ema20_pct": 6.372249530378538,
+              "price_vs_ema50_pct": 13.598259415517933,
+              "stack": "mixed"
+            },
+            "high": 1.059,
+            "indicators": {
+              "atr14": 0.07543470742780285,
+              "dema20": 1.0560132632502337,
+              "ema20": 0.9721520458253301,
+              "ema200": 1.200647737334688,
+              "ema50": 0.9103132436364938,
+              "macd": 0.06619493700547063,
+              "macd_hist": 0.013635888839799333,
+              "macd_signal": 0.0525590481656713,
+              "rsi14": 58.138160175854885,
+              "session_vwap_utc": null,
+              "stoch_rsi": 30.176745864913638,
+              "stoch_rsi_d": 49.76975333522364,
+              "stoch_rsi_k": 36.614686024446364,
+              "volume_ratio20": 0.5486479285643473,
+              "volume_sma20": 1335317.1916194994,
+              "volume_z20": -0.4516508046800209
+            },
+            "low": 1.033,
+            "open": 1.0408,
+            "structure": {
+              "high_state": "HH",
+              "last_pivot_high": {
+                "price": 1.2822,
+                "time": "2026-09-08T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 0.8077,
+                "time": "2026-08-30T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 0.8953,
+                "time": "2026-08-28T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 0.8307,
+                "time": "2026-08-26T00:00:00+00:00"
+              },
+              "trend": "mixed"
+            },
+            "trade_count": 6157,
+            "volume": 732619.0111584,
+            "vwap": 1.0464
+          },
+          "source_rows": 721
+        },
+        "1h": {
+          "interval_minutes": 60,
+          "last_closed": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 1.0389,
+            "ema_state": {
+              "price_vs_ema200_pct": -0.17141482046970635,
+              "price_vs_ema20_pct": -0.8239474063089558,
+              "price_vs_ema50_pct": -2.744137264414248,
+              "stack": "mixed"
+            },
+            "high": 1.0445,
+            "indicators": {
+              "atr14": 0.011049693601100894,
+              "dema20": 1.0332221875674166,
+              "ema20": 1.0475311053730003,
+              "ema200": 1.0406838864155563,
+              "ema50": 1.0682132375140283,
+              "macd": -0.009965194043374925,
+              "macd_hist": 0.001472837024996291,
+              "macd_signal": -0.011438031068371216,
+              "rsi14": 40.57673786760116,
+              "session_vwap_utc": 1.0465880165522665,
+              "stoch_rsi": 46.012777199328106,
+              "stoch_rsi_d": 19.944938343175565,
+              "stoch_rsi_k": 25.915435672228103,
+              "volume_ratio20": 1.1510419304835908,
+              "volume_sma20": 39989.841867899006,
+              "volume_z20": 0.08124096754930622
+            },
+            "low": 1.0342,
+            "open": 1.0383,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0387,
+                "time": "2026-09-12T10:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0542,
+                "time": "2026-09-12T07:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0424,
+                "time": "2026-09-12T05:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 362,
+            "volume": 46029.98478336,
+            "vwap": 1.0394
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:00:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -0.6263943885540968,
+              "price_vs_ema20_pct": -1.161474772068527,
+              "price_vs_ema50_pct": -3.0720983484365916,
+              "stack": "mixed"
+            },
+            "high": 1.0428,
+            "indicators": {
+              "atr14": 0.010960429772450833,
+              "dema20": 1.032148459943821,
+              "ema20": 1.0462519524803335,
+              "ema200": 1.040618375107939,
+              "ema50": 1.0668754634938704,
+              "macd": -0.009875233071535927,
+              "macd_hist": 0.0012502383974682327,
+              "macd_signal": -0.01112547146900416,
+              "rsi14": 38.12645966195661,
+              "session_vwap_utc": 1.046458796818999,
+              "stoch_rsi": 0.0,
+              "stoch_rsi_d": 20.80290487230275,
+              "stoch_rsi_k": 25.915435672228103,
+              "volume_ratio20": 0.24798779473015026,
+              "volume_sma20": 39404.1393047315,
+              "volume_z20": -0.3975482793224252
+            },
+            "low": 1.033,
+            "open": 1.0393,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0387,
+                "time": "2026-09-12T10:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0542,
+                "time": "2026-09-12T07:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0424,
+                "time": "2026-09-12T05:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 174,
+            "volume": 9771.74560942,
+            "vwap": 1.0369
+          },
+          "source_rows": 721
+        },
+        "1m": {
+          "interval_minutes": 1,
+          "last_closed": {
+            "asof_utc": "2026-09-12T17:50:00+00:00",
+            "close": 1.034,
+            "ema_state": {
+              "price_vs_ema200_pct": -0.38064542189535366,
+              "price_vs_ema20_pct": -0.11929766569386269,
+              "price_vs_ema50_pct": -0.24223918046785142,
+              "stack": "bearish"
+            },
+            "high": 1.034,
+            "indicators": {
+              "atr14": 0.0006397957670710796,
+              "dema20": 1.03429593176128,
+              "ema20": 1.0352350112028106,
+              "ema200": 1.037950912630449,
+              "ema50": 1.0365108353530197,
+              "macd": -0.0006780564235304709,
+              "macd_hist": 2.2921023456144978e-07,
+              "macd_signal": -0.0006782856337650324,
+              "rsi14": 35.766914387193495,
+              "session_vwap_utc": null,
+              "stoch_rsi": 3.4657599330020106,
+              "stoch_rsi_d": 30.61293991459944,
+              "stoch_rsi_k": 12.62818100912329,
+              "volume_ratio20": 0.0,
+              "volume_sma20": 253.34625999899998,
+              "volume_z20": -0.6099740217773355
+            },
+            "low": 1.034,
+            "open": 1.034,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.036,
+                "time": "2026-09-12T17:45:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0341,
+                "time": "2026-09-12T17:42:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.037,
+                "time": "2026-09-12T17:34:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0345,
+                "time": "2026-09-12T17:37:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 0,
+            "volume": 0.0,
+            "vwap": 0.0
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:51:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -0.3673329632829181,
+              "price_vs_ema20_pct": -0.09920666567562186,
+              "price_vs_ema50_pct": -0.22349058059675242,
+              "stack": "bearish"
+            },
+            "high": 1.0341,
+            "indicators": {
+              "atr14": 0.0006012389265660017,
+              "dema20": 1.034179470174703,
+              "ema20": 1.035126914897781,
+              "ema200": 1.0379125950918375,
+              "ema50": 1.0364162927901561,
+              "macd": -0.0006881249502166398,
+              "macd_hist": -7.871453161285955e-06,
+              "macd_signal": -0.0006802534970553538,
+              "rsi14": 36.90142704648468,
+              "session_vwap_utc": null,
+              "stoch_rsi": 13.841709316923607,
+              "stoch_rsi_d": 16.339564077013723,
+              "stoch_rsi_k": 6.924409727642552,
+              "volume_ratio20": 0.02404059022613584,
+              "volume_sma20": 243.338451551,
+              "volume_z20": -0.5671272446954675
+            },
+            "low": 1.0341,
+            "open": 1.0341,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.036,
+                "time": "2026-09-12T17:45:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0338,
+                "time": "2026-09-12T17:49:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.037,
+                "time": "2026-09-12T17:34:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0341,
+                "time": "2026-09-12T17:42:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 1,
+            "volume": 5.85,
+            "vwap": 1.0341
+          },
+          "source_rows": 721
+        },
+        "1w": {
+          "interval_minutes": 10080,
+          "last_closed": {
+            "asof_utc": "2026-09-03T00:00:00+00:00",
+            "close": 1.1223,
+            "ema_state": {
+              "price_vs_ema200_pct": -77.15182410361896,
+              "price_vs_ema20_pct": 8.841414623443544,
+              "price_vs_ema50_pct": -35.41769980968219,
+              "stack": "mixed"
+            },
+            "high": 1.2822,
+            "indicators": {
+              "atr14": 0.20076967823915745,
+              "dema20": 0.7040538694561307,
+              "ema20": 1.0311332353431815,
+              "ema200": 4.911989495746849,
+              "ema50": 1.7377826381108914,
+              "macd": -0.22062401019448452,
+              "macd_hist": 0.07142751282816989,
+              "macd_signal": -0.2920515230226544,
+              "rsi14": 48.1738501100705,
+              "session_vwap_utc": null,
+              "stoch_rsi": 100.0,
+              "stoch_rsi_d": 79.83262371518053,
+              "stoch_rsi_k": 98.91086807774023,
+              "volume_ratio20": 3.671342881807596,
+              "volume_sma20": 4538727.652493086,
+              "volume_z20": 3.8972869588428476
+            },
+            "low": 0.842,
+            "open": 0.8671,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.4364,
+                "time": "2026-05-07T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 0.7235,
+                "time": "2026-08-13T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.75,
+                "time": "2026-02-19T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 0.796,
+                "time": "2026-06-25T00:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 98042,
+            "volume": 16663225.45944379,
+            "vwap": 1.0748
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-10T00:00:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -78.78074340645678,
+              "price_vs_ema20_pct": 0.26024574013610025,
+              "price_vs_ema50_pct": -39.53293677511367,
+              "stack": "mixed"
+            },
+            "high": 1.1642,
+            "indicators": {
+              "atr14": 0.19598612979350336,
+              "dema20": 0.735742473854774,
+              "ema20": 1.0314157843581166,
+              "ema200": 4.87340353061504,
+              "ema50": 1.7101872405379153,
+              "macd": -0.19575832762041667,
+              "macd_hist": 0.07703455632179018,
+              "macd_signal": -0.27279288394220685,
+              "rsi14": 45.097179080639805,
+              "session_vwap_utc": null,
+              "stoch_rsi": 83.80641741969905,
+              "stoch_rsi_d": 91.3348391412481,
+              "stoch_rsi_k": 93.51300721763992,
+              "volume_ratio20": 0.8032676535866569,
+              "volume_sma20": 4603752.631743254,
+              "volume_z20": -0.29415597581192543
+            },
+            "low": 1.0304,
+            "open": 1.1218,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.4364,
+                "time": "2026-05-07T00:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 0.7235,
+                "time": "2026-08-13T00:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.75,
+                "time": "2026-02-19T00:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 0.796,
+                "time": "2026-06-25T00:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 31747,
+            "volume": 3698045.5741938,
+            "vwap": 1.0843
+          },
+          "source_rows": 318
+        },
+        "30m": {
+          "interval_minutes": 30,
+          "last_closed": {
+            "asof_utc": "2026-09-12T17:00:00+00:00",
+            "close": 1.0343,
+            "ema_state": {
+              "price_vs_ema200_pct": -3.6342828235080726,
+              "price_vs_ema20_pct": -0.6321909493321343,
+              "price_vs_ema50_pct": -1.605200526152184,
+              "stack": "bearish"
+            },
+            "high": 1.0428,
+            "indicators": {
+              "atr14": 0.006228473173996417,
+              "dema20": 1.0361468976731096,
+              "ema20": 1.0408803513747678,
+              "ema200": 1.0733070123949784,
+              "ema50": 1.0511734416155853,
+              "macd": -0.0035288697252724432,
+              "macd_hist": 5.155809121755797e-05,
+              "macd_signal": -0.0035804278164900012,
+              "rsi14": 37.91046289573934,
+              "session_vwap_utc": 1.0465397182419403,
+              "stoch_rsi": 9.63510507373952,
+              "stoch_rsi_d": 51.41550173422983,
+              "stoch_rsi_k": 47.937636892554444,
+              "volume_ratio20": 0.15905021942239184,
+              "volume_sma20": 28775.710843726498,
+              "volume_z20": -0.32464612879022486
+            },
+            "low": 1.033,
+            "open": 1.0393,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0333,
+                "time": "2026-09-12T15:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0542,
+                "time": "2026-09-12T07:30:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0387,
+                "time": "2026-09-12T10:30:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 98,
+            "volume": 4576.78312373,
+            "vwap": 1.0393
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:30:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -3.61788439781906,
+              "price_vs_ema20_pct": -0.5897327010092934,
+              "price_vs_ema50_pct": -1.5615263270727264,
+              "stack": "bearish"
+            },
+            "high": 1.037,
+            "indicators": {
+              "atr14": 0.006012153661568092,
+              "dema20": 1.0353677070733096,
+              "ema20": 1.0402346036247898,
+              "ema200": 1.0729168928686603,
+              "ema50": 1.0505038948855625,
+              "macd": -0.003656522669711393,
+              "macd_hist": -6.087588257711312e-05,
+              "macd_signal": -0.0035956467871342797,
+              "rsi14": 37.696123049380695,
+              "session_vwap_utc": 1.0464557634289045,
+              "stoch_rsi": 7.664208757989568,
+              "stoch_rsi_d": 43.4687983065358,
+              "stoch_rsi_k": 25.039226807940484,
+              "volume_ratio20": 0.18046877255760585,
+              "volume_sma20": 28785.9357165615,
+              "volume_z20": -0.31650377696798015
+            },
+            "low": 1.0338,
+            "open": 1.0348,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0445,
+                "time": "2026-09-12T16:30:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0333,
+                "time": "2026-09-12T15:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0483,
+                "time": "2026-09-12T12:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0387,
+                "time": "2026-09-12T10:30:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 76,
+            "volume": 5194.96248569,
+            "vwap": 1.0347
+          },
+          "source_rows": 721
+        },
+        "4h": {
+          "interval_minutes": 240,
+          "last_closed": {
+            "asof_utc": "2026-09-12T12:00:00+00:00",
+            "close": 1.0379,
+            "ema_state": {
+              "price_vs_ema200_pct": 12.395441960328801,
+              "price_vs_ema20_pct": -3.323173543508884,
+              "price_vs_ema50_pct": -0.19472964268915094,
+              "stack": "mixed"
+            },
+            "high": 1.0483,
+            "indicators": {
+              "atr14": 0.033869964103199875,
+              "dema20": 1.0717692959450231,
+              "ema20": 1.073576820880753,
+              "ema200": 0.9234360236479503,
+              "ema50": 1.039925042319143,
+              "macd": -0.00575529370711636,
+              "macd_hist": -0.012795394002244422,
+              "macd_signal": 0.0070401002951280605,
+              "rsi14": 41.617615365129595,
+              "session_vwap_utc": 1.0470587196036876,
+              "stoch_rsi": 0.0,
+              "stoch_rsi_d": 9.111382494014086,
+              "stoch_rsi_k": 8.249255844465933,
+              "volume_ratio20": 0.3561851948444686,
+              "volume_sma20": 272724.36965272296,
+              "volume_z20": -0.7879504046499605
+            },
+            "low": 1.0333,
+            "open": 1.0455,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.1642,
+                "time": "2026-09-11T04:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0304,
+                "time": "2026-09-11T20:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.2822,
+                "time": "2026-09-08T20:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0728,
+                "time": "2026-09-10T16:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 1394,
+            "volume": 97140.38274359,
+            "vwap": 1.037
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T16:00:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": 11.850561261020376,
+              "price_vs_ema20_pct": -3.338619551351074,
+              "price_vs_ema50_pct": -0.5382925400572169,
+              "stack": "mixed"
+            },
+            "high": 1.0445,
+            "indicators": {
+              "atr14": 0.03227210952439989,
+              "dema20": 1.064780113126067,
+              "ema20": 1.0698171236540146,
+              "ema200": 0.9245371577410055,
+              "ema50": 1.03969660928702,
+              "macd": -0.007836873774294206,
+              "macd_hist": -0.011901579255537814,
+              "macd_signal": 0.0040647054812436075,
+              "rsi14": 40.81928927458925,
+              "session_vwap_utc": 1.0464449073878062,
+              "stoch_rsi": 0.0,
+              "stoch_rsi_d": 7.499861183891354,
+              "stoch_rsi_k": 3.1385879256133205,
+              "volume_ratio20": 0.22695006349107985,
+              "volume_sma20": 245876.68993964948,
+              "volume_z20": -0.8846245553266995
+            },
+            "low": 1.033,
+            "open": 1.0383,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.1642,
+                "time": "2026-09-11T04:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.0304,
+                "time": "2026-09-11T20:00:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.2822,
+                "time": "2026-09-08T20:00:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0728,
+                "time": "2026-09-10T16:00:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 536,
+            "volume": 55801.73039278,
+            "vwap": 1.039
+          },
+          "source_rows": 721
+        },
+        "5m": {
+          "interval_minutes": 5,
+          "last_closed": {
+            "asof_utc": "2026-09-12T17:45:00+00:00",
+            "close": 1.034,
+            "ema_state": {
+              "price_vs_ema200_pct": -1.034430824719501,
+              "price_vs_ema20_pct": -0.30893038199943934,
+              "price_vs_ema50_pct": -0.40572800727310954,
+              "stack": "bearish"
+            },
+            "high": 1.036,
+            "indicators": {
+              "atr14": 0.002409237450961442,
+              "dema20": 1.0363556033969759,
+              "ema20": 1.0372042390177119,
+              "ema200": 1.0448078140880044,
+              "ema50": 1.0382123181496927,
+              "macd": -0.0008173527745327647,
+              "macd_hist": -0.0006252607702410479,
+              "macd_signal": -0.0001920920042917168,
+              "rsi14": 41.07593728666702,
+              "session_vwap_utc": 1.0464485832335315,
+              "stoch_rsi": 6.371121881327657,
+              "stoch_rsi_d": 14.049099588391455,
+              "stoch_rsi_k": 10.758423790058112,
+              "volume_ratio20": 0.9661043684776597,
+              "volume_sma20": 2612.5762724655,
+              "volume_z20": -0.01570991409615522
+            },
+            "low": 1.0338,
+            "open": 1.0355,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0428,
+                "time": "2026-09-12T17:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.033,
+                "time": "2026-09-12T17:25:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0445,
+                "time": "2026-09-12T16:30:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0378,
+                "time": "2026-09-12T16:55:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 26,
+            "volume": 2524.02134981,
+            "vwap": 1.0349
+          },
+          "latest_candle_is_open": true,
+          "live": {
+            "asof_utc": "2026-09-12T17:50:00+00:00",
+            "close": 1.0341,
+            "ema_state": {
+              "price_vs_ema200_pct": -1.014765559502695,
+              "price_vs_ema20_pct": -0.27086256339929893,
+              "price_vs_ema50_pct": -0.38062200971116233,
+              "stack": "bearish"
+            },
+            "high": 1.0341,
+            "indicators": {
+              "atr14": 0.0022442919187499097,
+              "dema20": 1.0358732985775974,
+              "ema20": 1.0369085972065013,
+              "ema200": 1.0447012686741934,
+              "ema50": 1.0380510507712735,
+              "macd": -0.0009567452252732256,
+              "macd_hist": -0.000611722576785207,
+              "macd_signal": -0.00034502264848801855,
+              "rsi14": 41.37875912967949,
+              "session_vwap_utc": 1.0464484846294673,
+              "stoch_rsi": 7.885576364313503,
+              "stoch_rsi_d": 13.008311073907102,
+              "stoch_rsi_k": 9.965458878919051,
+              "volume_ratio20": 0.0022399621502595837,
+              "volume_sma20": 2611.6512724655,
+              "volume_z20": -0.46224216924364336
+            },
+            "low": 1.0341,
+            "open": 1.0341,
+            "structure": {
+              "high_state": "LH",
+              "last_pivot_high": {
+                "price": 1.0428,
+                "time": "2026-09-12T17:00:00+00:00"
+              },
+              "last_pivot_low": {
+                "price": 1.033,
+                "time": "2026-09-12T17:25:00+00:00"
+              },
+              "low_state": "LL",
+              "previous_pivot_high": {
+                "price": 1.0445,
+                "time": "2026-09-12T16:30:00+00:00"
+              },
+              "previous_pivot_low": {
+                "price": 1.0378,
+                "time": "2026-09-12T16:55:00+00:00"
+              },
+              "trend": "bearish"
+            },
+            "trade_count": 1,
+            "volume": 5.85,
+            "vwap": 1.0341
+          },
+          "source_rows": 721
+        }
+      },
+      "trade_flow": {
+        "15m": {
+          "buy_share": 0.015035769901740506,
+          "buy_volume": 71.62754953999999,
+          "delta": -4620.554802780001,
+          "sell_volume": 4692.182352320001,
+          "trade_count": 55,
+          "window_complete": true
+        },
+        "5m": {
+          "buy_share": 0.009923093438006757,
+          "buy_volume": 18.97754954,
+          "delta": -1874.50795073,
+          "sell_volume": 1893.4855002699999,
+          "trade_count": 17,
+          "window_complete": true
+        },
+        "60m": {
+          "buy_share": 0.2566849386050492,
+          "buy_volume": 3402.13977179,
+          "delta": -6449.866922040001,
+          "sell_volume": 9852.00669383,
+          "trade_count": 219,
+          "window_complete": true
+        },
+        "asof_utc": "2026-09-12T17:51:26.821848+00:00",
+        "earliest_trade_utc": "2026-09-12T15:16:32.032609700+00:00",
+        "latest_price": 1.0341,
+        "latest_trade_utc": "2026-09-12T17:51:07.533910513+00:00"
+      }
+    }
+  },
+  "schema_version": 1,
+  "status": "ok"
+}
