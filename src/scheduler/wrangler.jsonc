@@ -1,0 +1,11 @@
+{
+  "name": "dot-market-scheduler",
+  "main": "worker.mjs",
+  "account_id": "daeba6ff3204db3296d50477ce7dfc5c",
+  "compatibility_date": "2026-09-12",
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": { "crons": ["50 * * * *", "55 * * * *"] },
+  "vars": { "ENABLED": "true" },
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
+}
