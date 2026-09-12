@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, Optional
 
 import pandas as pd
-import requests
+from common import PublicHTTP, finite
+from timeframes import validate_candles
+from orderflow import validate_trades, validate_book
 
 SPOT_BASE = "https://api.kraken.com/0/public"
 FUTURES_BASE = "https://futures.kraken.com/derivatives/api/v3"
@@ -23,21 +24,15 @@ class KrakenClient:
     user_agent: str = "dot-market-monitor/1.0"
 
     def __post_init__(self) -> None:
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": self.user_agent, "Accept": "application/json"})
+        self.http = PublicHTTP(timeout=self.timeout)
+        self.session = self.http.session
+        self._pairs = None
 
     def _get_json(self, url: str, params: Optional[dict] = None, retries: int = 2) -> Dict[str, Any]:
-        last_exc: Optional[Exception] = None
-        for attempt in range(retries + 1):
-            try:
-                response = self.session.get(url, params=params, timeout=self.timeout)
-                response.raise_for_status()
-                return response.json()
-            except Exception as exc:  # noqa: BLE001
-                last_exc = exc
-                if attempt < retries:
-                    time.sleep(1.2 * (attempt + 1))
-        raise KrakenError(f"GET failed for {url}: {last_exc}")
+        try:
+            return self.http.get(url, params)
+        except RuntimeError as exc:
+            raise KrakenError(str(exc)) from exc
 
     @staticmethod
     def _spot_result(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -70,7 +65,7 @@ class KrakenClient:
         payload = self._get_json(f"{SPOT_BASE}/Ticker", params={"pair": pair})
         result = self._spot_result(payload)
         t = self._single_market_result(result)
-        return {
+        out = {
             "last": float(t["c"][0]),
             "last_volume": float(t["c"][1]),
             "bid": float(t["b"][0]),
@@ -87,28 +82,56 @@ class KrakenClient:
             "trades_today": int(t["t"][0]),
             "trades_24h": int(t["t"][1]),
         }
+        for field in ['last','bid','ask','high_24h','low_24h']:
+            if finite(out[field]) is None or out[field]<=0:
+                raise KrakenError('Implausible spot ticker price')
+        if out['bid']>out['ask'] or out['low_24h']>out['high_24h']:
+            raise KrakenError('Implausible spot ticker range')
+        return out
+
+    @staticmethod
+    def parse_spot_trades(payload):
+        result=KrakenClient._spot_result(payload)
+        rows=KrakenClient._single_market_result(result)
+        records=[]
+        for row in rows:
+            if len(row)<6: raise KrakenError('Invalid spot trade row')
+            records.append({'price':float(row[0]),'volume':float(row[1]),
+                            'time':pd.to_datetime(float(row[2]),unit='s',utc=True),'side':row[3],
+                            'order_type':row[4],'misc':row[5],
+                            'trade_id':str(row[6]) if len(row)>6 else repr(row)})
+        return validate_trades(pd.DataFrame(records,columns=['price','volume','time','side','order_type','misc','trade_id']).sort_values('time'))
 
     def recent_trades(self, pair: str) -> pd.DataFrame:
-        payload = self._get_json(f"{SPOT_BASE}/Trades", params={"pair": pair})
-        result = self._spot_result(payload)
-        rows = self._single_market_result(result)
-        records = []
-        for row in rows:
-            records.append(
-                {
-                    "price": float(row[0]),
-                    "volume": float(row[1]),
-                    "time": pd.to_datetime(float(row[2]), unit="s", utc=True),
-                    "side": row[3],
-                    "order_type": row[4],
-                    "misc": row[5],
-                    "trade_id": row[6] if len(row) > 6 else None,
-                }
-            )
-        if not records:
-            return pd.DataFrame(columns=["price", "volume", "time", "side", "order_type", "misc", "trade_id"])
-        df = pd.DataFrame(records).sort_values("time")
-        return df
+        return self.parse_spot_trades(self._get_json(f"{SPOT_BASE}/Trades", params={"pair":pair}))
+
+    def trade_tape(self, pair, now, hours=4, max_pages=30):
+        start=pd.Timestamp(now)-pd.Timedelta(hours=hours)
+        cursor=str(int(start.timestamp()*1_000_000_000))
+        frames=[]
+        complete=False
+        pagination_error=None
+        for _ in range(max_pages):
+            try:
+                payload=self._get_json(f"{SPOT_BASE}/Trades",params={'pair':pair,'since':cursor,'count':1000})
+                result=self._spot_result(payload)
+                frame=self.parse_spot_trades(payload)
+            except Exception as exc:
+                if not frames: raise
+                pagination_error=str(exc)
+                break
+            frames.append(frame)
+            next_cursor=str(result['last'])
+            if len(frame)<1000 or (not frame.empty and frame.time.max()>=pd.Timestamp(now)):
+                complete=True
+                break
+            if next_cursor==cursor: break
+            cursor=next_cursor
+        tape=pd.concat(frames).drop_duplicates('trade_id').sort_values('time').reset_index(drop=True)
+        tape.attrs={'coverage_start':start.isoformat(),
+                    'coverage_end':pd.Timestamp(now).isoformat() if complete else (tape.time.max().isoformat() if not tape.empty else start.isoformat()),
+                    'pagination_complete':complete,'pages':len(frames),'pagination_error':pagination_error}
+        return tape
 
     def spread(self, pair: str) -> pd.DataFrame:
         payload = self._get_json(f"{SPOT_BASE}/Spread", params={"pair": pair})
@@ -130,7 +153,7 @@ class KrakenClient:
         book = self._single_market_result(result)
         bids = [{"price": float(x[0]), "volume": float(x[1]), "time": int(x[2])} for x in book["bids"]]
         asks = [{"price": float(x[0]), "volume": float(x[1]), "time": int(x[2])} for x in book["asks"]]
-        return {"bids": bids, "asks": asks}
+        return validate_book({"bids": bids, "asks": asks})
 
     def ohlc(self, pair: str, interval: int) -> pd.DataFrame:
         payload = self._get_json(f"{SPOT_BASE}/OHLC", params={"pair": pair, "interval": interval})
@@ -144,11 +167,12 @@ class KrakenClient:
         for c in ["open", "high", "low", "close", "vwap", "volume"]:
             df[c] = pd.to_numeric(df[c], errors="coerce")
         df["trade_count"] = pd.to_numeric(df["trade_count"], errors="coerce").astype("Int64")
-        return df.set_index("time").sort_index()
+        return validate_candles(df.set_index("time").sort_index())
 
     def asset_pairs(self) -> Dict[str, Any]:
-        payload = self._get_json(f"{SPOT_BASE}/AssetPairs")
-        return self._spot_result(payload)
+        if self._pairs is None:
+            self._pairs = self._spot_result(self._get_json(f"{SPOT_BASE}/AssetPairs"))
+        return self._pairs
 
     def resolve_altname(self, wsname: str) -> str:
         target = wsname.upper()
@@ -158,161 +182,85 @@ class KrakenClient:
                 return str(meta.get("altname"))
         raise KrakenError(f"Could not resolve Kraken pair for {wsname}")
 
-    def futures_ticker(self, symbol: str = "PF_DOTUSD") -> Dict[str, Any]:
-        try:
-            payload = self._get_json(f"{FUTURES_BASE}/tickers/{symbol}")
-            tickers = payload.get("tickers")
-            if isinstance(tickers, list) and tickers:
-                ticker = tickers[0]
-            elif isinstance(payload.get("ticker"), dict):
-                ticker = payload["ticker"]
-            else:
-                ticker = payload
-        except KrakenError:
-            payload = self._get_json(f"{FUTURES_BASE}/tickers")
-            tickers = payload.get("tickers") or []
-            matches = [x for x in tickers if x.get("symbol") == symbol]
-            if not matches:
-                raise KrakenError(f"Futures symbol not found: {symbol}")
-            ticker = matches[0]
+    def futures_ticker(self, symbol: str = 'PF_DOTUSD'):
+        payload=self._get_json(f'{FUTURES_BASE}/tickers/{symbol}')
+        if payload.get('result')!='success' or not isinstance(payload.get('ticker'),dict):
+            raise KrakenError('Invalid futures ticker envelope')
+        ticker=payload['ticker']
+        if ticker.get('symbol')!=symbol: raise KrakenError('Wrong futures symbol')
+        # This map contains only fields observed in the fixture and official schema.
+        fields={'mark_price':'markPrice','last':'last','index_price':'indexPrice','bid':'bid','ask':'ask',
+                'bid_size':'bidSize','ask_size':'askSize','high_24h':'high24h','low_24h':'low24h',
+                'volume_24h':'vol24h','volume_quote_24h':'volumeQuote','open_interest':'openInterest',
+                'open_24h':'open24h','vwap_24h':'vwap24h','last_size':'lastSize','funding_rate':'fundingRate',
+                'funding_rate_prediction':'fundingRatePrediction','change_24h_pct':'change24h'}
+        out={name:None if ticker.get(key) is None else float(ticker[key]) for name,key in fields.items()}
+        if any(value is not None and finite(value) is None for value in out.values()):
+            raise KrakenError('Nonfinite futures ticker field')
+        if finite(out['mark_price']) is None or out['mark_price']<=0: raise KrakenError('Invalid markPrice')
+        out.update({'symbol':symbol,'server_time_utc':pd.Timestamp(payload['serverTime']).isoformat(),
+                    'last_time_utc':ticker.get('lastTime'),'suspended':ticker.get('suspended'),
+                    'post_only':ticker.get('postOnly'),'tag':ticker.get('tag'),'pair':ticker.get('pair'),
+                    'field_status':{name:'ok' if ticker.get(key) is not None else 'unavailable' for name,key in fields.items()},
+                    'funding_rate_unit':'absolute API rate; not a percentage',
+                    'observed_api_fields':sorted(ticker),'raw':ticker})
+        return out
 
-        server_time = payload.get("serverTime") or ticker.get("serverTime")
-        if not server_time:
-            raise KrakenError("Futures ticker missing serverTime")
-        ts = pd.Timestamp(server_time)
-        if ts.tzinfo is None:
-            ts = ts.tz_localize("UTC")
-        else:
-            ts = ts.tz_convert("UTC")
+    def futures_instrument(self, symbol='PF_DOTUSD'):
+        payload=self._get_json(f'{FUTURES_BASE}/instruments')
+        result=next((x for x in payload['instruments'] if x['symbol']==symbol),None)
+        if result is None: raise KrakenError('Futures instrument unavailable')
+        if result.get('type')!='flexible_futures' or result.get('base')!='DOT' or result.get('quote')!='USD' or result.get('contractSize')!=1:
+            raise KrakenError('Unsupported contract units')
+        return result
 
-        def f(name: str) -> Optional[float]:
-            value = ticker.get(name)
-            return None if value is None else float(value)
+    def futures_orderbook(self, symbol='PF_DOTUSD'):
+        payload=self._get_json(f'{FUTURES_BASE}/orderbook',params={'symbol':symbol})
+        book=payload['orderBook']
+        parsed={side:[{'price':float(x[0]),'volume':float(x[1])} for x in book[side]] for side in ['bids','asks']}
+        parsed['server_time_utc']=payload['serverTime']
+        return validate_book(parsed)
 
-        return {
-            "symbol": ticker.get("symbol", symbol),
-            "server_time_utc": ts.isoformat(),
-            "server_time_unix": ts.timestamp(),
-            "mark_price": f("markPrice"),
-            "last": f("last"),
-            "bid": f("bid"),
-            "ask": f("ask"),
-            "high_24h": f("high24h"),
-            "low_24h": f("low24h"),
-            "volume_24h": f("vol24h") if ticker.get("vol24h") is not None else f("volume24h"),
-            "open_24h": f("open24h"),
-            "change_24h_pct": f("change24h"),
-            "index_price": f("indexPrice"),
-            "open_interest": f("openInterest"),
-            "funding_rate": f("fundingRate"),
-            "funding_rate_prediction": f("fundingRatePrediction"),
-            "raw": ticker,
-        }
+    @staticmethod
+    def parse_futures_trades(payload):
+        if payload.get('result')!='success' or not isinstance(payload.get('history'),list):
+            raise KrakenError('Invalid futures trade envelope')
+        records=[]
+        for x in payload['history']:
+            # uid is stable; observed trade_id is a page-relative index.
+            if x['side'] not in ['buy','sell']: raise KrakenError('Unknown futures taker side')
+            records.append({'price':float(x['price']),'volume':float(x['size']),
+                            'time':pd.Timestamp(x['time']), 'side':'b' if x['side']=='buy' else 's',
+                            'trade_id':x['uid'],'type':x['type']})
+        return validate_trades(pd.DataFrame(records,columns=['price','volume','time','side','trade_id','type']).sort_values('time'))
 
-    def futures_mark_candles(self, symbol: str = "PF_DOTUSD", resolution: str = "1m") -> pd.DataFrame:
-        payload = self._get_json(f"{FUTURES_CHARTS_BASE}/mark/{symbol}/{resolution}")
-        candles = payload.get("candles") or payload.get("data") or []
-        if not candles:
-            raise KrakenError("No futures mark candles returned")
-        records = []
-        for c in candles:
-            if isinstance(c, dict):
-                ts = c.get("time") or c.get("timestamp")
-                records.append(
-                    {
-                        "time": pd.to_datetime(ts, unit="ms" if float(ts) > 10_000_000_000 else "s", utc=True),
-                        "open": float(c["open"]),
-                        "high": float(c["high"]),
-                        "low": float(c["low"]),
-                        "close": float(c["close"]),
-                    }
-                )
-            else:
-                ts = c[0]
-                records.append(
-                    {
-                        "time": pd.to_datetime(ts, unit="ms" if float(ts) > 10_000_000_000 else "s", utc=True),
-                        "open": float(c[1]),
-                        "high": float(c[2]),
-                        "low": float(c[3]),
-                        "close": float(c[4]),
-                    }
-                )
-        return pd.DataFrame(records).set_index("time").sort_index()
-
-
-def data_age_seconds(ts_utc: Any, now_utc: Optional[datetime] = None) -> float:
-    now = now_utc or datetime.now(timezone.utc)
-    ts = pd.Timestamp(ts_utc)
-    if ts.tzinfo is None:
-        ts = ts.tz_localize("UTC")
-    else:
-        ts = ts.tz_convert("UTC")
-    return max(0.0, now.timestamp() - ts.timestamp())
-
-
-def trade_flow(
-    df: pd.DataFrame, windows_minutes: Iterable[int] = (5, 15, 60), now_utc: Optional[datetime] = None
-) -> Dict[str, Any]:
-    if df.empty:
-        return {}
-    latest = df["time"].max()
-    earliest = df["time"].min()
-    now = pd.Timestamp(now_utc or datetime.now(timezone.utc))
-    out: Dict[str, Any] = {
-        "asof_utc": now.isoformat(),
-        "earliest_trade_utc": earliest.isoformat(),
-        "latest_trade_utc": latest.isoformat(),
-        "latest_price": float(df.loc[df["time"].idxmax(), "price"]),
-    }
-    for minutes in windows_minutes:
-        start = now - pd.Timedelta(minutes=minutes)
-        w = df[(df["time"] >= start) & (df["time"] <= now)]
-        buy = float(w.loc[w["side"] == "b", "volume"].sum())
-        sell = float(w.loc[w["side"] == "s", "volume"].sum())
-        total = buy + sell
-        out[f"{minutes}m"] = {
-            "buy_volume": buy,
-            "sell_volume": sell,
-            "delta": buy - sell,
-            "buy_share": None if total == 0 else buy / total,
-            "trade_count": int(len(w)),
-            "window_complete": bool(earliest <= start),
-        }
-    return out
-
-
-def orderbook_metrics(book: Dict[str, Any], mid: Optional[float] = None) -> Dict[str, Any]:
-    bids = book.get("bids", [])
-    asks = book.get("asks", [])
-    if not bids or not asks:
-        return {}
-    best_bid = max(x["price"] for x in bids)
-    best_ask = min(x["price"] for x in asks)
-    midpoint = mid or (best_bid + best_ask) / 2
-
-    out: Dict[str, Any] = {
-        "best_bid": best_bid,
-        "best_ask": best_ask,
-        "spread_bps": (best_ask - best_bid) / midpoint * 10_000,
-    }
-
-    for pct in (0.25, 0.5, 1.0, 2.0):
-        lower = midpoint * (1 - pct / 100)
-        upper = midpoint * (1 + pct / 100)
-        bid_levels = [x for x in bids if x["price"] >= lower]
-        ask_levels = [x for x in asks if x["price"] <= upper]
-        bid_vol = sum(x["volume"] for x in bid_levels)
-        ask_vol = sum(x["volume"] for x in ask_levels)
-        total = bid_vol + ask_vol
-        out[f"depth_{pct:g}pct"] = {
-            "bid_volume": bid_vol,
-            "ask_volume": ask_vol,
-            "imbalance": None if total == 0 else (bid_vol - ask_vol) / total,
-        }
-
-    near_bids = [x for x in bids if x["price"] >= midpoint * 0.98]
-    near_asks = [x for x in asks if x["price"] <= midpoint * 1.02]
-    out["largest_bid_wall_within_2pct"] = max(near_bids, key=lambda x: x["volume"], default=None)
-    out["largest_ask_wall_within_2pct"] = max(near_asks, key=lambda x: x["volume"], default=None)
-    return out
+    def futures_trade_tape(self, now, symbol='PF_DOTUSD', hours=4, max_pages=30):
+        start=pd.Timestamp(now)-pd.Timedelta(hours=hours)
+        frames=[]
+        last_time=None
+        complete=False
+        pagination_error=None
+        for _ in range(max_pages):
+            params={'symbol':symbol}
+            if last_time is not None: params['lastTime']=last_time
+            try:
+                payload=self._get_json(f'{FUTURES_BASE}/history',params=params)
+                frame=self.parse_futures_trades(payload)
+            except Exception as exc:
+                if not frames: raise
+                pagination_error=str(exc)
+                break
+            frames.append(frame)
+            if frame.empty: break
+            oldest=frame.time.min()
+            if oldest<=start:
+                complete=True
+                break
+            next_time=oldest.isoformat()
+            if next_time==last_time: break
+            last_time=next_time
+        tape=pd.concat(frames).drop_duplicates('trade_id').sort_values('time').reset_index(drop=True)
+        tape.attrs={'coverage_start':start.isoformat() if complete else (tape.time.min().isoformat() if not tape.empty else pd.Timestamp(now).isoformat()),
+                    'coverage_end':pd.Timestamp(now).isoformat(),'pagination_complete':complete,
+                    'pages':len(frames),'pagination_error':pagination_error}
+        return tape

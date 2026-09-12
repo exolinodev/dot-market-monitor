@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/llm_snapshot.schema.json",
+  "type": "object",
+  "required": [
+    "meta",
+    "sources",
+    "markets",
+    "errors",
+    "breadth",
+    "global_market",
+    "history_changes",
+    "wall_persistence",
+    "relative_strength_dot_btc",
+    "correlation_beta"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "generated_at_utc",
+        "run_duration_seconds",
+        "status",
+        "fresh",
+        "consumer_max_age_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 2
+        },
+        "generated_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "run_duration_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fresh": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "partial"
+          ]
+        },
+        "consumer_max_age_seconds": {
+          "const": 5400
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_url",
+          "source_timestamp_utc",
+          "age_seconds",
+          "fresh",
+          "status",
+          "error"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "source_timestamp_utc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "age_seconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "fresh": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "stale",
+              "unavailable",
+              "invalid"
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "markets": {
+      "type": "object",
+      "required": [
+        "DOTUSD",
+        "BTCUSD",
+        "DOTBTC",
+        "ETHBTC",
+        "ETHUSD"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "timeframes",
+          "returns",
+          "pair"
+        ],
+        "properties": {
+          "timeframes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "live",
+                "last_closed",
+                "source_ids",
+                "status",
+                "fresh",
+                "interval_minutes"
+              ],
+              "properties": {
+                "live": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "asof_utc",
+                    "close",
+                    "volume",
+                    "indicators",
+                    "slopes",
+                    "cross_events"
+                  ],
+                  "properties": {
+                    "asof_utc": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "close": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "volume": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "indicators": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "slopes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "cross_events": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "last_closed": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "asof_utc",
+                    "close",
+                    "volume",
+                    "indicators",
+                    "slopes",
+                    "cross_events"
+                  ],
+                  "properties": {
+                    "asof_utc": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "close": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "volume": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "indicators": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "slopes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "cross_events": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "fresh": {
+                  "type": "boolean"
+                },
+                "interval_minutes": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "enum": [
+                    "ok",
+                    "partial",
+                    "stale",
+                    "unavailable"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "error"
+        ]
+      }
+    },
+    "breadth": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "global_market": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "history_changes": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "wall_persistence": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "relative_strength_dot_btc": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "correlation_beta": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}

@@ -1,78 +1,71 @@
 import json
-from datetime import datetime, timezone
-
+from types import SimpleNamespace
 import numpy as np
-import pandas as pd
 import pytest
-
-import main
-from indicators import IndicatorConfig
-from test_indicators import sample_df
-
-
-def test_summary_handles_failed_timeframe():
-    data = {
-        'generated_at_utc': '2026-09-12T12:00:00+00:00',
-        'markets': {'DOTUSD': {'timeframes': {'1m': {'error': 'API unavailable'}}}, 'BTCUSD': {}},
-        'errors': [{'component': 'dot_ohlc_1m', 'error': 'API unavailable'}],
-    }
-    summary = main.markdown_summary(data)
-    assert 'API unavailable' in summary
-    assert '1m' in summary
+from common import json_safe
+from output import compact_snapshot, validate_snapshot, markdown_summary
+from pipeline import Collector
 
 
-def test_history_requires_a_point_near_the_requested_age(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, 'HISTORY', tmp_path / 'history.json')
-    now = datetime(2026, 9, 12, 12, tzinfo=timezone.utc)
-    main.HISTORY.write_text(json.dumps([{'unix': now.timestamp() - 3600, 'btc_dominance': 58}]))
-    result = main.update_history(now, {'btc_dominance': 59}, None)
-    assert result['btc_dominance_change_24h_pp'] is None
-    assert result['btc_dominance_change_7d_pp'] is None
+class Offline:
+    base_url='https://api.coingecko.com/api/v3'
+    http=SimpleNamespace(records={},raw={})
+    def __getattr__(self,name):
+        def fail(*args,**kwargs): raise RuntimeError('offline fixture')
+        return fail
 
 
-def test_history_uses_real_24h_and_7d_points(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, 'HISTORY', tmp_path / 'history.json')
-    now = datetime(2026, 9, 12, 12, tzinfo=timezone.utc)
-    main.HISTORY.write_text(json.dumps([
-        {'unix': now.timestamp() - 7 * 86400, 'btc_dominance': 55},
-        {'unix': now.timestamp() - 86400, 'btc_dominance': 58},
-    ]))
-    result = main.update_history(now, {'btc_dominance': 59}, None)
-    assert result['btc_dominance_change_24h_pp'] == 1
-    assert result['btc_dominance_change_7d_pp'] == 4
+def test_all_source_failures_publish_explicit_nulls(tmp_path):
+    # New v2 contract: even a total outage produces a fresh error envelope.
+    data=Collector(tmp_path,Offline(),Offline()).collect()
+    compact=compact_snapshot(data)
+    validate_snapshot(compact)
+    assert data['status']=='partial'
+    assert data['markets']['DOTUSD']['spot']['verified_price'] is None
+    assert data['markets']['DOTUSD']['timeframes']['1m']['live'] is None
+    assert len(data['errors'])>=20
+    assert all(not s['fresh'] for s in data['sources'].values())
+    assert 'offline fixture' in markdown_summary(data)
+    assert 'n/a' in markdown_summary(data)
 
 
 def test_json_safe_removes_numpy_nonfinite_values():
-    result = main.json_safe({'values': [np.float32('nan'), np.float64('inf'), np.int64(3)]})
-    assert json.dumps(result, allow_nan=False) == '{"values": [null, null, 3]}'
+    result=json_safe({'values':[np.float32('nan'),np.float64('inf'),np.int64(3)]})
+    assert json.dumps(result,allow_nan=False)=='{"values": [null, null, 3]}'
 
 
-def test_closed_snapshot_excludes_open_candle():
-    df = sample_df()
-    class Client:
-        def ohlc(self, pair, interval):
-            return df
-    result = main.tf_snapshot(Client(), 'DOTUSD', 60, IndicatorConfig())
-    assert result['live']['asof_utc'] == df.index[-1].isoformat()
-    assert result['last_closed']['asof_utc'] == df.index[-2].isoformat()
-    assert result['last_closed']['close'] == df.iloc[-2]['close']
+def test_schema_rejects_wrong_version_and_missing_instrument(tmp_path):
+    x=compact_snapshot(Collector(tmp_path,Offline(),Offline()).collect())
+    x['meta']['schema_version']=999
+    with pytest.raises(Exception): validate_snapshot(x)
+    x['meta']['schema_version']=2
+    del x['markets']['DOTBTC']
+    with pytest.raises(Exception): validate_snapshot(x)
 
 
-def test_failed_collection_preserves_published_data(tmp_path, monkeypatch):
-    for name, filename in [('LATEST', 'latest.json'), ('SUMMARY', 'latest.md'), ('HISTORY', 'history.json')]:
-        path = tmp_path / filename
-        path.write_text('[]' if name == 'HISTORY' else 'previous valid snapshot')
-        monkeypatch.setattr(main, name, path)
-    monkeypatch.setattr(main, 'DATA_DIR', tmp_path)
-    class Unavailable:
-        def __getattr__(self, name):
-            def fail(*args, **kwargs):
-                raise RuntimeError('offline test')
-            return fail
-    monkeypatch.setattr(main, 'KrakenClient', Unavailable)
-    monkeypatch.setattr(main, 'CoinGeckoClient', Unavailable)
-    with pytest.raises(RuntimeError, match='Core market data'):
-        main.main()
-    assert main.LATEST.read_text() == 'previous valid snapshot'
-    assert main.SUMMARY.read_text() == 'previous valid snapshot'
-    assert main.HISTORY.read_text() == '[]'
+def test_single_failure_does_not_discard_other_sources(tmp_path):
+    collector=Collector(tmp_path,Offline(),Offline())
+    good=collector.source('good','https://example.test/good',lambda:{'price':12})
+    bad=collector.source('bad','https://example.test/bad',lambda:(_ for _ in ()).throw(RuntimeError('one source failed')))
+    assert good=={'price':12}
+    assert bad is None
+    assert collector.sources['good']['fresh']
+    assert not collector.sources['bad']['fresh']
+
+
+def test_offline_main_publishes_valid_files(tmp_path,monkeypatch):
+    import main
+    monkeypatch.setattr(main,'Collector',lambda target:Collector(target,Offline(),Offline()))
+    data=main.main(tmp_path)
+    saved=json.loads((tmp_path/'llm_snapshot.json').read_text())
+    assert validate_snapshot(saved)
+    assert saved['meta']['status']=='partial'
+    assert (tmp_path/'raw'/'latest.json.gz').exists()
+    assert (tmp_path/'latest.json').exists()
+    assert 'offline fixture' in (tmp_path/'latest.md').read_text()
+
+
+def test_schema_requires_all_dot_timeframes(tmp_path):
+    x=compact_snapshot(Collector(tmp_path,Offline(),Offline()).collect())
+    del x['markets']['DOTUSD']['timeframes']['3m']
+    with pytest.raises(ValueError,match='inventory'):validate_snapshot(x)

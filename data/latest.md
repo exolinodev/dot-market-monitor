@@ -1,37 +1,31 @@
 # DOT Market Snapshot
 
-Generated UTC: 2026-09-12T17:52:35.056185+00:00
+Generated UTC: 2026-09-12T18:38:30.056663+00:00
+Status: ok
 
-## Live market
-DOT spot verified: 1.034100 USD
-DOT perp mark: 1.033813 USD
-BTC spot verified: 77166.80 USD
-DOT/BTC spot: 0.0000134780 BTC
+Primary consumer: [llm_snapshot.json](llm_snapshot.json)
 
-## Market regime
-BTC dominance: 58.189%
-BTC dominance 24h delta: n/a pp
-BTC dominance 7d delta: n/a pp
-Alt peer median 24h: -0.15%
-Alt peer median 7d: -2.95%
-DOT relative strength 24h: laggard
-DOT relative strength 7d: leader
+| Instrument | Verified price | Status |
+|---|---:|---|
+| DOTUSD | 1.0317 | ok |
+| BTCUSD | 77153.1 | ok |
+| DOTBTC | n/a | ok |
+| ETHBTC | 0.032719 | ok |
 
-## DOT timeframes
-| TF | Close | RSI14 | Stoch K | MACD hist | EMA20 | EMA50 | EMA200 | Structure | Vol x20 |
-|---|---:|---:|---:|---:|---:|---:|---:|---|---:|
-| 1m | 1.03410 | 36.9 | 10.4 | -0.000006 | 1.03503 | 1.03633 | 1.03787 | bearish | 0.00 |
-| 5m | 1.03410 | 41.4 | 10.0 | -0.000612 | 1.03691 | 1.03805 | 1.04470 | bearish | 0.00 |
-| 15m | 1.03410 | 36.5 | 24.2 | -0.000067 | 1.03799 | 1.04183 | 1.06740 | bearish | 0.35 |
-| 30m | 1.03410 | 37.7 | 25.0 | -0.000061 | 1.04023 | 1.05050 | 1.07292 | bearish | 0.18 |
-| 1h | 1.03410 | 38.1 | 25.9 | 0.001250 | 1.04625 | 1.06688 | 1.04062 | bearish | 0.25 |
-| 4h | 1.03410 | 40.8 | 3.1 | -0.011902 | 1.06982 | 1.03970 | 0.92454 | bearish | 0.23 |
-| 1d | 1.03410 | 58.1 | 36.6 | 0.013636 | 0.97215 | 0.91031 | 1.20065 | mixed | 0.55 |
-| 1w | 1.03410 | 45.1 | 93.5 | 0.077035 | 1.03142 | 1.71019 | 4.87340 | bearish | 0.80 |
+| DOT TF | Live close | Closed RSI14 | Closed ATR% | Status |
+|---|---:|---:|---:|---|
+| 1m | 1.0317 | 46.47788253231787 | 0.06122315168651481 | ok |
+| 3m | 1.0317 | 39.03011312852174 | 0.17058437166679324 | ok |
+| 5m | 1.0317 | 40.347840244697004 | 0.2478840087123808 | ok |
+| 15m | 1.0317 | 35.49235630994873 | 0.3796937848340344 | ok |
+| 30m | 1.0317 | 36.7920512454162 | 0.5933101033568857 | ok |
+| 1h | 1.0317 | 38.17448497639013 | 1.0597978894266904 | ok |
+| 2h | 1.0317 | 38.117038212898365 | 1.943503488787504 | ok |
+| 4h | 1.0317 | 41.617615365129595 | 3.263316707120134 | ok |
+| 12h | 1.0317 | 56.026203583667254 | 5.94758947164971 | ok |
+| 1d | 1.0317 | 58.8065834458874 | 7.613853870466179 | ok |
+| 2d | 1.0317 | 62.63314890611974 | 8.68098790697241 | ok |
+| 4d | 1.0317 | 55.356873696533825 | 12.201003992051076 | ok |
+| 1w | 1.0317 | 48.1738501100705 | 17.889127527324018 | ok |
 
-## Flow and order book
-5m trade delta: -1245.35 DOT
-15m trade delta: -4626.40 DOT
-1% book imbalance: 0.140
-
-Machine-readable source: `data/latest.json`
+Formula definitions: [FORMULAS.md](../docs/FORMULAS.md)

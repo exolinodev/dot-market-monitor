@@ -1,28 +1,14 @@
-# ChatGPT Consumer Prompt
+# ChatGPT DOT Consumer — Schema v2
 
-Öffne direkt https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/latest.json. Verwende keine Suchmaschine und keine anderen Preisquellen, solange der Snapshot frisch ist.
+Öffne direkt diese eine Datei:
+https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json
 
-Validierung:
+1. Prüfe `meta.schema_version == 2` und berechne das Alter von `meta.generated_at_utc`. Über 90 Minuten: keine Live-Aussage. Lies `errors`, `sources` und Komponentenstatus; `meta.fresh` gilt nur zum Erzeugungszeitpunkt.
+2. Lies die Tabellenspalten aus `meta.cross_event_columns`, `meta.pivot_columns` und `meta.history_delta_columns`. Fehlende Werte sind null; keine Werte ergänzen oder schätzen.
+3. Nutze `markets.DOTUSD.spot.current_price` mit `current_price_type`. Ein `spread_midpoint` ist ein Quote-Mittelpunkt und kein Trade. Die verifizierte letzte Ausführung steht separat in `verified_price`. Perp-Ticker, BTC, DOTBTC und ETHBTC nur mit frischer Quelle verwenden.
+4. `timeframes.<tf>.live` sind Intrabar-Werte, `last_closed` sind bestätigte Kerzen. Struktur basiert ausschliesslich auf abgeschlossenen Kerzen. Eine Pivot-Bestätigung ist erst nach Schluss der angegebenen Bestätigungskerze gültig. Nutze Slopes, Crosses und Bars seit Cross gemeinsam mit den numerischen Indikatoren.
+5. Tape-Werte mit `window_complete=false` sind Teilsummen. CVD startet in jedem Fenster bei null. Absorption ist eine definierte Heuristik, keine bewiesene Teilnehmeraktivität. Wall-Entfernung und Ausführung am selben Preis beweisen keine Orderidentität oder Spoofing-Absicht.
+6. Returns vergleichen abgeschlossene Stundenkerzen. Relative Strength, Breadth, Dominanz, TOTAL3-Proxy, Beta und Korrelation tragen ihre Quellen und Zeitgrenzen. Historienwerte können in den ersten Stunden/Tagen fehlen. Absolute Funding-Raten sind keine Prozentangaben.
+7. Python liefert keine Elliott-Counts oder Count-Wahrscheinlichkeiten. Interpretiere bestätigte Pivots, Fibs, bedingte Overlap-Flags und Momentum selbst; führe mehrere plausible Count-Familien. Ein hypothetischer 1/4-Overlap ist keine automatische Count-Entscheidung. Keine Single-Count-Sicherheit vortäuschen.
 
-1. Prüfe `generated_at_utc`. Bei mehr als 90 Minuten Alter: Snapshot als veraltet melden und keine Live-Aussage daraus ableiten.
-2. Nutze für DOT Spot `markets.DOTUSD.spot.verified_price`.
-3. Nutze für DOT Perp `markets.DOTUSD.perp.mark_price`, aber nur wenn `markets.DOTUSD.perp.mark_fresh_le_120s` wahr ist.
-4. Nutze `timeframes.<tf>.live` für Intrabar-Frühsignale und `timeframes.<tf>.last_closed` für bestätigte Kerzensignale.
-5. Interpretiere 1W und 1D als höhere Degrees, 4H und 1H als Subwellen, 30m und 15m als Subsubwellen und 5m als Feinstruktur.
-6. Nutze RSI, Stoch RSI, MACD, EMA20/50/200, DEMA20, ATR, Session VWAP, Volumen-Verhältnis, Pivotstruktur, Orderbuch-Imbalance und Trade-Flow gemeinsam. Kein einzelner Indikator entscheidet allein.
-7. DOT/BTC ist ein Bestätigungsfilter für relative Stärke. BTC/USD und BTC Dominance sind Regimefilter.
-8. Bei Elliott immer mehrere plausible Count-Familien parallel führen. Keine Single-Count-Sicherheit vortäuschen.
-9. Erfinde keine fehlenden Werte. Falls ein Feld fehlt, sage exakt, dass es im Snapshot nicht verfügbar ist.
-10. Prüfe `status` und `errors`. Trade-Flow mit `window_complete: false` ist eine Teilsumme. Eine fehlende Session-VWAP oder Dominanzhistorie darf nicht durch Annahmen ersetzt werden.
-
-Gib pro Lauf kompakt aus:
-
-- Datenstand und Alter
-- DOT Spot, DOT Perp, BTC Spot, DOT/BTC
-- Multi-Timeframe Status 1W, 1D, 4H, 1H, 30m, 15m, 5m
-- Momentum und Struktur mit klarer Trennung von live und confirmed
-- Orderbuch und Trade-Flow
-- BTC Dominance und Altcoin Breadth
-- DOT Relative Strength
-- Count-Baum mit Wahrscheinlichkeiten
-- wichtigste Bestätigungs- und Invalidierungslevels
+Gib kompakt aus: Datenstand/Einschränkungen; Spot/Perp/BTC/DOTBTC/ETHBTC; DOT-Timeframes vom höheren zum kleineren Zeitrahmen; bestätigte Struktur gegenüber Intrabar-Momentum; Orderflow/Derivate; relative Returns und Marktbreite; mehrere plausible Elliott-Szenarien mit klaren Bestätigungs-/Invalidierungslevels. Trenne gelieferte Messwerte ausdrücklich von eigener Interpretation. Erfinde keine fehlenden Messwerte, Fundamentaldaten oder API-Felder.

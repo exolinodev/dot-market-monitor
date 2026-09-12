@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "schema/**"
+      - "scripts/validate_snapshot.py"
       - "requirements.txt"
       - ".github/workflows/market-data.yml"
   schedule:
@@ -26,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -45,6 +47,9 @@ jobs:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
         run: python src/main.py
 
+      - name: Validate consumer snapshot
+        run: python scripts/validate_snapshot.py
+
       - name: Show snapshot
         run: cat data/latest.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -52,10 +57,11 @@ jobs:
         run: |
           git config user.name "dot-market-bot"
           git config user.email "dot-market-bot@users.noreply.github.com"
-          git add data/latest.json data/latest.md data/history.json
+          git add data/latest.json data/latest.md data/llm_snapshot.json data/history.json data/raw/latest.json.gz data/raw/ohlc_cache.json.gz
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
           git commit -m "data: hourly market snapshot"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main

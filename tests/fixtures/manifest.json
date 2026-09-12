@@ -1,0 +1,58 @@
+{
+  "spot_ticker": {
+    "url": "https://api.kraken.com/0/public/Ticker?pair=DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.002492+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "spot_ohlc": {
+    "url": "https://api.kraken.com/0/public/OHLC?pair=DOTUSD&interval=60",
+    "captured_at_utc": "2026-09-12T17:58:51.117309+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "spot_trades": {
+    "url": "https://api.kraken.com/0/public/Trades?pair=DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.249054+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "spot_depth": {
+    "url": "https://api.kraken.com/0/public/Depth?pair=DOTUSD&count=100",
+    "captured_at_utc": "2026-09-12T17:58:51.376838+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "spot_spread": {
+    "url": "https://api.kraken.com/0/public/Spread?pair=DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.495603+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "futures_ticker": {
+    "url": "https://futures.kraken.com/derivatives/api/v3/tickers/PF_DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.640326+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "futures_book": {
+    "url": "https://futures.kraken.com/derivatives/api/v3/orderbook?symbol=PF_DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.753567+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "futures_trades": {
+    "url": "https://futures.kraken.com/derivatives/api/v3/history?symbol=PF_DOTUSD",
+    "captured_at_utc": "2026-09-12T17:58:51.888793+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "futures_instruments": {
+    "url": "https://futures.kraken.com/derivatives/api/v3/instruments",
+    "captured_at_utc": "2026-09-12T17:58:52.024793+00:00",
+    "anonymization": "none needed: public market data only",
+    "projection": "Exact PF_DOTUSD instrument retained; other instruments omitted"
+  },
+  "coingecko_global": {
+    "url": "https://api.coingecko.com/api/v3/global",
+    "captured_at_utc": "2026-09-12T17:58:52.292327+00:00",
+    "anonymization": "none needed: public market data only"
+  },
+  "coingecko_markets": {
+    "url": "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=ethereum%2Cbinancecoin%2Cripple%2Csolana%2Cdogecoin%2Ccardano%2Cchainlink%2Cavalanche-2%2Cpolkadot&price_change_percentage=1h%2C24h%2C7d&sparkline=false",
+    "captured_at_utc": "2026-09-12T17:58:52.641587+00:00",
+    "anonymization": "none needed: public market data only"
+  }
+}
