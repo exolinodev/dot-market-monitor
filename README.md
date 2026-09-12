@@ -91,7 +91,7 @@ git clone https://github.com/exolinodev/dot-market-monitor.git
 cd dot-market-monitor
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r tests/requirements.txt
 python -m pytest -q
 python src/main.py
 python scripts/validate_snapshot.py --live
@@ -99,11 +99,19 @@ python scripts/validate_snapshot.py --live
 
 Optional: `COINGECKO_API_KEY` als Umgebungsvariable oder GitHub Actions Secret mit einem Demo-API-Key. Kraken braucht keinen Schlüssel. CoinGecko wird ohne Schlüssel versucht; Einschränkungen oder Rate Limits werden als Quellenstatus gemeldet. Keine `.env` oder Tokens committen.
 
+Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; pytest wird nur über `tests/requirements.txt` installiert.
+
 ## GitHub Actions
 
-Der Collector läuft **stündlich um :55**, manuell per `workflow_dispatch` und bei Änderungen an Collector, Schema oder Abhängigkeiten auf `main`. GitHub-Zeitpläne sind Best Effort; ChatGPT um :05 soll immer die tatsächliche Freshness prüfen.
+Der Collector ist **stündlich um :45** geplant (`45 * * * *`, UTC), manuell per `workflow_dispatch` startbar und läuft bei Änderungen an Collector, Schema oder Abhängigkeiten auf `main`. Ziel: Daten bis zur folgenden vollen Stunde verfügbar machen. Der 15-Minuten-Puffer berücksichtigt Startverzögerungen, Laufzeit und den GitHub-Raw-Cache (beobachtet: bis zu fünf Minuten). GitHub-Zeitpläne sind Best Effort: Starts können verspätet erfolgen oder ausfallen; eine feste Zusage zur vollen Stunde ist damit nicht möglich. ChatGPT muss immer `meta.generated_at_utc` und die Quellen-Freshness prüfen. Der Snapshot enthält den tatsächlichen Erfassungszeitpunkt und keine vorgetäuschten Kurse der vollen Stunde.
 
-`contents: write`, eine gemeinsame Concurrency-Gruppe, Python-/pip-Cache, Tests **vor** Datenerzeugung, harte Schema-/Plausibilitätsprüfung und Commit nur bei geänderten Daten. Nur die sechs festgelegten Output-/State-Dateien werden gestaged. Ein manueller Prüflauf:
+Der stündliche Job besteht aus Checkout des aktuellen `main`, Python-/pip-Cache, Installation der Produktionsabhängigkeiten, Datensammlung und bedingtem Commit. Er installiert kein pytest und führt keine Tests aus. Die harte Schema-/Plausibilitätsprüfung bleibt direkt in `src/main.py` vor dem Schreiben enthalten. `contents: write` und eine gemeinsame Concurrency-Gruppe erlauben geordnete Daten-Updates. Nur die sechs festgelegten Output-/State-Dateien werden gestaged; `git diff --cached --quiet` verhindert Commits ohne Änderungen.
+
+Der separate Testworkflow läuft ausschliesslich bei Pushes auf `main` oder Pull Requests mit Änderungen an `src/**`, `tests/**`, `requirements.txt` oder `.github/workflows/**`. Reine Daten- und README-Änderungen starten keine Tests. Er installiert zusätzlich die gepinnten Test-Abhängigkeiten aus `tests/requirements.txt`.
+
+Bei 24 geplanten Läufen täglich entstehen 720 Collector-Jobs pro 30 Tage; Test-Jobs kommen nur bei passenden Codeänderungen hinzu. Bei beispielsweise 40 Sekunden pro Collector sind das acht Stunden tatsächliche Laufzeit pro 30 Tage. Die wirkliche Dauer steht im jeweiligen Actions-Run. Für dieses öffentliche Repository sind Standard-GitHub-Runner kostenlos; bei privaten Repositories gelten Kontingente und die Abrechnung pro Job mit aufgerundeten Minuten.
+
+Ein manueller Collector-Prüflauf:
 
 ```bash
 gh workflow run market-data.yml --repo exolinodev/dot-market-monitor --ref main
