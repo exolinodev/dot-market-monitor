@@ -48,7 +48,7 @@ function mockGitHub({ runs = [], meta = snapshot(-60), dispatchStatus = 204 } = 
   const calls = [];
   const fetcher = async (url, options) => {
     calls.push({ url, options });
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.equal(options.headers.Authorization, "Bearer test-only-token");
     if (url.includes("/runs?")) return Response.json({ workflow_runs: runs });
     if (url.endsWith("/git/ref/heads/main")) return Response.json({ object: { sha } });
@@ -85,6 +85,16 @@ test("429/5xx and dispatch ambiguity never cause a blind retry", async () => {
     assert.equal(m.calls.filter((x) => x.options.method === "POST").length, 1);
   }
 });
+test("redirects are rejected without following them or starting a collector", async () => {
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push({ url, options });
+    assert.equal(options.redirect, "manual");
+    return new Response(null, { status: 302, headers: { Location: "https://unexpected.example/" } });
+  };
+  await assert.rejects(reconcile(env, { start, now, phase: "initial" }, fetcher), /github_http_302/);
+  assert.ok(calls.every((c) => c.url.startsWith("https://api.github.com/") && c.options.method === "GET"));
+});
 test("malformed refs and documents cannot trigger a workflow", async () => {
   await assert.rejects(readState(env, async () => Response.json({})), /invalid_github_schema/);
   const m = mockGitHub({ meta: null });
@@ -100,7 +110,13 @@ test("administrative endpoints require a separate secret; public health exposes 
   assert.ok(text.includes('"configured":true'));
   assert.ok(!text.includes(env.GITHUB_TOKEN) && !text.includes(env.CONTROL_TOKEN));
 });
-test("scheduled events from an unsupported cron or past deadline fail", async () => {
-  await assert.rejects(worker.scheduled({ cron: "* * * * *", scheduledTime: start }, env), /unknown_cron/);
+test("retired triggers are ignored while Cloudflare propagates changes", async () => {
+  const result = await worker.scheduled({ cron: "* * * * *", scheduledTime: start }, env);
+  assert.equal(result.action, "ignored_retired_cron");
+});
+test("scheduled events past the deadline fail", async () => {
   await assert.rejects(worker.scheduled({ cron: "50 * * * *", scheduledTime: 0 }, env), /schedule_arrived_after_deadline/);
+});
+test("missing GitHub secret fails before any upstream request", async () => {
+  await assert.rejects(readState({}, () => assert.fail("unexpected HTTP")), /missing_github_token/);
 });

@@ -6,6 +6,12 @@ hat. Der Python-Code und alle Marktquellen bleiben unverändert.
 
 ## Ablauf und Grenzen
 
+Neue oder geänderte Cron-Konfigurationen können laut Cloudflare bis zu 15 Minuten
+zur Übernahme benötigen. Deshalb wird nach einer Einrichtung ein tatsächlicher
+Cloudflare-Start geprüft; eine erfolgreiche Konfigurationsantwort allein genügt
+nicht. Entfernte Trigger werden während dieser Übernahmephase ohne Start ignoriert.
+Quelle: https://developers.cloudflare.com/workers/configuration/cron-triggers/
+
 * `:50 UTC`: Erster Start, sofern kein Collector läuft und kein Snapshot dieser
   Stundenrunde vorliegt.
 * `:55 UTC`: Kontrolle. Bei einem laufenden Job wird kein weiterer angelegt. Fehlt
@@ -99,18 +105,13 @@ Die strukturierten Worker-Logs unterscheiden `dispatched`, `fresh`,
 Startauftrag ist noch kein erfolgreicher Datenlauf: dafür müssen anschliessend
 Actions-Ergebnis, Daten-Commit und Snapshot-Zeitstempel geprüft werden.
 
-## Manuelle Kontrolle über GitHub
+## Inbetriebnahme
 
-`Check Cloudflare scheduler` ist ein ausschliesslich manuell startbarer Hilfsworkflow
-mit den Aktionen `status` (nur lesen), `run` (manuell sammeln) und `check` (Kontrolle
-mit möglichem Wiederholungsversuch). Er prüft den tatsächlich bereitgestellten
-Worker von einem GitHub-Runner aus und benötigt weder Checkout noch Abhängigkeiten.
-Das Repository-Secret `SCHEDULER_CONTROL_TOKEN` enthält hierfür denselben separaten
-Verwaltungsschlüssel wie `CONTROL_TOKEN` im Worker. **Der GitHub-PAT bleibt nur in
-Cloudflare.** Der Hilfsworkflow läuft nie automatisch stündlich und verbraucht nur
-bei manueller Verwendung zusätzliche Runner-Zeit.
-
-```bash
-gh workflow run scheduler-check.yml --repo exolinodev/dot-market-monitor -f action=status
-gh workflow run scheduler-check.yml --repo exolinodev/dot-market-monitor -f action=run
-```
+Am 12. September 2026 durch einen echten Cloudflare-Cron geprüft:
+[Collector-Lauf 34720956471](https://github.com/exolinodev/dot-market-monitor/actions/runs/34720956471),
+gestartet 21:47:41 UTC, erfolgreicher Daten-Commit `ec97c92` um 21:48 UTC,
+42 Quellen ohne Fehler. Der zeitlich begrenzte Test-Cron wurde danach entfernt.
+Die Worker-spezifische HTTP-Behandlung wurde zusätzlich in der lokalen
+Cloudflare-Workers-Laufzeit geprüft. Weiterleitungen werden mit `redirect: manual`
+unterbunden und als HTTP-Fehler behandelt; der von Node unterstützte Modus `error`
+ist in Workers nicht verfügbar.

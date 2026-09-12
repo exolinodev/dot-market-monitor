@@ -10,9 +10,7 @@ on:
       - "scripts/validate_snapshot.py"
       - "requirements.txt"
       - ".github/workflows/market-data.yml"
-  schedule:
-    # 15 minutes for scheduler delays, collection and GitHub Raw caching.
-    - cron: "45 * * * *"
+  # Hourly dispatch and recovery checks are scheduled by Cloudflare; see docs/CLOUDFLARE_SCHEDULER.md.
 
 permissions:
   contents: write

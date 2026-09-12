@@ -37,7 +37,8 @@ export function decide({ runs, snapshot, start, now, phase }) {
 
 async function github(env, path, fetcher, { raw = false, method = "GET", body } = {}) {
   const response = await fetcher(`${API}${path}`, {
-    method, redirect: "error", signal: AbortSignal.timeout(15_000),
+    // Workers supports only follow/manual. Manual + !ok rejects redirects without forwarding credentials.
+    method, redirect: "manual", signal: AbortSignal.timeout(15_000),
     headers: {
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
       Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
@@ -57,6 +58,7 @@ async function github(env, path, fetcher, { raw = false, method = "GET", body } 
 }
 
 export async function readState(env, fetcher = fetch) {
+  if (!env.GITHUB_TOKEN) throw new Error("missing_github_token");
   const [runResponse, ref] = await Promise.all([
     github(env, `/actions/workflows/${WORKFLOW}/runs?branch=main&per_page=20`, fetcher),
     github(env, "/git/ref/heads/main", fetcher),
@@ -93,7 +95,11 @@ const json = (value, status = 200) => Response.json(value, {
 export default {
   async scheduled(controller, env) {
     const index = CRONS.indexOf(controller.cron);
-    if (index === -1) throw new Error("unknown_cron");
+    // Removed triggers can still arrive while Cloudflare propagates a deployment.
+    if (index === -1) {
+      console.log(JSON.stringify({ service: "dot-market-scheduler", action: "ignored_retired_cron" }));
+      return { action: "ignored_retired_cron" };
+    }
     const now = Date.now();
     // Ignore an old delivery that arrived after the intended hour boundary.
     const start = cycleStart(controller.scheduledTime);
