@@ -130,3 +130,6 @@ Ein zweiter manueller Start innerhalb von zwei Minuten nach einem gültigen Snap
 Alternativ: `gh workflow run market-data.yml --repo exolinodev/dot-market-monitor --ref main`.
 
 Ein grüner Workflow allein genügt nicht: Im [Snapshot](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) muss `meta.generated_at_utc` aktuell sein.
+
+Die stündliche ChatGPT-Aufgabe kann mit einem autorisierten GitHub-Anschluss den
+Collector selbst neu starten. [Berechtigungen und Ablauf](docs/CHATGPT_RECOVERY.md).

@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
-def collection_due(document, now, event):
+def collection_due(document, now, event, run_attempt=1):
+    if run_attempt > 1:
+        event = "workflow_dispatch"  # GitHub/ChatGPT rerun must collect current main.
     if event == "push":
         return True  # A new collector version must actually be exercised.
     start = now.replace(minute=50, second=0, microsecond=0)
@@ -28,7 +30,8 @@ def main():
         document = json.loads(Path("data/llm_snapshot.json").read_text())
     except (OSError, ValueError):
         document = None
-    due = collection_due(document, datetime.now(timezone.utc), os.environ.get("GITHUB_EVENT_NAME", "manual"))
+    due = collection_due(document, datetime.now(timezone.utc), os.environ.get("GITHUB_EVENT_NAME", "manual"),
+                         int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")))
     print("Collect market data" if due else "Snapshot is already current; skip Python setup, dependencies and collection")
     if output := os.environ.get("GITHUB_OUTPUT"):
         with open(output, "a") as handle:
