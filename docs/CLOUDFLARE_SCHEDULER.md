@@ -4,6 +4,22 @@ Cloudflare führt keine Marktberechnungen aus. Der Worker startet den bestehende
 GitHub-Actions-Collector und prüft, ob dieser einen aktuellen Snapshot veröffentlicht
 hat. Der Python-Code und alle Marktquellen bleiben unverändert.
 
+Seit dem Ausfall vom 13.09.2026 bleibt zusätzlich ein unabhängiger GitHub-Zeitplan
+um `:52` aktiv. Der Job prüft unmittelbar nach Checkout mit dem vorinstallierten
+Python und ohne Dependencies die Snapshot-Zeit. Liegt bereits ein gültiger Snapshot
+der um `:50` begonnenen Runde vor, entfallen Python-Setup, Installation, Sammlung
+und Commit. Ein verspäteter GitHub-Start kann ausgefallene Cloudflare-Aufrufe auch
+nach der vollen Stunde nachholen. Manuelle Starts werden nur dann übersprungen,
+wenn ein gültiger Snapshot höchstens zwei Minuten alt ist. Pushes prüfen neuen Code
+immer durch einen echten Collector-Lauf. Concurrency serialisiert alle diese Wege.
+
+**Direkt manuell starten:**
+https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml
+→ `Run workflow` → Branch `main` → `Run workflow`.
+Alternativ: `gh workflow run market-data.yml --repo exolinodev/dot-market-monitor --ref main`.
+Ein angenommener Start ist noch kein frischer Snapshot; danach Daten-Commit und
+`meta.generated_at_utc` kontrollieren.
+
 ## Ablauf und Grenzen
 
 Neue oder geänderte Cron-Konfigurationen können laut Cloudflare bis zu 15 Minuten
@@ -51,7 +67,9 @@ Zwei Cron-Aufrufe stündlich ergeben regulär 48 kurze Worker-Ausführungen täg
 Nur bei Bedarf wird ein GitHub-Collector gestartet; der Kontrollaufruf allein
 verbraucht keine GitHub-Runner-Minuten. Der Worker benötigt keine Datenbank, KV,
 Durable Objects oder kostenpflichtigen Zusatzdienste. Er ist für das Workers-Free-
-Kontingent ausgelegt. GitHub-Standard-Runner bleiben für dieses öffentliche Repo
+Kontingent ausgelegt. Der unabhängige GitHub-Ersatzzeitplan benötigt zusätzlich
+24 kurze Runner-Jobs täglich, auch wenn die Sammlung übersprungen wird. Diese
+verbrauchen Runtime. GitHub-Standard-Runner bleiben für dieses öffentliche Repo
 kostenlos. Limits: https://developers.cloudflare.com/workers/platform/limits/
 
 Cloudflare-Secrets (niemals im Repository speichern):
@@ -86,8 +104,8 @@ Node-Installation oder Wrangler-Installation im stündlichen Collector erforderl
 `ENABLED=false` ist die sichere Erstbereitstellung bzw. Pause: Cron- und manuelle
 Aufrufe starten dann keine Jobs. Erst nach Einrichten der Secrets und erfolgreichem
 Test wird `ENABLED=true` gesetzt. Secrets bleiben bei normalen Deployments erhalten.
-Nach erfolgreichem Umstieg wird ausschliesslich der `schedule`-Block im
-GitHub-Collector entfernt; Push-Trigger und `workflow_dispatch` bleiben verfügbar.
+Der unabhängige `schedule`-Block im GitHub-Collector bleibt als Ersatz aktiv;
+Push-Trigger und `workflow_dispatch` bleiben ebenfalls verfügbar.
 
 Worker-URL: https://dot-market-scheduler.dot-market-monitor.workers.dev
 

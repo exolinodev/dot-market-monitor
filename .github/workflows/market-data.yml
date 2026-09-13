@@ -2,15 +2,18 @@ name: Update DOT market data
 
 on:
   workflow_dispatch:
+  schedule:
+    # Independent fallback if Cloudflare stops delivering events. GitHub can be late.
+    - cron: "52 * * * *"
   push:
     branches: [main]
     paths:
       - "src/**"
       - "schema/**"
       - "scripts/validate_snapshot.py"
+      - "scripts/collection_due.py"
       - "requirements.txt"
       - ".github/workflows/market-data.yml"
-  # Hourly dispatch and recovery checks are scheduled by Cloudflare; see docs/CLOUDFLARE_SCHEDULER.md.
 
 permissions:
   contents: write
@@ -31,7 +34,12 @@ jobs:
         with:
           ref: main
 
+      - name: Skip collection when the snapshot is already current
+        id: freshness
+        run: python3 scripts/collection_due.py
+
       - name: Set up Python
+        if: steps.freshness.outputs.due == 'true'
         uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.12"
@@ -39,14 +47,17 @@ jobs:
           cache-dependency-path: requirements.txt
 
       - name: Install dependencies
+        if: steps.freshness.outputs.due == 'true'
         run: python -m pip install --disable-pip-version-check --progress-bar off -r requirements.txt
 
       - name: Collect market data and indicators
+        if: steps.freshness.outputs.due == 'true'
         env:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
         run: python src/main.py
 
       - name: Commit fresh snapshot
+        if: steps.freshness.outputs.due == 'true'
         run: |
           git config user.name "dot-market-bot"
           git config user.email "dot-market-bot@users.noreply.github.com"
