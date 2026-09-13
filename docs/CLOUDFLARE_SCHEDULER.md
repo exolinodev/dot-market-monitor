@@ -28,13 +28,14 @@ Cloudflare-Start geprüft; eine erfolgreiche Konfigurationsantwort allein genüg
 nicht. Entfernte Trigger werden während dieser Übernahmephase ohne Start ignoriert.
 Quelle: https://developers.cloudflare.com/workers/configuration/cron-triggers/
 
-* `:50 UTC`: Erster Start, sofern kein Collector läuft und kein Snapshot dieser
-  Stundenrunde vorliegt.
-* `:55 UTC`: Kontrolle. Bei einem laufenden Job wird kein weiterer angelegt. Fehlt
-  ein aktueller Snapshot nach abgeschlossenem/fehlgeschlagenem Lauf, ist ein
-  Wiederholungsversuch erlaubt. Ohne ersten Lauf kann die Kontrolle diesen nachholen.
-* Ziel ist die folgende volle Stunde. Nach der vollen Stunde eingetroffene alte
-  Cron-Ereignisse werden als Fehler protokolliert und nicht verspätet ausgeführt.
+* Cloudflare prüft alle fünf Minuten. Eine neue Stundenrunde beginnt um `:50 UTC`.
+* Um `:50` ist ein erster Start erlaubt. Ab `:55` können fehlende Daten mit einem
+  zweiten Versuch nachgeholt werden. Frische Daten oder ein aktiver Collector
+  verhindern weitere Starts. Es bleiben höchstens zwei Versuche pro Stundenrunde.
+* Ziel ist die folgende volle Stunde. Verspätete Ereignisse prüfen die bei ihrem
+  tatsächlichen Eintreffen aktuelle Runde. Auch nach der vollen Stunde werden
+  fehlende Daten nachgeholt; der frühere harte Abbruch ist entfernt.
+* Der unabhängige GitHub-Zeitplan um `:52` benötigt keinen Cloudflare-Zugang.
 
 Eine Runde beginnt um `:50`. Ein Snapshot ist dafür aktuell, wenn
 `meta.generated_at_utc >= Rundenbeginn`, höchstens 60 Sekunden in der Zukunft liegt,
@@ -63,7 +64,7 @@ Worker: `dot-market-scheduler`, Cloudflare-Konto
 `daeba6ff3204db3296d50477ce7dfc5c`. Konfiguration und Code liegen unter
 `src/scheduler/`; Tests unter `tests/scheduler.test.mjs`.
 
-Zwei Cron-Aufrufe stündlich ergeben regulär 48 kurze Worker-Ausführungen täglich.
+Zwölf kurze Prüfungen stündlich ergeben regulär 288 Worker-Ausführungen täglich.
 Nur bei Bedarf wird ein GitHub-Collector gestartet; der Kontrollaufruf allein
 verbraucht keine GitHub-Runner-Minuten. Der Worker benötigt keine Datenbank, KV,
 Durable Objects oder kostenpflichtigen Zusatzdienste. Er ist für das Workers-Free-
@@ -133,3 +134,15 @@ Die Worker-spezifische HTTP-Behandlung wurde zusätzlich in der lokalen
 Cloudflare-Workers-Laufzeit geprüft. Weiterleitungen werden mit `redirect: manual`
 unterbunden und als HTTP-Fehler behandelt; der von Node unterstützte Modus `error`
 ist in Workers nicht verfügbar.
+
+## Ausfall am 13. September 2026
+
+Der letzte automatische Collector vor der Lücke startete am 12.09. um 22:50 UTC.
+Cloudflare-Konfiguration und Secrets waren weiterhin vorhanden. Die abgefragte
+Cloudflare-Statistik enthielt für die späteren Stunden keine Invocations; sie
+belegt keine konkrete Fehlerursache. Es gab keinen Nachweis eines abgelaufenen
+GitHub-Tokens oder eines fehlgeschlagenen Collectors. Der manuelle Wiederanlauf
+[34733834467](https://github.com/exolinodev/dot-market-monitor/actions/runs/34733834467)
+veröffentlichte um 02:46 UTC frische Daten. Deshalb wird Cloudflare jetzt durch
+einen unabhängigen GitHub-Zeitplan ergänzt. Ein einzelner erfolgreicher Test
+ist ausdrücklich keine Garantie für spätere pünktliche Cron-Ausführungen.

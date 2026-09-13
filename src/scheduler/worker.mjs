@@ -1,7 +1,8 @@
 // Cloudflare starts/checks GitHub Actions; all market calculations stay in Python.
 export const REPOSITORY = "exolinodev/dot-market-monitor";
 export const WORKFLOW = "market-data.yml";
-export const CRONS = ["50 * * * *", "55 * * * *"];
+export const CRONS = ["*/5 * * * *"];
+const ACCEPTED_CRONS = new Set([...CRONS, "50 * * * *", "55 * * * *"]);
 const API = `https://api.github.com/repos/${REPOSITORY}`;
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -11,6 +12,14 @@ const iso = (time) => new Date(time).toISOString();
 export function cycleStart(time) {
   const start = Math.floor(time / HOUR) * HOUR + 50 * MINUTE;
   return time >= start ? start : start - HOUR;
+}
+
+export function scheduleWindow(controller, now) {
+  if (!ACCEPTED_CRONS.has(controller.cron)) return null;
+  // Always reconcile the current round. A late event must help restore data,
+  // including after midnight, rather than discard the whole recovery opportunity.
+  const start = cycleStart(now);
+  return { start, now, phase: now < start + 5 * MINUTE ? "initial" : "verify" };
 }
 
 export function decide({ runs, snapshot, start, now, phase }) {
@@ -30,7 +39,7 @@ export function decide({ runs, snapshot, start, now, phase }) {
   };
   if (fresh) return { ...detail, action: "fresh", run_id: active?.id ?? null };
   if (active) return { ...detail, action: "already_running", run_id: active.id };
-  // At most one initial dispatch, and one recovery attempt at :55.
+  // At most one initial dispatch, and one recovery attempt per :50 round.
   if (attempts >= (phase === "initial" ? 1 : 2)) return { ...detail, action: "attempt_limit" };
   return { ...detail, action: "dispatch" };
 }
@@ -94,17 +103,13 @@ const json = (value, status = 200) => Response.json(value, {
 
 export default {
   async scheduled(controller, env) {
-    const index = CRONS.indexOf(controller.cron);
+    const window = scheduleWindow(controller, Date.now());
     // Removed triggers can still arrive while Cloudflare propagates a deployment.
-    if (index === -1) {
+    if (!window) {
       console.log(JSON.stringify({ service: "dot-market-scheduler", action: "ignored_retired_cron" }));
       return { action: "ignored_retired_cron" };
     }
-    const now = Date.now();
-    // Ignore an old delivery that arrived after the intended hour boundary.
-    const start = cycleStart(controller.scheduledTime);
-    if (now >= start + 10 * MINUTE) throw new Error("schedule_arrived_after_deadline");
-    return reconcile(env, { start, now, phase: index === 0 ? "initial" : "verify" });
+    return reconcile(env, window);
   },
   async fetch(request, env) {
     const path = new URL(request.url).pathname;

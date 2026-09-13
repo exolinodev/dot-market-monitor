@@ -103,13 +103,13 @@ Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; py
 
 ## GitHub Actions
 
-**Cloudflare startet den Collector stündlich um :50 und kontrolliert um :55** (UTC). Der GitHub-eigene Cron ist abgeschaltet. Liegt bereits ein aktueller Snapshot vor oder läuft ein Collector, wird kein weiterer gestartet. Die Kontrolle kann bei fehlenden Daten einen begrenzten Wiederholungsversuch auslösen. Details, Zugangserneuerung und Fehlerregeln: [Cloudflare-Starter](docs/CLOUDFLARE_SCHEDULER.md).
+**Cloudflare prüft alle fünf Minuten; eine neue Sammelrunde beginnt um :50 UTC. Ein unabhängiger GitHub-Zeitplan um :52 dient als Ersatz.** Frische Daten und laufende Collector verhindern weitere Starts. Der Ersatzjob überspringt bei aktuellen Daten Python-Setup, Dependencies und Sammlung. Auch verspätete Prüfungen können fehlende Daten nachholen. Details: [Cloudflare-Starter](docs/CLOUDFLARE_SCHEDULER.md).
 
 Ziel: Daten bis zur folgenden vollen Stunde verfügbar machen. Der Puffer berücksichtigt Startverzögerungen, Laufzeit und den GitHub-Raw-Cache (beobachtet: bis zu fünf Minuten). Auch Cloudflare und extern gestartete GitHub-Runner bieten keine feste Zusage zur vollen Stunde. ChatGPT muss immer `meta.generated_at_utc` und die Quellen-Freshness prüfen. Der Snapshot enthält den tatsächlichen Erfassungszeitpunkt und keine vorgetäuschten Kurse der vollen Stunde. Manuelle Starts per `workflow_dispatch` und passende Code-Pushes auf `main` bleiben möglich.
 
 Der stündliche Job besteht aus Checkout des aktuellen `main`, Python-/pip-Cache, Installation der Produktionsabhängigkeiten, Datensammlung und bedingtem Commit. Er installiert kein pytest und führt keine Tests aus. Die harte Schema-/Plausibilitätsprüfung bleibt direkt in `src/main.py` vor dem Schreiben enthalten. `contents: write` und eine gemeinsame Concurrency-Gruppe erlauben geordnete Daten-Updates. Nur die sechs festgelegten Output-/State-Dateien werden gestaged; `git diff --cached --quiet` verhindert Commits ohne Änderungen.
 
-Der separate Testworkflow läuft ausschliesslich bei Pushes auf `main` oder Pull Requests mit Änderungen an `src/**`, `tests/**`, `requirements.txt` oder `.github/workflows/**`. Reine Daten- und README-Änderungen starten keine Tests. Er installiert zusätzlich die gepinnten Test-Abhängigkeiten aus `tests/requirements.txt` und prüft den Cloudflare-Starter mit `node --test tests/scheduler.test.mjs`. Node und Wrangler werden nicht im stündlichen Collector installiert.
+Der separate Testworkflow läuft ausschliesslich bei Pushes auf `main` oder Pull Requests mit Änderungen an `src/**`, `tests/**`, `requirements.txt` an `scripts/collection_due.py` oder `.github/workflows/**`. Reine Daten- und README-Änderungen starten keine Tests. Er installiert zusätzlich die gepinnten Test-Abhängigkeiten aus `tests/requirements.txt` und prüft den Cloudflare-Starter mit `node --test tests/scheduler.test.mjs`. Node und Wrangler werden nicht im stündlichen Collector installiert.
 
 Bei 24 geplanten Läufen täglich entstehen 720 Collector-Jobs pro 30 Tage; Test-Jobs kommen nur bei passenden Codeänderungen hinzu. Bei beispielsweise 40 Sekunden pro Collector sind das acht Stunden tatsächliche Laufzeit pro 30 Tage. Die wirkliche Dauer steht im jeweiligen Actions-Run. Für dieses öffentliche Repository sind Standard-GitHub-Runner kostenlos; bei privaten Repositories gelten Kontingente und die Abrechnung pro Job mit aufgerundeten Minuten.
 
@@ -122,3 +122,11 @@ gh run watch RUN_ID --repo exolinodev/dot-market-monitor --exit-status
 ```
 
 Schema v2 ersetzt den bisherigen v1-Consumer-Vertrag. Den stündlichen ChatGPT-Monitor auf die [neue Raw-URL](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) umstellen. Ein passender [Consumer-Prompt](CHATGPT_MONITOR_PROMPT.md) liegt bei.
+
+### Daten sofort aktualisieren
+
+[Collector öffnen](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml) → **Run workflow** → **main** → **Run workflow**.
+Ein zweiter manueller Start innerhalb von zwei Minuten nach einem gültigen Snapshot überspringt die Sammlung.
+Alternativ: `gh workflow run market-data.yml --repo exolinodev/dot-market-monitor --ref main`.
+
+Ein grüner Workflow allein genügt nicht: Im [Snapshot](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) muss `meta.generated_at_utc` aktuell sein.

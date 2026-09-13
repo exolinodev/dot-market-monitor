@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { cycleStart, decide, reconcile, readState } from "../src/scheduler/worker.mjs";
+import worker, { cycleStart, decide, reconcile, readState, scheduleWindow } from "../src/scheduler/worker.mjs";
 
 const start = Date.parse("2026-09-12T20:50:00Z");
 const now = start + 5 * 60_000;
@@ -114,8 +114,19 @@ test("retired triggers are ignored while Cloudflare propagates changes", async (
   const result = await worker.scheduled({ cron: "* * * * *", scheduledTime: start }, env);
   assert.equal(result.action, "ignored_retired_cron");
 });
-test("scheduled events past the deadline fail", async () => {
-  await assert.rejects(worker.scheduled({ cron: "50 * * * *", scheduledTime: 0 }, env), /schedule_arrived_after_deadline/);
+test("late cron delivery recovers the current round instead of discarding it", () => {
+  const late = start + 20 * 60_000;
+  assert.deepEqual(scheduleWindow({ cron: "*/5 * * * *", scheduledTime: start }, late),
+    { start, now: late, phase: "verify" });
+  assert.equal(choice({ now: late }).action, "dispatch");
+  assert.equal(choice({ now: late, snapshot: snapshot(19) }).action, "fresh");
+  assert.equal(choice({ now: late, runs: [run("completed"), run("completed", 10)] }).action, "attempt_limit");
+});
+test("a many-hours-old delivery checks the newest round and keeps the hourly budget", () => {
+  const current = start + 4 * 3600000;
+  assert.deepEqual(scheduleWindow({ cron: "50 * * * *", scheduledTime: start }, current),
+    { start: current, now: current, phase: "initial" });
+  assert.equal(scheduleWindow({ cron: "* * * * *", scheduledTime: start }, current), null);
 });
 test("missing GitHub secret fails before any upstream request", async () => {
   await assert.rejects(readState({}, () => assert.fail("unexpected HTTP")), /missing_github_token/);
