@@ -69,3 +69,80 @@ def test_schema_requires_all_dot_timeframes(tmp_path):
     x=compact_snapshot(Collector(tmp_path,Offline(),Offline()).collect())
     del x['markets']['DOTUSD']['timeframes']['3m']
     with pytest.raises(ValueError,match='inventory'):validate_snapshot(x)
+
+
+def test_time_fibs_use_snapshot_reference_and_survive_compaction(tmp_path,monkeypatch):
+    from datetime import datetime
+    import pipeline
+    monkeypatch.setattr(pipeline,'utcnow',lambda:datetime.fromisoformat('2026-09-15T14:00:00Z'))
+    data=Collector(tmp_path,Offline(),Offline()).collect()
+    compact=compact_snapshot(data)
+    block=compact['markets']['DOTUSD']['time_fibs']
+    assert validate_snapshot(compact)
+    assert block['reference_at_utc']==compact['meta']['generated_at_utc']
+    assert block['clusters'][1]['state']=='active'
+    assert block['clusters'][1]['minutes_to_center']==0
+    original=data['markets']['DOTUSD']['time_fibs']
+    assert block['anchors']==original['anchors']
+    # Existing numeric export rounding is retained; timestamps are unchanged.
+    for exported,raw in zip(block['projections'],original['projections']):
+        assert exported['projected_at_utc']==raw['projected_at_utc']
+        assert exported['state']==raw['state']
+        assert exported['minutes_to_center']==pytest.approx(raw['minutes_to_center'])
+    # The new field is optional for older v2 consumers/archived snapshots.
+    del compact['markets']['DOTUSD']['time_fibs']
+    assert validate_snapshot(compact)
+
+
+@pytest.fixture
+def time_fib_reference(monkeypatch):
+    from datetime import datetime
+    import pipeline
+    monkeypatch.setattr(pipeline,'utcnow',lambda:datetime.fromisoformat('2026-09-15T14:00:00Z'))
+
+
+def test_regenerate_from_latest_is_additive_idempotent_and_preserves_history(tmp_path,monkeypatch,time_fib_reference):
+    import main
+    from common import write_json
+    data=Collector(tmp_path,Offline(),Offline()).collect()
+    del data['markets']['DOTUSD']['time_fibs']
+    # Runtime perp and live data cannot select or replace configured time anchors.
+    data['markets']['DOTUSD']['perp']['pivots']=[{'time_utc':'2026-09-14T12:00:00Z','price':99}]
+    write_json(tmp_path/'latest.json',data)
+    old_compact=compact_snapshot(data)
+    history=(tmp_path/'history.json').read_bytes()
+    raw=(tmp_path/'raw'/'latest.json.gz').read_bytes()
+    monkeypatch.setattr(main,'Collector',lambda *a:pytest.fail('Offline regeneration must not collect'))
+    regenerated=main.regenerate_snapshot(tmp_path)
+    saved=json.loads((tmp_path/'llm_snapshot.json').read_text())
+    assert validate_snapshot(saved)
+    block=saved['markets']['DOTUSD'].pop('time_fibs')
+    assert block['status']=='ok'
+    assert [a['price'] for a in block['anchors']]==[1.2822,1.1642,0.9959]
+    assert saved==old_compact
+    assert regenerated['markets']['DOTUSD'].pop('time_fibs')
+    assert regenerated==data
+    assert (tmp_path/'history.json').read_bytes()==history
+    assert (tmp_path/'raw'/'latest.json.gz').read_bytes()==raw
+    once=(tmp_path/'llm_snapshot.json').read_bytes()
+    main.regenerate_snapshot(tmp_path)
+    assert (tmp_path/'llm_snapshot.json').read_bytes()==once
+
+
+def test_missing_time_config_is_isolated_and_schema_checked(tmp_path,monkeypatch,time_fib_reference):
+    import pipeline
+    from time_fibs import load_time_fibs
+    monkeypatch.setattr(pipeline,'load_time_fibs',lambda ref:load_time_fibs(ref,tmp_path/'absent.json'))
+    data=compact_snapshot(Collector(tmp_path,Offline(),Offline()).collect())
+    block=data['markets']['DOTUSD']['time_fibs']
+    assert block['status']=='unavailable'
+    assert validate_snapshot(data)
+    block['status']='invented'
+    with pytest.raises(Exception): validate_snapshot(data)
+
+
+@pytest.mark.parametrize('field,value',[('state','bullish'),('projected_at_utc','invalid'),('minutes_to_start',-1)])
+def test_time_projection_schema_rejects_invalid_values(tmp_path,field,value,time_fib_reference):
+    data=compact_snapshot(Collector(tmp_path,Offline(),Offline()).collect())
+    data['markets']['DOTUSD']['time_fibs']['projections'][0][field]=value
+    with pytest.raises(Exception): validate_snapshot(data)

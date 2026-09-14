@@ -15,6 +15,106 @@
     "correlation_beta"
   ],
   "additionalProperties": false,
+  "$defs": {
+    "utcTime": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "timePosition": {
+      "type": "object",
+      "required": ["state", "minutes_to_center", "minutes_to_start", "minutes_since_end"],
+      "properties": {
+        "state": {"enum": ["upcoming", "active", "expired"]},
+        "minutes_to_center": {"type": ["number", "null"], "minimum": 0},
+        "minutes_to_start": {"type": ["number", "null"], "minimum": 0},
+        "minutes_since_end": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "timeProjection": {
+      "allOf": [{"$ref": "#/$defs/timePosition"}],
+      "required": ["projection_id", "source_duration", "anchor_id", "ratio", "projected_at_utc"],
+      "properties": {
+        "projection_id": {"type": "string", "minLength": 1},
+        "source_duration": {"enum": ["A_B", "B_C", "A_C"]},
+        "anchor_id": {"const": "C"},
+        "ratio": {"enum": [0.5, 0.618, 1, 1.272, 1.618, 2, 2.618]},
+        "projected_at_utc": {"$ref": "#/$defs/utcTime"}
+      }
+    },
+    "timeCluster": {
+      "allOf": [{"$ref": "#/$defs/timePosition"}],
+      "required": ["cluster_id", "window_start_utc", "center_utc", "window_end_utc", "event_count", "events"],
+      "properties": {
+        "cluster_id": {"type": "string", "minLength": 1},
+        "window_start_utc": {"$ref": "#/$defs/utcTime"},
+        "center_utc": {"$ref": "#/$defs/utcTime"},
+        "window_end_utc": {"$ref": "#/$defs/utcTime"},
+        "event_count": {"type": "integer", "minimum": 2},
+        "events": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/timeProjection"}}
+      }
+    },
+    "timeFibs": {
+      "type": "object",
+      "required": ["status", "method", "timezone_calculation", "anchor_set_id", "anchors", "durations", "projections", "symmetry_projections", "clusters"],
+      "properties": {
+        "status": {"enum": ["ok", "unavailable", "error"]},
+        "method": {"const": "confirmed_spot_pivots_same_degree"},
+        "timezone_calculation": {"const": "UTC"},
+        "anchor_set_id": {"type": ["string", "null"]},
+        "reference_at_utc": {"$ref": "#/$defs/utcTime"},
+        "reason": {"type": "string", "minLength": 1},
+        "anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "price", "time_utc", "market_type", "pivot_method", "candle_state", "confirmed", "confirmed_at_utc"],
+            "properties": {
+              "id": {"enum": ["A", "B", "C"]},
+              "type": {"enum": ["high", "low"]},
+              "role": {"type": "string"},
+              "price": {"type": "number", "exclusiveMinimum": 0},
+              "time_utc": {"$ref": "#/$defs/utcTime"},
+              "confirmed_at_utc": {"$ref": "#/$defs/utcTime"},
+              "market_type": {"const": "spot"},
+              "pivot_method": {"const": "fractal"},
+              "candle_state": {"const": "closed"},
+              "confirmed": {"const": true}
+            }
+          }
+        },
+        "durations": {
+          "type": ["object", "null"],
+          "required": ["A_B_hours", "B_C_hours", "A_C_hours"],
+          "properties": {
+            "A_B_hours": {"type": "number", "exclusiveMinimum": 0},
+            "B_C_hours": {"type": "number", "exclusiveMinimum": 0},
+            "A_C_hours": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "projections": {"type": "array", "items": {"$ref": "#/$defs/timeProjection"}},
+        "symmetry_projections": {"type": "array", "items": {"$ref": "#/$defs/timeProjection"}},
+        "clusters": {"type": "array", "items": {"$ref": "#/$defs/timeCluster"}}
+      },
+      "if": {"properties": {"status": {"const": "ok"}}},
+      "then": {
+        "required": ["reference_at_utc"],
+        "properties": {
+          "anchor_set_id": {"type": "string", "minLength": 1},
+          "anchors": {"minItems": 3, "maxItems": 3},
+          "durations": {"type": "object"},
+          "projections": {"minItems": 2},
+          "symmetry_projections": {"minItems": 1, "maxItems": 1}
+        }
+      },
+      "else": {
+        "required": ["reason"],
+        "properties": {
+          "anchors": {"maxItems": 0},
+          "durations": {"type": "null"},
+          "projections": {"maxItems": 0},
+          "symmetry_projections": {"maxItems": 0},
+          "clusters": {"maxItems": 0}
+        }
+      }
+    }
+  },
   "properties": {
     "meta": {
       "type": "object",
@@ -124,6 +224,7 @@
           "pair"
         ],
         "properties": {
+          "time_fibs": {"$ref": "#/$defs/timeFibs"},
           "timeframes": {
             "type": "object",
             "additionalProperties": {

@@ -1,0 +1,48 @@
+{
+  "active_anchor_sets": {
+    "DOTUSD": "count_b_same_degree_2026_09"
+  },
+  "anchor_sets": {
+    "count_b_same_degree_2026_09": {
+      "market": "DOTUSD",
+      "selection": "explicit_same_degree",
+      "ratios": ["0.618", "1.000", "1.272", "1.618"],
+      "anchors": [
+        {
+          "id": "A",
+          "type": "high",
+          "price": 1.2822,
+          "time_utc": "2026-09-08T20:00:00Z",
+          "market_type": "spot",
+          "pivot_method": "fractal",
+          "candle_state": "closed",
+          "confirmed": true,
+          "confirmed_at_utc": "2026-09-09T08:00:00Z"
+        },
+        {
+          "id": "B",
+          "type": "high",
+          "role": "corrective_high",
+          "price": 1.1642,
+          "time_utc": "2026-09-11T04:00:00Z",
+          "market_type": "spot",
+          "pivot_method": "fractal",
+          "candle_state": "closed",
+          "confirmed": true,
+          "confirmed_at_utc": "2026-09-11T16:00:00Z"
+        },
+        {
+          "id": "C",
+          "type": "low",
+          "price": 0.9959,
+          "time_utc": "2026-09-13T08:00:00Z",
+          "market_type": "spot",
+          "pivot_method": "fractal",
+          "candle_state": "closed",
+          "confirmed": true,
+          "confirmed_at_utc": "2026-09-13T20:00:00Z"
+        }
+      ]
+    }
+  }
+}

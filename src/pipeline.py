@@ -13,6 +13,7 @@ from analytics import closed_returns, realized_volatility, correlation_beta, bre
 from orderflow import orderbook_metrics, tape_metrics, absorption, wall_persistence
 from history import HistoryStore
 from structure import fib_levels, level_distances
+from time_fibs import load_time_fibs
 
 
 def unavailable(reason='source_unavailable'):
@@ -306,6 +307,7 @@ class Collector:
                 'correlation_beta':dependence,'relative_strength_dot_btc':relative,'wall_persistence':walls,
                 'errors':self.errors,'raw_data':'data/raw/latest.json.gz',
                 'definitions':'docs/FORMULAS.md','status':'partial' if self.errors else 'ok'}
+        markets['DOTUSD']['time_fibs']=load_time_fibs(output['generated_at_utc'])
         current=hourly_record(output)
         output['history_changes']=self.compute('history.update',lambda:self.history.update(current))
         output['history_points']=len(self.history.history)

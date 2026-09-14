@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "config/**"
+      - "schema/**"
       - "tests/**"
       - "requirements.txt"
       - "scripts/collection_due.py"
@@ -12,6 +14,8 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - "config/**"
+      - "schema/**"
       - "tests/**"
       - "requirements.txt"
       - "scripts/collection_due.py"

@@ -52,6 +52,51 @@ Crosses require previous difference ≤0 and current >0 (up), or previous ≥0 a
 
 **wave_rule_flags:** the last five alternating ATR-ZigZag pivots are conditionally called p0..p4 only for geometry. Test whether closed price intervals [p0,p1] and [p3,p4] intersect, endpoints included. This is `hypothetical_1_4_price_overlap`. It neither labels those segments as actual waves nor accepts/rejects a count. Insufficient anchors → null. No Elliott A/B/C/D, wave-count probability, or preferred scenario is generated.
 
+## Fibonacci time projections (DOT/USD)
+
+**Fibonacci Time ≠ Fibonacci Price.** `markets.DOTUSD.time_fibs` contains timestamps and elapsed durations; prices are anchor provenance only. It makes no assertion about price direction, breakouts, reversals or whether a window will matter. Python assigns no Elliott count or degree. A/B/C are configured anchor IDs, not automatically identified Elliott waves.
+
+`config/time_fibs.json` is the explicit anchor registry. `active_anchor_sets.DOTUSD` selects one named set from `anchor_sets`; additional sets can be stored without becoming active. `selection=explicit_same_degree` is required. Selection never reads the latest fractal/ATR-ZigZag extrema, live indicators, perp wicks or history deltas. The selected set remains fixed until deliberately edited; it does not change when old pivots roll out of the compact history. The file is a reviewed record of confirmed spot fractals, not an automated degree detector or a fresh exchange observation.
+
+Every anchor must declare `market_type=spot`, `pivot_method=fractal`, `candle_state=closed` and boolean `confirmed=true`, a finite positive price, high/low type, and timezone-aware pivot and confirmation times. A < B < C is required. `confirmed_at_utc` is the **actual confirming candle close/availability time**, not the opening timestamp used by the existing fractal `confirmed_at` field. All confirmations must be at or before the snapshot reference. Missing configuration/selection/anchors or a set not yet confirmed as of the reference yields `status=unavailable`; invalid configuration yields `status=error`. Both include a reason, empty anchors/projections/clusters and null durations. There is no fallback or invented data; other market components remain usable.
+
+The initial set `count_b_same_degree_2026_09` uses the confirmed DOT/USD **4h spot fractals** below. The confirmation instants are the observed confirming-bar opening timestamps plus four hours (see the fractal convention above).
+
+| Anchor | Type / configured role | Price USD | Pivot UTC | Confirmed/available UTC |
+|---|---|---:|---|---|
+| A | high | 1.2822 | 2026-09-08 20:00 | 2026-09-09 08:00 |
+| B | high / corrective_high | 1.1642 | 2026-09-11 04:00 | 2026-09-11 16:00 |
+| C | low | 0.9959 | 2026-09-13 08:00 | 2026-09-13 20:00 |
+
+**Formula:** `projected_time = anchor_time + duration * fibonacci_ratio`. Here `anchor_time=C.time_utc`, A→B=56h, B→C=52h and A→C=108h. A→B and B→C each project ratios 0.618, 1.000, 1.272 and 1.618. Configuring 2.000 and 2.618 is also supported; unsupported/duplicate ratios are errors. Separately, `symmetry_projections` always includes A→C×0.500 from C, i.e. 2026-09-15T14:00:00Z.
+
+All timestamp arithmetic uses timezone-aware **UTC**, including when inputs have another explicit offset. Naive times are rejected; the host timezone and clock are never used by this module. Durations are integer microseconds and ratios use Decimal multiplication. Sub-microsecond results round to the nearest microsecond (ties to even); no hour/minute rounding occurs. ISO timestamps end in Z and retain fractional seconds without unnecessary trailing zeros. Minutes follow the existing compact snapshot's 12-significant-digit numeric export convention.
+
+| Source | Ratio | Projected UTC |
+|---|---:|---|
+| B→C | 0.618 | 2026-09-14T16:08:09.6Z |
+| A→B | 0.618 | 2026-09-14T18:36:28.8Z |
+| B→C | 1.000 | 2026-09-15T12:00:00Z |
+| A→C symmetry | 0.500 | 2026-09-15T14:00:00Z |
+| A→B | 1.000 | 2026-09-15T16:00:00Z |
+| B→C | 1.272 | 2026-09-16T02:08:38.4Z |
+| A→B | 1.272 | 2026-09-16T07:13:55.2Z |
+| B→C | 1.618 | 2026-09-16T20:08:09.6Z |
+| A→B | 1.618 | 2026-09-17T02:36:28.8Z |
+
+**Clusters (±2-hour confluence rule):** use a maximum total event span of four hours, inclusive. Combine normal and symmetry projections, deduplicate duration/ratio identities, sort chronologically (ties by projection ID), and greedily take the longest prefix within four hours of the earliest remaining event. If the group qualifies, consume it and repeat, producing disjoint, reproducible clusters; otherwise discard only its earliest event and retry so a later independent pair is not lost. Neighbouring events cannot chain into a span greater than four hours. Emit a cluster only if it contains at least two distinct source durations; multiple ratios of one duration alone are not independent. Distinct source durations count separately even when their projected times coincide. This is arithmetic confluence, not statistical independence.
+
+`window_start_utc`/`window_end_utc` are the actual earliest/latest events, with no added padding. `center_utc` is the median event time (even count: mean of the two middle times, to microsecond precision). The four-hour membership rule means a common ±2h midpoint exists; the exported **median** can differ from that midpoint for asymmetric groups. `events` retains each complete source projection and its own state; `event_count` counts them. Cluster IDs depend on the set ID and member projection IDs, not on snapshot time or whether another cluster expires.
+
+The initial two clusters are:
+
+- 2026-09-14T16:08:09.6Z–18:36:28.8Z, median 17:22:19.2Z: B→C×0.618 + A→B×0.618. Europe/Madrid display: 18:08:09.6–20:36:28.8.
+- 2026-09-15T12:00:00Z–16:00:00Z, median 14:00:00Z: B→C×1.000 + A→C×0.500 + A→B×1.000, **three events**. Europe/Madrid display: 14:00–18:00, center 16:00. Display conversion never enters calculations.
+
+**Snapshot-relative state:** the sole reference is `meta.generated_at_utc` (the same `generated_at_utc` value in the detailed generator output), repeated as `reference_at_utc`. A cluster is upcoming before its start, active from start through end inclusive, and expired after its end. A single projection is a point: start=center=end=projected time; it is active only at that exact instant, with no implicit tolerance window. `minutes_to_center` is nonnegative until/at center, otherwise null; `minutes_to_start` is nonnegative until/at start, otherwise null; `minutes_since_end` is positive only after end, otherwise null. An active cluster after its median can therefore have all three minute fields null. Expired events/clusters stay in the output. These states express only timing; subsequent interpretation belongs to the analysis layer.
+
+`python src/main.py --from-latest` regenerates `latest.json` and `llm_snapshot.json` from the existing detailed measurements and configured anchors without network collection, timestamp advancement, or history/cache changes. Use it for a reproducible local regeneration; `python src/main.py` continues the normal collector path. The new field is optional in schema v2 so older snapshots remain valid. Existing price Fibonacci, pivot, indicator and history formulas are unchanged.
+
 ## Orderbook and execution estimates
 
 Spot requests 500 visible L2 levels per side; public futures orderbook returns its visible depth. Orders are aggregated per price, not individual identities. Quantity units for PF_DOTUSD are validated against the actual `flexible_futures`, DOT/USD instrument definition; `contractSize` must be 1.

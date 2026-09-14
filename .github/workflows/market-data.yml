@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "config/**"
       - "schema/**"
       - "scripts/validate_snapshot.py"
       - "scripts/collection_due.py"
