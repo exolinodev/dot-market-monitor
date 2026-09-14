@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "scope": "Explicitly verified events; not a comprehensive economic calendar",
+  "events": [
+    {
+      "id": "fomc_2026_09",
+      "name": "FOMC meeting",
+      "event_type": "central_bank_meeting",
+      "precision": "date",
+      "start_date": "2026-09-15",
+      "end_date": "2026-09-16",
+      "timezone": "America/New_York",
+      "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "verified_at_utc": "2026-09-14T18:40:47Z"
+    },
+    {
+      "id": "fomc_2026_10",
+      "name": "FOMC meeting",
+      "event_type": "central_bank_meeting",
+      "precision": "date",
+      "start_date": "2026-10-27",
+      "end_date": "2026-10-28",
+      "timezone": "America/New_York",
+      "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "verified_at_utc": "2026-09-14T18:40:47Z"
+    },
+    {
+      "id": "fomc_2026_12",
+      "name": "FOMC meeting",
+      "event_type": "central_bank_meeting",
+      "precision": "date",
+      "start_date": "2026-12-08",
+      "end_date": "2026-12-09",
+      "timezone": "America/New_York",
+      "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "verified_at_utc": "2026-09-14T18:40:47Z"
+    }
+  ]
+}

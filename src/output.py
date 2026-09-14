@@ -4,6 +4,8 @@ import json
 import math
 from pathlib import Path
 import jsonschema
+from referencing import Registry, Resource
+from observation_common import utc
 from common import json_safe
 from timeframes import DOT_TIMEFRAMES, DOTBTC_TIMEFRAMES, BTC_TIMEFRAMES
 
@@ -72,7 +74,9 @@ def compact_snapshot(data):
 
 def validate_snapshot(data):
     schema=json.loads(SCHEMA.read_text())
-    jsonschema.Draft202012Validator(schema,format_checker=jsonschema.FormatChecker()).validate(data)
+    observation_schema=json.loads(SCHEMA.with_name('observations.schema.json').read_text())
+    registry=Registry().with_resource(observation_schema['$id'],Resource.from_contents(observation_schema))
+    jsonschema.Draft202012Validator(schema,registry=registry,format_checker=jsonschema.FormatChecker()).validate(data)
     def visit(value,path=''):
         if isinstance(value,dict):
             for key,item in value.items(): visit(item,path+'.'+key)
@@ -81,6 +85,22 @@ def validate_snapshot(data):
         elif isinstance(value,float) and not math.isfinite(value):
             raise ValueError('Nonfinite value: '+path)
     visit(data)
+    observation=data['markets']['DOTUSD'].get('observations')
+    if observation:
+        reference=utc(data['meta']['generated_at_utc'])
+        if utc(observation['reference_at_utc'])!=reference:
+            raise ValueError('Observation reference differs from snapshot reference')
+        def check_observation(value):
+            if isinstance(value,dict):
+                if 'source_ids' in value and 'coverage' in value and 'data' in value:
+                    if value['asof_utc'] is not None and utc(value['asof_utc'])>reference:
+                        raise ValueError('Observation asof is later than snapshot')
+                    if value['status']=='ok' and any(s not in data['sources'] for s in value['source_ids']):
+                        raise ValueError('Unknown observation source reference')
+                for item in value.values(): check_observation(item)
+            elif isinstance(value,list):
+                for item in value: check_observation(item)
+        check_observation(observation)
     for name,required in [('DOTUSD',DOT_TIMEFRAMES),('DOTBTC',DOTBTC_TIMEFRAMES),('BTCUSD',BTC_TIMEFRAMES)]:
         if set(data['markets'][name]['timeframes'])!=set(required): raise ValueError(name+' timeframe inventory mismatch')
     for name,market in data['markets'].items():

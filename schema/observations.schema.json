@@ -1,0 +1,1505 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/observations.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract",
+    "reference_at_utc",
+    "config_sha256",
+    "status",
+    "components"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "contract": {
+      "const": "measurements_only"
+    },
+    "reference_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "config_sha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial",
+        "error"
+      ]
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "price_levels",
+        "anchored_vwap",
+        "historical_context",
+        "market_relative",
+        "flow_windows",
+        "volume_profile",
+        "spot_perp_history",
+        "cross_venue",
+        "scheduled_events",
+        "input_lineage"
+      ],
+      "properties": {
+        "price_levels": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [],
+                  "properties": {
+                    "1h": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/envelope"
+                        }
+                      ],
+                      "properties": {
+                        "data": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/$defs/level"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "4h": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/envelope"
+                        }
+                      ],
+                      "properties": {
+                        "data": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/$defs/level"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "anchored_vwap": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/$defs/envelope"
+                      }
+                    ],
+                    "properties": {
+                      "data": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/$defs/anchoredVwap"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "historical_context": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "atr14_pct",
+                    "realized_volatility_pct",
+                    "movement_efficiency",
+                    "range_width_pct"
+                  ],
+                  "properties": {
+                    "atr14_pct": {
+                      "$ref": "#/$defs/historicalRank"
+                    },
+                    "realized_volatility_pct": {
+                      "$ref": "#/$defs/historicalRank"
+                    },
+                    "movement_efficiency": {
+                      "$ref": "#/$defs/historicalRank"
+                    },
+                    "range_width_pct": {
+                      "$ref": "#/$defs/historicalRank"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "market_relative": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [],
+                  "properties": {
+                    "1h": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/envelope"
+                        }
+                      ],
+                      "properties": {
+                        "data": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/relativeReturn"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "4h": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/envelope"
+                        }
+                      ],
+                      "properties": {
+                        "data": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/relativeReturn"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "24h": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/envelope"
+                        }
+                      ],
+                      "properties": {
+                        "data": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/relativeReturn"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "flow_windows": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "spot",
+                    "perp"
+                  ],
+                  "properties": {
+                    "spot": {
+                      "$ref": "#/$defs/flowComparison"
+                    },
+                    "perp": {
+                      "$ref": "#/$defs/flowComparison"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "volume_profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "price_lower_usd",
+                      "price_upper_usd",
+                      "volume_dot",
+                      "buy_volume_dot",
+                      "sell_volume_dot",
+                      "notional_usd",
+                      "trade_count"
+                    ],
+                    "properties": {
+                      "price_lower_usd": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "price_upper_usd": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "volume_dot": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "buy_volume_dot": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sell_volume_dot": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notional_usd": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "trade_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "spot_perp_history": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "changes",
+                    "funding_history"
+                  ],
+                  "properties": {
+                    "changes": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "1h",
+                        "4h",
+                        "24h",
+                        "168h"
+                      ],
+                      "properties": {
+                        "1h": {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/envelope"
+                            }
+                          ],
+                          "properties": {
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/historyValues"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "4h": {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/envelope"
+                            }
+                          ],
+                          "properties": {
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/historyValues"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "24h": {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/envelope"
+                            }
+                          ],
+                          "properties": {
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/historyValues"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "168h": {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/envelope"
+                            }
+                          ],
+                          "properties": {
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/historyValues"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "funding_history": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "current_value",
+                        "historical_percentile",
+                        "sample_count",
+                        "minimum_samples",
+                        "lookback_days",
+                        "unit",
+                        "status"
+                      ],
+                      "properties": {
+                        "current_value": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "historical_percentile": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "sample_count": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "minimum_samples": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "lookback_days": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "unit": {
+                          "const": "absolute_API_rate"
+                        },
+                        "status": {
+                          "enum": [
+                            "ok",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "cross_venue": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kraken",
+                    "coinbase",
+                    "timestamp_skew_seconds",
+                    "coinbase_minus_kraken_mid_bps"
+                  ],
+                  "properties": {
+                    "kraken": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/quote"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "coinbase": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/quote"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp_skew_seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "coinbase_minus_kraken_mid_bps": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "scheduled_events": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "name",
+                      "event_type",
+                      "precision",
+                      "source_url",
+                      "verified_at_utc",
+                      "verification_age_days",
+                      "event_time_utc",
+                      "minutes_until_event",
+                      "minutes_since_event",
+                      "start_date",
+                      "end_date",
+                      "timezone",
+                      "state"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "event_type": {
+                        "type": "string"
+                      },
+                      "precision": {
+                        "enum": [
+                          "date",
+                          "instant"
+                        ]
+                      },
+                      "source_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "verified_at_utc": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "verification_age_days": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "event_time_utc": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      },
+                      "minutes_until_event": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "minutes_since_event": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "start_date": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "end_date": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "timezone": {
+                        "type": "string"
+                      },
+                      "state": {
+                        "enum": [
+                          "upcoming",
+                          "active",
+                          "expired"
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "input_lineage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "anchor_set_id",
+                    "selection_recorded_at_utc",
+                    "selection_record_available_asof_snapshot",
+                    "duration_dependencies",
+                    "identities",
+                    "cluster_event_count_semantics",
+                    "shared_inputs"
+                  ],
+                  "properties": {
+                    "anchor_set_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "selection_recorded_at_utc": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "selection_record_available_asof_snapshot": {
+                      "type": "boolean"
+                    },
+                    "duration_dependencies": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "identities": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cluster_event_count_semantics": {
+                      "const": "arithmetic_projection_count"
+                    },
+                    "shared_inputs": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level_usd",
+        "level_origin",
+        "last_closed_price_usd",
+        "atr14_usd",
+        "distance_usd",
+        "distance_pct",
+        "distance_atr",
+        "closes_above",
+        "closes_below",
+        "closes_equal",
+        "last_close_side",
+        "consecutive_closes_on_last_side",
+        "consecutive_count_capped",
+        "last_cross_in_window"
+      ],
+      "properties": {
+        "level_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "level_origin": {
+          "type": "string"
+        },
+        "last_closed_price_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "atr14_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_usd": {
+          "type": "number"
+        },
+        "distance_pct": {
+          "type": "number"
+        },
+        "distance_atr": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "closes_above": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closes_below": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closes_equal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_close_side": {
+          "enum": [
+            "above",
+            "below",
+            "equal"
+          ]
+        },
+        "consecutive_closes_on_last_side": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "consecutive_count_capped": {
+          "type": "boolean"
+        },
+        "last_cross_in_window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "closed_at_utc",
+                "close_side",
+                "bars_since",
+                "max_close_move_against_cross_usd",
+                "atr_at_cross_usd",
+                "max_close_move_against_cross_atr"
+              ],
+              "properties": {
+                "closed_at_utc": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "close_side": {
+                  "enum": [
+                    "above",
+                    "below"
+                  ]
+                },
+                "bars_since": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_close_move_against_cross_usd": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "atr_at_cross_usd": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max_close_move_against_cross_atr": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "anchoredVwap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vwap_usd",
+        "cumulative_volume_dot",
+        "slope_last_bar_usd",
+        "last_closed_price_usd",
+        "distance_usd",
+        "distance_pct"
+      ],
+      "properties": {
+        "vwap_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cumulative_volume_dot": {
+          "type": "number",
+          "minimum": 0
+        },
+        "slope_last_bar_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "last_closed_price_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "distance_usd": {
+          "type": "number"
+        },
+        "distance_pct": {
+          "type": "number"
+        }
+      }
+    },
+    "historicalRank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_value",
+        "historical_percentile",
+        "sample_count",
+        "requested_baseline_bars",
+        "minimum_samples",
+        "baseline_complete",
+        "status",
+        "baseline_start_utc",
+        "baseline_end_utc"
+      ],
+      "properties": {
+        "current_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "historical_percentile": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requested_baseline_bars": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_samples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_complete": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        },
+        "baseline_start_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "baseline_end_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "relativeReturn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "beta",
+        "dot_log_return_pct",
+        "btc_log_return_pct",
+        "beta_adjusted_log_return_pp"
+      ],
+      "properties": {
+        "beta": {
+          "type": "number"
+        },
+        "dot_log_return_pct": {
+          "type": "number"
+        },
+        "btc_log_return_pct": {
+          "type": "number"
+        },
+        "beta_adjusted_log_return_pp": {
+          "type": "number"
+        }
+      }
+    },
+    "executionWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buy_volume_dot",
+        "sell_volume_dot",
+        "buy_notional_usd",
+        "sell_notional_usd",
+        "signed_volume_dot",
+        "trade_count",
+        "first_trade_price_usd",
+        "last_trade_price_usd",
+        "first_trade_utc",
+        "last_trade_utc",
+        "first_to_last_price_change_pct"
+      ],
+      "properties": {
+        "buy_volume_dot": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sell_volume_dot": {
+          "type": "number",
+          "minimum": 0
+        },
+        "buy_notional_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sell_notional_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "signed_volume_dot": {
+          "type": "number"
+        },
+        "trade_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "first_trade_price_usd": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_trade_price_usd": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "first_trade_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_trade_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "first_to_last_price_change_pct": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "flowComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current",
+        "previous",
+        "current_minus_previous"
+      ],
+      "properties": {
+        "current": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/executionWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "previous": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/envelope"
+            }
+          ],
+          "properties": {
+            "data": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/executionWindow"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "current_minus_previous": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "buy_volume_dot",
+                "sell_volume_dot",
+                "signed_volume_dot",
+                "trade_count"
+              ],
+              "properties": {
+                "buy_volume_dot": {
+                  "type": "number"
+                },
+                "sell_volume_dot": {
+                  "type": "number"
+                },
+                "signed_volume_dot": {
+                  "type": "number"
+                },
+                "trade_count": {
+                  "type": "integer"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "historyChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_value",
+        "reference_value",
+        "absolute_change",
+        "unit",
+        "source_timestamp_utc",
+        "reference_source_timestamp_utc",
+        "elapsed_minutes",
+        "status"
+      ],
+      "properties": {
+        "current_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reference_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "absolute_change": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "USD",
+            "DOT",
+            "absolute_API_rate",
+            "bps"
+          ]
+        },
+        "source_timestamp_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "reference_source_timestamp_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "elapsed_minutes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        }
+      }
+    },
+    "historyValues": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spot_midprice_usd",
+        "perp_mark_usd",
+        "open_interest_dot",
+        "funding_rate_absolute_api",
+        "quote_mark_basis_bps"
+      ],
+      "properties": {
+        "spot_midprice_usd": {
+          "$ref": "#/$defs/historyChange"
+        },
+        "perp_mark_usd": {
+          "$ref": "#/$defs/historyChange"
+        },
+        "open_interest_dot": {
+          "$ref": "#/$defs/historyChange"
+        },
+        "funding_rate_absolute_api": {
+          "$ref": "#/$defs/historyChange"
+        },
+        "quote_mark_basis_bps": {
+          "$ref": "#/$defs/historyChange"
+        }
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "venue",
+        "market",
+        "market_type",
+        "base",
+        "quote",
+        "bid_usd",
+        "ask_usd",
+        "midprice_usd",
+        "spread_bps",
+        "bid_size_dot",
+        "ask_size_dot",
+        "source_timestamp_utc",
+        "timestamp_kind"
+      ],
+      "properties": {
+        "venue": {
+          "enum": [
+            "kraken",
+            "coinbase"
+          ]
+        },
+        "market": {
+          "const": "DOTUSD"
+        },
+        "market_type": {
+          "const": "spot"
+        },
+        "base": {
+          "const": "DOT"
+        },
+        "quote": {
+          "const": "USD"
+        },
+        "bid_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ask_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "midprice_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "spread_bps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bid_size_dot": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ask_size_dot": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source_timestamp_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timestamp_kind": {
+          "enum": [
+            "source",
+            "received_at"
+          ]
+        },
+        "instrument_source_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "source_ids",
+        "asof_utc",
+        "coverage",
+        "data"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ok",
+            "partial",
+            "unavailable",
+            "error"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "asof_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "coverage": {
+          "type": "object"
+        },
+        "data": {}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "unavailable",
+                  "error"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

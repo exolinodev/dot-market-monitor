@@ -97,6 +97,85 @@ The initial two clusters are:
 
 `python src/main.py --from-latest` regenerates `latest.json` and `llm_snapshot.json` from the existing detailed measurements and configured anchors without network collection, timestamp advancement, or history/cache changes. Use it for a reproducible local regeneration; `python src/main.py` continues the normal collector path. The new field is optional in schema v2 so older snapshots remain valid. Existing price Fibonacci, pivot, indicator and history formulas are unchanged.
 
+## Descriptive observation layer
+
+`markets.DOTUSD.observations` is an additive version-1 contract inside snapshot v2. `contract=measurements_only` means that Python exports observations and explicit mathematical transformations. It does **not** add forecast models, directional scores, regime labels, probabilities, target prices, Elliott scenarios or forecast evaluation. ChatGPT performs the hourly interpretation using `CHATGPT_MONITOR_PROMPT.md`. Existing indicator/price-Fibonacci/time-Fibonacci/history calculations remain unchanged.
+
+The reference is the snapshot's `generated_at_utc`, repeated as `reference_at_utc`. Each component has `status`, `reason`, `source_ids`, `asof_utc`, `coverage` and `data`. `ok`/`partial`/`unavailable`/`error` describe data availability or validity. Null data is not zero. Component failures do not replace other market data. The strict payload schema rejects undeclared fields such as a directional score; observation timestamps may not exceed the snapshot reference. The observation schema is resolved locally, without schema-validation network requests.
+
+Parameters live in `config/observations.json` and are checked against `schema/observations.config.schema.json`. The SHA-256 in each block covers the canonical JSON of all three input configurations: observations, time-Fibonacci anchors and scheduled events. The separate archive retains the actual configurations referenced by its observations. Formula changes require a deliberate contract/version review; parameter changes are visible through the fingerprint.
+
+### Closed-candle availability
+
+New candle measurements use only bars closed at the **source reception cutoff**, and also closed at the snapshot reference. Their most recent bar must end at the latest elapsed UTC timeframe boundary; collection crossing a boundary cannot promote a bar that was open when received. Source failures, missing latest closes, gaps and insufficient windows return unavailable. UTC calculations do not depend on the host timezone. Earlier bars remain historical measurements, not claimed observations of a later close.
+
+### Price-level observations
+
+`price_levels` uses the configured USD levels (initially the same 1.03/1.14/1.27/1.2848/1.31/1.42 levels already present), separately for closed 1h and 4h candles. Default observation window: the last 24 bars, plus the preceding close to detect a crossing. No importance/ranking is assigned to levels.
+
+- Distance USD = last closed close − level; distance % = 100×(close/level−1); distance ATR = (close−level)/current Wilder ATR14. Undefined/zero ATR produces null normalized distance.
+- Count closes strictly above, strictly below and exactly equal to the level. The final side is an arithmetic comparison, not a forecast. Count consecutive final-side closes within the window; `consecutive_count_capped=true` marks reaching the configured window limit.
+- An upward close crossing requires previous close ≤ level and current close > level; a downward crossing requires previous close ≥ level and current close < level. Report only the latest crossing **inside the observed window**, its closing UTC instant and bars since. No observed crossing means null, without assuming an earlier one.
+- For an upward crossing, `max_close_move_against_cross_usd` = max(running maximum of subsequent closes − each close), including the crossing close. For a downward crossing use max(each close − running minimum). Normalize by ATR **at the crossing**, frozen at that time. This uses closing-price paths; intrabar order is not inferred.
+
+These are retrospective facts relative to the currently configured levels, not claims that those levels had already been selected for a historical decision. Terms such as acceptance, rejection, support, resistance and confirmed breakout remain interpretation outside this module.
+
+### Anchored VWAP
+
+`anchored_vwap` uses each anchor from the explicitly selected, confirmed spot time-Fibonacci set and native 1h candles. The start is the **opening timestamp of the pivot candle**, not the unknown exact execution time of its high/low. The full anchor candle participates once closed. All elapsed bars from that opening through the last closed bar must be available without gaps.
+
+AVWAP = sum(exchange candle VWAP × candle volume) / sum(candle volume). No typical-price approximation is used. Positive-volume candles require valid positive exchange VWAPs. A verified zero-volume bar contributes zero notional and zero quantity, even if its VWAP is absent; a zero total volume yields null. Export AVWAP, cumulative DOT volume, change from the preceding bar's anchored average, last closed price and its USD/% distance. A missing previous average gives null slope. Anchor IDs, set ID, actual confirmation time, sampling interval and coverage remain visible. No automatic re-anchoring occurs.
+
+### Historical context
+
+`historical_context` uses closed hourly candles. It supplies current ATR14%, realized volatility over 24 hourly returns, movement efficiency over 24 changes, and range width over 24 candles:
+
+- Realized volatility % = 100×sqrt(sum(log(Cᵢ/Cᵢ₋₁)²)); not annualized.
+- Movement efficiency = abs(Cₜ−Cₜ₋ₙ)/sum(abs(Cᵢ−Cᵢ₋₁)) over n changes. A zero path denominator is undefined/null.
+- Range width % = 100×(max(high,n)−min(low,n))/Cₜ.
+
+The percentile reference is the preceding 720 bar positions (30 days), **excluding the current observation**. Warmup/undefined values do not become observations. At least 168 valid samples are required for a rank. Percentile = 100×(number strictly below current + 0.5×number exactly equal)/sample count. Export actual baseline start/end, sample count, requested size and completeness. Tied populations rank at 50; insufficient baselines retain a valid current value but no rank. These are descriptive historical ranks, not event probabilities or regime classifications. As with existing indicators, Wilder seeding uses the retained source history.
+
+### Market-relative measurements
+
+`market_relative` measures DOT/BTC log returns over matching completed 1h/4h/24h periods. Beta = sample covariance(DOT hourly log returns, BTC hourly log returns) / sample variance(BTC hourly log returns), using the **168 hourly returns strictly preceding the measured interval**. The estimation interval ends where the measured return interval starts. Missing/misaligned candles, insufficient samples or zero BTC variance yield unavailable.
+
+Beta-adjusted log return in percentage points = 100×(sum(DOT log returns in measured interval) − beta×sum(BTC log returns in measured interval)). The period's DOT and BTC log returns, beta, exact estimation/measurement boundaries and observation count are exported. This is a backward-looking decomposition of already observed returns, not a predicted DOT return or proof of a causal BTC effect.
+
+### Execution windows and volume by price
+
+`flow_windows` chooses a shared cutoff at the latest whole UTC minute covered by the available fresh spot/perp trade tapes, no later than the snapshot reference. A stale tape is unavailable without discarding the other venue. The two default 60-minute windows are `(T−60m,T]` and `(T−120m,T−60m]`; a boundary trade is counted once. Both source coverage boundaries must prove the entire requested interval. Missing/incomplete coverage gives null data, not extrapolated totals.
+
+For each window export buy/sell DOT quantity and USD notional, signed DOT volume (buy−sell), trade count, first/last observed execution prices/times and their percent change. A proven empty window has zero flow/counts and null prices. Perpetual assignment/termination/block records are excluded, while fills and liquidations are executions. Unique trade IDs and exchange-provided taker sides are required. Unknown sides fail validation.
+
+`current_minus_previous` subtracts the two complete, adjacent equal-length window totals for quantities/counts. Each signed-volume sum resets independently; this is **not** a change in a continuous CVD series or a comparison of differently reset/overlapping windows. First-to-last execution price change describes observed trade endpoints, not invented prices exactly at the interval boundaries. No absorption, positioning or participant-intent label is added.
+
+`volume_profile` bins actual **spot executions** over a completely covered trailing 4h interval. Fixed initial bin width: USD 0.005; origin: USD 0. Decimal division/floor defines bin index, with `[lower,upper)` boundaries. Export observed bins in ascending price order, with total/buy/sell DOT quantity, USD notional and trade count. Bins conserve the included trades, quantities and notionals. Zero-activity bins are omitted; a proven empty interval produces an empty array. More than 200 observed bins or incomplete tape coverage yields unavailable, without silently changing resolution or treating partial trades as a complete profile. Candle volume is never redistributed into guessed price bins. This profile is not a long-term cost-basis estimate.
+
+### Actual observation history and derivatives changes
+
+`data/raw/observation_history.json.gz` separately retains the latest genuine observation per UTC hour for up to **365 days / 8760 entries** by default. It starts with the new collector and has no synthetic backfill from older fields lacking the required provenance. Comparisons use only observations from earlier UTC hours and reserve one retention slot for the current hour; a rerun within the same hour or at the retention limit therefore reproduces the same history view after saving. The existing `data/history.json` remains a separate 30-day contract.
+
+Each archived measurement carries value/null, unit, source IDs, source timestamp and method. Values must have been fresh within 120 seconds at their observation time. Records include their configuration hash; retained configurations include the exact content and first recorded timestamp. Loading validates units, finite values, ordered unique hours and configuration hashes. A corrupt archive is reported and preserved; a collector cannot overwrite a later observation with an earlier snapshot. Offline regeneration never appends to the archive.
+
+`spot_perp_history` compares genuine observations nearest T−1h/4h/24h/168h, within ±20 minutes. Source timestamp separation must independently fit that tolerance, and unit/method/source IDs must match. Export current/reference values, absolute change, both source times and actual elapsed minutes. A missing/null/mismatched reference is not replaced by another value.
+
+Fields are spot quote midpoint USD (consistently midpoint, never silently switched to last trade), exchange perp mark USD, open interest DOT only with validated DOT/USD contract size 1, and the unchanged absolute API funding rate. Quote/mark basis = 10000×(mark/spot quote midpoint−1), only if the observations are at most 60 seconds apart. This new quote-based basis does not change the existing trade/quote-based `spot_perp_basis`. Funding differences are absolute API-rate differences, without invented percent or annualization conventions. Its 30-day historical rank uses only earlier valid archived observations and the same midrank/minimum-sample rule as above. Archived signed-volume windows are available for auditing; they are not subtracted across hourly snapshots with potentially overlapping resets.
+
+### Additional venue and verified calendar
+
+`cross_venue` adds the public Coinbase Exchange DOT-USD product and level-one book. The product must be online, enabled, non-auction and explicitly DOT/USD spot. Bid/ask, sizes and exchange book timestamp are checked. Kraken's corresponding book uses its explicitly labelled reception timestamp because that feed lacks an equivalent book-wide source instant. Only fresh quotes within the configured maximum 60-second skew produce the arithmetic `10000×(Coinbase midpoint/Kraken midpoint−1)` difference in bps. Quotes and spreads stay separate by venue; the module does not claim leadership, market-wide coverage, order identity or executable arbitrage. Coinbase raw responses are archived alongside existing public responses.
+
+`scheduled_events` reads `config/scheduled_events.json`: an explicitly verified, limited registry, not an automatically refreshed complete economic calendar. Every event has a source URL and verification time. An event verified later than a replay reference is excluded. Current initial entries are the official Fed's September 15–16, October 27–28 and December 8–9 **2026 meeting dates**. No decision release time was established by that date-only source.
+
+For `precision=date`, export inclusive local start/end dates and their IANA timezone; event UTC instant and minute countdown fields remain null. Upcoming/active/expired compares the reference's date in that explicit timezone; active means within the listed dates, not proof a session is presently in progress. For separately verified `precision=instant` records, normalize the source instant to UTC and calculate nonnegative minutes until, or positive minutes since, relative to the snapshot. Export verification age and scope; do not add surprise forecasts, impact rankings or directional conclusions. Captured source excerpts and response hashes live in `tests/fixtures/observation_sources_manifest.json`.
+
+### Shared inputs and replay
+
+`input_lineage` exposes shared candle/trade inputs, the time-Fibonacci duration dependency A→C=A→B+B→C, and the midpoint identity of the total-symmetry projection. `event_count=3` remains the arithmetic count of projections. No independence weight or confidence score is manufactured. The initial anchor selection's `selection_recorded_at_utc=2026-09-14T18:24:05Z` is the first committed configuration record (`f028161`), not an assertion about an earlier human decision time. Existing time-Fibonacci arithmetic is unchanged; this extra provenance lets the consumer distinguish retrospective configuration from information demonstrably recorded at the time.
+
+`--from-latest` reconstructs source-bound closed frames from the saved cache and reception cutoffs, and deduplicates saved raw spot/perp trade pages using their existing coverage metadata. It requires matching raw/snapshot generation times; missing source inputs remain unavailable. Configuration is explicit, source data are not fetched, and snapshot reference/history/cache are not advanced. A full fresh collector run and its offline replay are checked for equal output. The entire compact snapshot must remain below the existing 500 KB limit.
+
 ## Orderbook and execution estimates
 
 Spot requests 500 visible L2 levels per side; public futures orderbook returns its visible depth. Orders are aggregated per price, not individual identities. Quantity units for PF_DOTUSD are validated against the actual `flexible_futures`, DOT/USD instrument definition; `contractSize` must be 1.

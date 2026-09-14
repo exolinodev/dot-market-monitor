@@ -6,6 +6,9 @@ from common import json_safe, write_json
 from pipeline import Collector
 from output import compact_snapshot, validate_snapshot, markdown_summary
 from time_fibs import load_time_fibs
+from observations import build_observations, replay_inputs
+from observation_history import ObservationArchive
+from observation_common import block
 
 ROOT=Path(__file__).resolve().parents[1]
 DATA_DIR=ROOT/'data'
@@ -31,6 +34,18 @@ def regenerate_snapshot(data_dir=None):
     target=Path(data_dir) if data_dir is not None else DATA_DIR
     data=json.loads((target/'latest.json').read_text(encoding='utf-8'))
     data['markets']['DOTUSD']['time_fibs']=load_time_fibs(data['generated_at_utc'])
+    frames,spot_trades,perp_trades,quote=replay_inputs(data,target)
+    archive_error=None
+    try:
+        archive=ObservationArchive(target/'raw'/'observation_history.json.gz')
+    except Exception as exc:
+        archive=None
+        archive_error=str(exc)
+    observation=build_observations(data,frames,spot_trades,perp_trades,quote,archive)[0]
+    if archive_error:
+        observation['components']['spot_perp_history']=block(status='error',reason=archive_error)
+        observation['status']='partial'
+    data['markets']['DOTUSD']['observations']=observation
     compact=compact_snapshot(data)
     validate_snapshot(compact)
     write_json(target/'latest.json',data)

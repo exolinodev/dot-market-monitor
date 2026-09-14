@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "price_levels_usd", "level_timeframes_minutes", "level_window_bars", "anchored_vwap_minutes", "context_minutes", "context_baseline_bars", "context_minimum_samples", "movement_window_bars", "relative_return_hours", "beta_estimation_hours", "flow_window_minutes", "volume_profile_window_minutes", "volume_profile_bin_width_usd", "cross_venue_max_skew_seconds", "history_days", "history_reference_tolerance_minutes"],
+  "properties": {
+    "version": {"const": 1},
+    "price_levels_usd": {"type": "array", "minItems": 1, "maxItems": 30, "uniqueItems": true, "items": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000000}},
+    "level_timeframes_minutes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": [60, 240]}},
+    "level_window_bars": {"type": "integer", "minimum": 2, "maximum": 720},
+    "anchored_vwap_minutes": {"const": 60},
+    "context_minutes": {"const": 60},
+    "context_baseline_bars": {"type": "integer", "minimum": 24, "maximum": 2160},
+    "context_minimum_samples": {"type": "integer", "minimum": 24, "maximum": 2160},
+    "movement_window_bars": {"type": "integer", "minimum": 2, "maximum": 168},
+    "relative_return_hours": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": [1, 4, 24]}},
+    "beta_estimation_hours": {"type": "integer", "minimum": 24, "maximum": 720},
+    "flow_window_minutes": {"const": 60},
+    "volume_profile_window_minutes": {"enum": [60, 240]},
+    "volume_profile_bin_width_usd": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.[0-9]+$"},
+    "cross_venue_max_skew_seconds": {"type": "integer", "minimum": 0, "maximum": 120},
+    "history_days": {"type": "integer", "minimum": 30, "maximum": 730},
+    "history_reference_tolerance_minutes": {"type": "integer", "minimum": 0, "maximum": 20}
+  }
+}

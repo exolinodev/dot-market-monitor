@@ -15,6 +15,11 @@ class Offline:
         return fail
 
 
+@pytest.fixture(autouse=True)
+def offline_extra_venue(monkeypatch):
+    monkeypatch.setattr('pipeline.CoinbaseClient',Offline)
+
+
 def test_all_source_failures_publish_explicit_nulls(tmp_path):
     # New v2 contract: even a total outage produces a fresh error envelope.
     data=Collector(tmp_path,Offline(),Offline()).collect()

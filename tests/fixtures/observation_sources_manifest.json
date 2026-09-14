@@ -1,0 +1,20 @@
+[
+  {
+    "file": "coinbase_product.json",
+    "source_url": "https://api.exchange.coinbase.com/products/DOT-USD",
+    "retrieved_at_utc": "2026-09-14T18:58:35.434203+00:00",
+    "sha256": "4f4d7718c2b4c1057695afd6453f233d2377c1b1def7c09470d0292740019ae7"
+  },
+  {
+    "file": "coinbase_book.json",
+    "source_url": "https://api.exchange.coinbase.com/products/DOT-USD/book?level=1",
+    "retrieved_at_utc": "2026-09-14T18:58:35.561754+00:00",
+    "sha256": "98b7c14a21adc5fc439c23234f187b0221388cde5b0ebf65cf43418a38049909"
+  },
+  {
+    "file": "fomc_calendar_2026.json",
+    "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "retrieved_at_utc": "2026-09-14T18:58:35.697296+00:00",
+    "sha256": "ed71aa70280e0c09ee390abdf330e188e23176bc328384148878e3cc5988edfd"
+  }
+]

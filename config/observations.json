@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "price_levels_usd": [1.03, 1.14, 1.27, 1.2848, 1.31, 1.42],
+  "level_timeframes_minutes": [60, 240],
+  "level_window_bars": 24,
+  "anchored_vwap_minutes": 60,
+  "context_minutes": 60,
+  "context_baseline_bars": 720,
+  "context_minimum_samples": 168,
+  "movement_window_bars": 24,
+  "relative_return_hours": [1, 4, 24],
+  "beta_estimation_hours": 168,
+  "flow_window_minutes": 60,
+  "volume_profile_window_minutes": 240,
+  "volume_profile_bin_width_usd": "0.005",
+  "cross_venue_max_skew_seconds": 60,
+  "history_days": 365,
+  "history_reference_tolerance_minutes": 20
+}

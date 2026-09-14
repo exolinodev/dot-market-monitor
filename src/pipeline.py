@@ -14,6 +14,10 @@ from orderflow import orderbook_metrics, tape_metrics, absorption, wall_persiste
 from history import HistoryStore
 from structure import fib_levels, level_distances
 from time_fibs import load_time_fibs
+from coinbase import CoinbaseClient, QUOTE_URL
+from observations import build_observations
+from observation_history import ObservationArchive
+from observation_common import block
 
 
 def unavailable(reason='source_unavailable'):
@@ -21,15 +25,23 @@ def unavailable(reason='source_unavailable'):
 
 
 class Collector:
-    def __init__(self, data_dir, kraken=None, cg=None):
+    def __init__(self, data_dir, kraken=None, cg=None, coinbase=None):
         self.data_dir=Path(data_dir)
         self.kraken=kraken or KrakenClient(timeout=12)
         self.cg=cg or CoinGeckoClient()
+        self.coinbase=coinbase or CoinbaseClient()
         self.sources={}
         self.errors=[]
         self.frames={}
         self.started=utcnow()
         self.timer=time.monotonic()
+        self.observation_archive_error=None
+        try:
+            self.observation_archive=ObservationArchive(self.data_dir/'raw'/'observation_history.json.gz')
+        except Exception as exc:
+            self.observation_archive=None
+            self.observation_archive_error=str(exc)
+            self.errors.append({'source_id':'observation_archive','error':str(exc)})
         try:
             self.cache=CandleCache(self.data_dir/'raw'/'ohlc_cache.json.gz')
         except Exception as exc:
@@ -204,6 +216,8 @@ class Collector:
         global_market=self.source('coingecko.global',self.cg.base_url+'/global',self.cg.global_market,
                                   timestamp=lambda x:x['source_timestamp_utc'],ttl=1800)
         breadth=self.source('coingecko.breadth',self.cg.base_url+'/coins/markets',self.cg.breadth,ttl=1800)
+        coinbase_quote=self.source('COINBASE.DOTUSD.book',QUOTE_URL,self.coinbase.quote,
+                                   timestamp=lambda value:value['source_timestamp_utc'])
         now=utcnow()
         if breadth:
             for symbol,coin in breadth['coins'].items():
@@ -308,13 +322,25 @@ class Collector:
                 'errors':self.errors,'raw_data':'data/raw/latest.json.gz',
                 'definitions':'docs/FORMULAS.md','status':'partial' if self.errors else 'ok'}
         markets['DOTUSD']['time_fibs']=load_time_fibs(output['generated_at_utc'])
+        observation_frames={(name,minutes):self.closed_frame(name,minutes)
+                            for name,minutes in [('DOTUSD',60),('DOTUSD',240),('BTCUSD',60)]}
+        if not self.sources['COINBASE.DOTUSD.book']['fresh']: coinbase_quote=None
+        observation,record,configuration=build_observations(output,observation_frames,dot_trades,perp_trades,
+                                                          coinbase_quote,self.observation_archive)
+        markets['DOTUSD']['observations']=observation
+        if self.observation_archive_error:
+            observation['components']['spot_perp_history']=block(status='error',reason=self.observation_archive_error)
+            observation['status']='partial'
+        if self.observation_archive is not None and record is not None:
+            self.compute('observation_archive.save',lambda:self.observation_archive.update(
+                record,configuration,configuration['observations']['history_days']))
         current=hourly_record(output)
         output['history_changes']=self.compute('history.update',lambda:self.history.update(current))
         output['history_points']=len(self.history.history)
         self.compute('ohlc_cache.save',self.cache.save)
         raw={'schema_version':2,'generated_at_utc':now.isoformat(),'sources':self.sources,
-             'http_requests':{**self.kraken.http.records,**self.cg.http.records},
-             'responses':{**self.kraken.http.raw,**self.cg.http.raw},'previous_hourly_record':previous,
+             'http_requests':{**self.kraken.http.records,**self.cg.http.records,**self.coinbase.http.records},
+             'responses':{**self.kraken.http.raw,**self.cg.http.raw,**self.coinbase.http.raw},'previous_hourly_record':previous,
              'calculation_context':{'spot_tape_asof_utc':spot_tape_asof.isoformat(),'perp_tape_asof_utc':perp_asof.isoformat(),
                                     'timeframe_asof_utc':{k:v['received_at_utc'] for k,v in self.sources.items() if '.ohlc.' in k}}}
         self.compute('raw.save',lambda:write_json(self.data_dir/'raw'/'latest.json.gz',raw,compressed=True))

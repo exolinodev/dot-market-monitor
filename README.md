@@ -26,6 +26,8 @@ Pro DOT-Timeframe: RSI14, Stoch RSI14/3/3, MACD12/26/9, EMA9/20/21/50/100/200, S
 
 Zusätzlich: bestätigte Fractal- und ATR-ZigZag-Pivots, HH/HL/LH/LL, regelbasierte RSI/MACD-Divergenzen, Fibs aus 0.7324→1.2848 und aktuellen Hauptpivots, bedingte Preisüberlappungsflags, Depth bis ±200bps, Walls, Slippage für USD-/DOT-Grössen, taker-seitige 1m–4h Tape-Aggregate und CVD, Absorptionskandidaten, relative Returns, Korrelation/Beta und realisierte Volatilität.
 
+`markets.DOTUSD.time_fibs` liefert UTC-Zeitprojektionen aus explizit konfigurierten bestätigten Spot-Pivots. Der additive Block `markets.DOTUSD.observations` ergänzt **reine Messwerte**: Schlusskursbeobachtungen an Preislevels, Anchored VWAP, historische Perzentile, rückblickende beta-bereinigte Renditen, benachbarte Orderflow-Fenster, echtes Trade-Volumen nach Preis, Spot-/Perp-Veränderungen, Kraken-/Coinbase-Spot-Quotevergleich und ein begrenztes verifiziertes Terminregister. Richtungsprognosen, Scores, Marktregime und Elliott-Szenarien werden dort nicht erzeugt. Die stündliche ChatGPT-Auswertung bleibt beim [Consumer-Prompt](CHATGPT_MONITOR_PROMPT.md).
+
 ## Architektur und Dateien
 
 ```mermaid
@@ -47,20 +49,29 @@ flowchart LR
 | `src/kraken.py`, `coingecko.py`, `common.py` | echte Responses, Parser, Timeouts, Retries, Circuit Breaker, Freshness |
 | `src/timeframes.py`, `indicators.py`, `structure.py` | Kerzen, Formeln, kausale Struktur, Divergenzen, Fibs |
 | `src/orderflow.py`, `analytics.py`, `history.py` | Orderflow, relative Messwerte, rollender Zustand |
+| `src/observations.py`, `observation_*.py` | isolierte Beobachtungen, Candle-/Trade-Messwerte, einjährige Beobachtungshistorie, Offline-Replay |
+| `src/coinbase.py`, `event_calendar.py` | öffentlicher DOT/USD-Quotevergleich und explizit verifizierte Termine |
+| `config/observations.json`, `time_fibs.json`, `scheduled_events.json` | sichtbare Parameter, manuelle Anchor-Auswahl, Terminquellen und Genauigkeit |
 | `src/pipeline.py`, `output.py`, `main.py` | isolierte Sammlung, Ausgabe, Schema-Prüfung |
 | `data/llm_snapshot.json` | kompakter Consumer-Snapshot; keine Raw-Candle-Arrays |
 | `data/latest.json`, `data/latest.md` | detaillierte Messwerte und Übersicht |
 | `data/history.json` | maximal 720 echte Stundenbeobachtungen / 30 Tage |
 | `data/raw/latest.json.gz` | letzte öffentliche HTTP-Responses, Quellen und Berechnungskontext |
 | `data/raw/ohlc_cache.json.gz` | maximal 4096 native Kerzen pro Instrument/Intervall |
+| `data/raw/observation_history.json.gz` | maximal 365 Tage tatsächlicher Stundenbeobachtungen plus verwendete Konfigurationen; beginnt mit dem neuen Collector |
 | `schema/llm_snapshot.schema.json` | JSON Schema Draft 2020-12 plus zusätzliche numerische Prüfung |
+| `schema/observations.schema.json`, `observations.config.schema.json` | strikter neuer Messwertvertrag und Parameterprüfung; lokal ohne Netzwerk aufgelöst |
 | `tests/fixtures/` | echte öffentliche Kraken-/CoinGecko-Responses mit Capture-Manifest |
 
 Raw-Dateien werden jeweils ersetzt; es entstehen keine neuen grossen Dateien pro Stunde. Die Git-Historie wächst dennoch durch stündliche Daten-Commits. Tests verwenden eingefrorene Fixtures und synthetische Referenzreihen, niemals aktuelle Marktpreise. Es werden keine privaten Konto-, Order- oder Positionsdaten abgefragt.
 
+Die neue Beobachtungshistorie ergänzt die bestehende 30-Tage-History. Sie enthält keine Prognosen oder Ergebnislabels und füllt fehlende Zeiträume nicht rückwirkend auf. Neue Kennzahlen nennen Zeitfenster, Quellen, Stichprobengrösse und Einschränkungen. Ein `partial`-Status beschreibt Datenverfügbarkeit. Das Terminregister wird bewusst manuell verifiziert; aktuelle Einträge enthalten nur belegte FOMC-Sitzungstage, keine behaupteten Entscheidungsuhrzeiten und keine vollständige Makro-/DOT-Ereignisabdeckung.
+
 ## Datenquellen und Einheiten
 
 Öffentliche [Kraken Spot API](https://docs.kraken.com/openapi/spot-rest.yaml): `Ticker`, `OHLC`, `Trades`, `Spread`, `Depth`. Öffentliche [Kraken Futures API](https://docs.kraken.com/openapi/futures-rest.yaml): `tickers/PF_DOTUSD`, `instruments`, `orderbook`, `history` mit `lastTime`-Pagination. Die Futures-Feldnamen wurden am echten Response geprüft; unbekannte Felder bleiben im Raw-Archiv, fehlende optionale Felder werden null.
+
+Zusätzlich: öffentliche Coinbase Exchange [`DOT-USD`-Produktdefinition](https://api.exchange.coinbase.com/products/DOT-USD) und [`book?level=1`](https://api.exchange.coinbase.com/products/DOT-USD/book?level=1). Geprüft werden Spot-Produkt, USD-Quote, Handelsstatus, Mengen und Exchange-Zeitstempel; die Kraken-Kerzen und bestehenden Spotpreise werden dadurch nicht ersetzt. Der zusätzliche Client braucht keinen API-Key. Termine stammen aus dem [offiziellen Fed-Kalender](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm), mit Verifikationszeit und Quellenbeleg im Repository.
 
 [CoinGecko Global](https://api.coingecko.com/api/v3/global) und [Coins/Markets](https://api.coingecko.com/api/v3/coins/markets): historische 1h/24h/7d Coin-Returns aus tatsächlich gelieferten Feldern. Dominanz-/TOTAL3-Veränderungen werden aus eigenen Stunden-Snapshots berechnet. TOTAL3 ist ausdrücklich ein Proxy auf Basis des CoinGecko-Universums.
 
@@ -97,6 +108,8 @@ python src/main.py
 python scripts/validate_snapshot.py --live
 ```
 
+Offline neu generieren: `python src/main.py --from-latest`. Das verwendet die gespeicherten Messwerte, Raw-Trades und Quellen-Empfangszeiten, behält die ursprüngliche Snapshot-Zeit bei und schreibt keine History-/Cache-Beobachtungen hinzu. Neue Quellen, die im alten Raw-Archiv fehlen, bleiben unavailable/partial. Die bestehende v2-Struktur bleibt gültig, wenn der neue Beobachtungsblock fehlt.
+
 Optional: `COINGECKO_API_KEY` als Umgebungsvariable oder GitHub Actions Secret mit einem Demo-API-Key. Kraken braucht keinen Schlüssel. CoinGecko wird ohne Schlüssel versucht; Einschränkungen oder Rate Limits werden als Quellenstatus gemeldet. Keine `.env` oder Tokens committen.
 
 Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; pytest wird nur über `tests/requirements.txt` installiert.
@@ -107,9 +120,9 @@ Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; py
 
 Ziel: Daten bis zur folgenden vollen Stunde verfügbar machen. Der Puffer berücksichtigt Startverzögerungen, Laufzeit und den GitHub-Raw-Cache (beobachtet: bis zu fünf Minuten). Auch Cloudflare und extern gestartete GitHub-Runner bieten keine feste Zusage zur vollen Stunde. ChatGPT muss immer `meta.generated_at_utc` und die Quellen-Freshness prüfen. Der Snapshot enthält den tatsächlichen Erfassungszeitpunkt und keine vorgetäuschten Kurse der vollen Stunde. Manuelle Starts per `workflow_dispatch` und passende Code-Pushes auf `main` bleiben möglich.
 
-Der stündliche Job besteht aus Checkout des aktuellen `main`, Python-/pip-Cache, Installation der Produktionsabhängigkeiten, Datensammlung und bedingtem Commit. Er installiert kein pytest und führt keine Tests aus. Die harte Schema-/Plausibilitätsprüfung bleibt direkt in `src/main.py` vor dem Schreiben enthalten. `contents: write` und eine gemeinsame Concurrency-Gruppe erlauben geordnete Daten-Updates. Nur die sechs festgelegten Output-/State-Dateien werden gestaged; `git diff --cached --quiet` verhindert Commits ohne Änderungen.
+Der stündliche Job besteht aus Checkout des aktuellen `main`, Python-/pip-Cache, Installation der Produktionsabhängigkeiten, Datensammlung und bedingtem Commit. Er installiert kein pytest und führt keine Tests aus. Die harte Schema-/Plausibilitätsprüfung bleibt direkt in `src/main.py` vor dem Schreiben enthalten. `contents: write` und eine gemeinsame Concurrency-Gruppe erlauben geordnete Daten-Updates. Die festgelegten Output-/State-Dateien einschliesslich der neuen Beobachtungshistorie werden gestaged; `git diff --cached --quiet` verhindert Commits ohne Änderungen.
 
-Der separate Testworkflow läuft ausschliesslich bei Pushes auf `main` oder Pull Requests mit Änderungen an `src/**`, `tests/**`, `requirements.txt` an `scripts/collection_due.py` oder `.github/workflows/**`. Reine Daten- und README-Änderungen starten keine Tests. Er installiert zusätzlich die gepinnten Test-Abhängigkeiten aus `tests/requirements.txt` und prüft den Cloudflare-Starter mit `node --test tests/scheduler.test.mjs`. Node und Wrangler werden nicht im stündlichen Collector installiert.
+Der separate Testworkflow läuft ausschliesslich bei Pushes auf `main` oder Pull Requests mit Änderungen an `src/**`, `tests/**`, `config/**`, `schema/**`, `requirements.txt`, `scripts/collection_due.py` oder `.github/workflows/**`. Reine Daten- und README-Änderungen starten keine Tests. Er installiert zusätzlich die gepinnten Test-Abhängigkeiten aus `tests/requirements.txt` und prüft den Cloudflare-Starter mit `node --test tests/scheduler.test.mjs`. Node und Wrangler werden nicht im stündlichen Collector installiert.
 
 Bei 24 geplanten Läufen täglich entstehen 720 Collector-Jobs pro 30 Tage; Test-Jobs kommen nur bei passenden Codeänderungen hinzu. Bei beispielsweise 40 Sekunden pro Collector sind das acht Stunden tatsächliche Laufzeit pro 30 Tage. Die wirkliche Dauer steht im jeweiligen Actions-Run. Für dieses öffentliche Repository sind Standard-GitHub-Runner kostenlos; bei privaten Repositories gelten Kontingente und die Abrechnung pro Job mit aufgerundeten Minuten.
 

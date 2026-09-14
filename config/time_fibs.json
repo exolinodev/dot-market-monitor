@@ -6,6 +6,7 @@
     "count_b_same_degree_2026_09": {
       "market": "DOTUSD",
       "selection": "explicit_same_degree",
+      "selection_recorded_at_utc": "2026-09-14T18:24:05Z",
       "ratios": ["0.618", "1.000", "1.272", "1.618"],
       "anchors": [
         {
