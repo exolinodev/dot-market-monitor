@@ -22,13 +22,21 @@ from oracle_scorecard import scorecard
 
 def run(prompt_path,snapshots,output,model=None,endpoint='https://api.openai.com/v1/chat/completions'):
     prompt=prompt_path.read_text()
+    eligible=[];skipped=[]
+    for path in snapshots:
+        snapshot=json.loads(path.read_text())
+        dot=snapshot['markets']['DOTUSD']
+        if not (dot.get('observations') or {}).get('config_sha256') or not (dot.get('oracle_context') or {}).get('current_features'):
+            skipped.append({'snapshot_sha256':digest(snapshot),'reason':'original_measurement_config_or_oracle_inputs_unavailable'})
+        else: eligible.append(path)
     manifest={'prompt_sha256':hashlib.sha256(prompt.encode()).hexdigest(),'model':model,
         'snapshot_sha256':[digest(json.loads(p.read_text())) for p in snapshots],
+        'eligible_snapshot_count':len(eligible),'skipped_snapshots':skipped,
         'mode':'actual_model_invocation' if model else 'prepare_only', 'future_context_in_requests':False}
     output.mkdir(parents=True,exist_ok=True)
     create_only(output/'manifest.json',manifest)
     create_only(output/'frozen_prompt.json',{'text':prompt})
-    for path in snapshots:
+    for path in eligible:
         snapshot=json.loads(path.read_text())
         request={'model':model,'messages':[{'role':'system','content':prompt},
             {'role':'user','content':'Historical point-in-time experiment. Use the snapshot time as creation time. Return only the oracle_forecast JSON.\n'+canonical(snapshot)}],
@@ -37,6 +45,7 @@ def run(prompt_path,snapshots,output,model=None,endpoint='https://api.openai.com
         request['messages'][1]['content'] += '\nDeterministic snapshot_sha256: '+digest(snapshot)
         ident=digest(snapshot)
         create_only(output/(ident+'-request.json'),request)
+        create_only(output/(ident+'-snapshot.json'),snapshot)
         if model:
             key=os.environ.get('OPENAI_API_KEY')
             if not key: raise RuntimeError('OPENAI_API_KEY required; no generated model results are available')
@@ -55,6 +64,8 @@ def evaluate_experiment(directory,data_dir):
     forecasts=[json.loads(p.read_text()) for p in sorted(directory.glob('*-forecast.json'))]
     outcomes=[]
     for forecast in forecasts:
+        snapshot=json.loads((directory/(forecast['snapshot_sha256']+'-snapshot.json')).read_text())
+        validate_forecast(forecast,snapshot)
         out=evaluate_forecast(forecast,frames,latest['generated_at_utc'])
         create_only(directory/(forecast['forecast_id']+'-outcome.json'),out)
         outcomes.append(out)

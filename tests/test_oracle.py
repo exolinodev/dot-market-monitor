@@ -251,6 +251,9 @@ def test_end_to_end_lifecycle(tmp_path,actual):
     old={p:p.read_bytes() for p in paths}
     assert build_context(future,tmp_path,persist=True)==c
     assert {p:p.read_bytes() for p in paths}==old
+    from oracle_evaluator import verify_outcome
+    forged=json.loads(paths[0].read_text());h=next(iter(forged['horizons']));forged['horizons'][h]['r_multiple']=999
+    with pytest.raises(ValueError,match='recomputation'):verify_outcome(forged,f,tmp_path)
 
 
 def test_exit_candle_extrema_are_not_claimed_as_pre_exit_excursions():
@@ -367,3 +370,32 @@ def test_new_confirmed_structure_is_a_response_family(cfg):
     g=evidence(f,cfg)['reversal_gates']['downside']
     assert g['abc_ready'] and g['trigger_candidate']
     assert 'structure.1h.new_low' in g['response_feature_ids']
+
+
+def test_concurrent_publication_has_exactly_one_complete_forecast(tmp_path,actual):
+    from concurrent.futures import ThreadPoolExecutor
+    actual['markets']['DOTUSD']['oracle_context']=build_context(actual,ROOT/'data')
+    snapshot=compact_snapshot(actual);f=fixture_forecast(snapshot)
+    def publish():
+        try:return persist_forecast(f,snapshot,tmp_path,f['created_at_utc'])
+        except FileExistsError:return None
+    with ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(lambda _:publish(),range(4)))
+    assert sum(r is not None for r in results)==1
+    path=next(r for r in results if r is not None)
+    assert json.loads(path.read_text())==f
+
+
+def test_matured_missing_coverage_is_counted_and_retryable(tmp_path,actual):
+    attach_oracle(actual,tmp_path,persist=True)
+    snapshot=compact_snapshot(actual);f=fixture_forecast(snapshot)
+    persist_forecast(f,snapshot,tmp_path/'oracle',f['created_at_utc'])
+    future=copy.deepcopy(actual);future['generated_at_utc']='2026-09-17T07:00:00Z'
+    c=build_context(future,tmp_path,persist=True)
+    assert len(c['model_scorecard']['groups'])==3
+    assert all(g['unavailable_partial_count']==1 for g in c['model_scorecard']['groups'])
+    assert not list((tmp_path/'oracle/outcomes').glob('*/*.json'))
+    frame=bars();write_json(tmp_path/'raw/ohlc_cache.json.gz',{'DOTUSD.ohlc.1':encode_candles(frame)},compressed=True)
+    future['sources']['DOTUSD.ohlc.1'].update(fresh=True,received_at_utc=future['generated_at_utc'])
+    c=build_context(future,tmp_path,persist=True)
+    assert all(g['unavailable_partial_count']==0 for g in c['model_scorecard']['groups'])
+    assert len(list((tmp_path/'oracle/outcomes').glob('*/*.json')))==3

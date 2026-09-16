@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
 from oracle_context import load_forecasts
 from oracle_common import validate
+from oracle_evaluator import verify_outcome
 
 
 def check(base,head='HEAD',repo=Path('.')):
@@ -17,7 +18,11 @@ def check(base,head='HEAD',repo=Path('.')):
         status,path=line.split('\t',1)
         if status!='A': raise ValueError('Immutable Oracle artifact modified or removed: '+path)
     # Validate all forecast bindings as well as the proposed additions.
-    load_forecasts(repo/'data','2260-01-01T00:00:00Z')
+    forecasts={f['forecast_id']:f for f in load_forecasts(repo/'data','2260-01-01T00:00:00Z')}
+    for path in (repo/'data/oracle/outcomes').glob('*/*.json'):
+        out=json.loads(path.read_text())
+        if out['forecast_id'] not in forecasts: raise ValueError('Outcome has no published forecast')
+        verify_outcome(out,forecasts[out['forecast_id']],repo/'data')
     return True
 
 

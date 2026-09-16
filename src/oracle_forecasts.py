@@ -63,20 +63,24 @@ def validate_forecast(f, snapshot=None):
     return f
 
 
-def create_only(path, value):
-    """Hard-link an fsynced temporary file; atomic and fails if destination exists."""
+def create_only_bytes(path, payload):
+    """Hard-link fsynced bytes atomically; concurrent writers never read half a file."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix='.oracle-', dir=path.parent)
     try:
-        with os.fdopen(fd, 'w') as stream:
-            stream.write(canonical(value)+'\n')
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
         os.link(temp, path)
     finally:
         os.unlink(temp)
     return path
+
+
+def create_only(path, value):
+    return create_only_bytes(path, (canonical(value)+'\n').encode())
 
 
 def persist_forecast(f, snapshot, directory, now):
@@ -92,7 +96,7 @@ def persist_forecast(f, snapshot, directory, now):
     evidence.parent.mkdir(parents=True, exist_ok=True)
     payload = gzip.compress(canonical(snapshot).encode(), mtime=0)
     try:
-        with evidence.open('xb') as stream: stream.write(payload)
+        create_only_bytes(evidence, payload)
     except FileExistsError:
         if gzip.decompress(evidence.read_bytes()) != canonical(snapshot).encode():
             raise ValueError('Existing snapshot evidence mismatch')

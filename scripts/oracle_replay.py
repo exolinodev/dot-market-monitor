@@ -9,6 +9,8 @@ import collections
 import json
 from pathlib import Path
 import subprocess
+import tempfile
+import hashlib
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
 from oracle_common import configuration, digest, canonical, validate
@@ -22,8 +24,8 @@ from observation_common import utc
 from common import write_json
 
 
-def historical_snapshots(repo):
-    shas=subprocess.check_output(['git','log','--format=%H','--reverse','--','data/latest.json'],cwd=repo,text=True).splitlines()
+def historical_snapshots(repo,source_ref):
+    shas=subprocess.check_output(['git','log','--format=%H','--reverse',source_ref,'--','data/latest.json'],cwd=repo,text=True).splitlines()
     unique={}
     for sha in shas:
         raw=subprocess.check_output(['git','show',f'{sha}:data/latest.json'],cwd=repo)
@@ -37,11 +39,15 @@ def historical_snapshots(repo):
     return [hourly[k] for k in sorted(hourly)]
 
 
-def replay(repo,output,export_snapshots=None):
+def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
     cfg,_=configuration()
-    snapshots=historical_snapshots(repo)
+    snapshots=historical_snapshots(repo,source_ref)
     latest=snapshots[-1][1]
-    frames=outcome_frames(latest,Path(repo)/'data')
+    cache_bytes=subprocess.check_output(['git','show',snapshots[-1][0]+':data/raw/ohlc_cache.json.gz'],cwd=repo)
+    with tempfile.TemporaryDirectory(prefix='oracle-labels-') as temp:
+        raw=Path(temp)/'raw';raw.mkdir()
+        (raw/'ohlc_cache.json.gz').write_bytes(cache_bytes)
+        frames=outcome_frames(latest,temp)
     cutoff=latest['generated_at_utc']
     rows=[];history=[];availability=collections.Counter();counts=collections.Counter();max_size=0
     for sha,data in snapshots:
@@ -90,7 +96,8 @@ def replay(repo,output,export_snapshots=None):
         warning_checks[side]={'abc_count':len(armed),'matured_4h_count':len(known),
             'adverse_4h_return_count':sum(r['labels']['4h']['forward_return_pct']*(1 if side=='downside' else -1)<0 for r in known),
             'interpretation':'diagnostic only; no threshold fitting, no LLM forecast, no execution backtest'}
-    report={'methodology':'git-snapshot-walk-forward-v1','feature_version':cfg['feature_version'],
+    report={'source_ref_sha':subprocess.check_output(['git','rev-parse',source_ref],cwd=repo,text=True).strip(),
+        'label_cache_sha256':hashlib.sha256(cache_bytes).hexdigest(),'methodology':'git-snapshot-walk-forward-v1','feature_version':cfg['feature_version'],
         'config_sha256':digest(cfg),'actual_snapshot_count':len(rows),
         'first_reference':rows[0]['record']['reference_at_utc'],'last_reference':rows[-1]['record']['reference_at_utc'],
         'availability_count':dict(availability),'evidence_gate_counts':dict(counts),'outcome_coverage':label_counts,
@@ -118,4 +125,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--repo',type=Path,default=Path('.'))
     p.add_argument('--output',type=Path,default=Path('docs/evaluation/oracle-v3'))
     p.add_argument('--export-snapshots',type=Path)
-    a=p.parse_args();replay(a.repo,a.output,a.export_snapshots)
+    p.add_argument('--ref',default='origin/main',help='Immutable original source revision or branch; recorded in report')
+    a=p.parse_args();replay(a.repo,a.output,a.export_snapshots,a.ref)

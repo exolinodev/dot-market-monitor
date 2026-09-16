@@ -7,7 +7,7 @@ from oracle_common import configuration, FEATURE_VERSION, STRATEGY_VERSION, EVAL
 from oracle_features import feature_inputs, build_features
 from oracle_history import FeatureArchive
 from oracle_forecasts import validate_forecast, create_only
-from oracle_evaluator import evaluate_forecast
+from oracle_evaluator import evaluate_forecast, verify_outcome
 from oracle_scorecard import scorecard
 from oracle_analogs import market_analogs
 from observation_common import utc, iso
@@ -36,7 +36,9 @@ def load_forecasts(directory, reference):
     for path in sorted((Path(directory)/'oracle/forecasts').glob('*/*/*/*.json')):
         f=json.loads(path.read_text())
         validate_forecast(f)
-        if path.stem!=f['forecast_id']: raise ValueError('Forecast filename does not match ID')
+        expected=utc(f['created_at_utc']).strftime('%Y/%m/%d')+'/'+f['forecast_id']+'.json'
+        if path.relative_to(Path(directory)/'oracle/forecasts').as_posix()!=expected:
+            raise ValueError('Forecast path does not match creation date and ID')
         if utc(f['created_at_utc'])>utc(reference): continue
         evidence=Path(directory)/'oracle/inputs'/(f['snapshot_sha256']+'.json.gz')
         snapshot=json.loads(gzip.decompress(evidence.read_bytes()))
@@ -65,7 +67,7 @@ def build_context(data, directory, persist=False, cfg=None):
             path=root/'oracle/outcomes'/f['forecast_id']/(EVALUATOR_VERSION+'-'+h+'.json')
             if path.exists():
                 out=json.loads(path.read_text())
-                validate(out,'oracle_outcome.schema.json')
+                verify_outcome(out,f,root)
                 if out['forecast_sha256']!=digest(f): raise ValueError('Immutable forecast was modified')
                 if utc(out['evaluated_at_utc'])<=utc(ref): outcomes.append(out)
                 continue
@@ -73,6 +75,10 @@ def build_context(data, directory, persist=False, cfg=None):
             result=evaluated['horizons'][h]
             if result['status'] in ('pending','partial','unavailable'):
                 pending.append({'forecast_id':f['forecast_id'],'horizon':h,'status':result['status']})
+                if result['status']!='pending':
+                    out={**evaluated,'horizons':{h:result}}
+                    validate(out,'oracle_outcome.schema.json')
+                    outcomes.append(out)  # Count missing coverage, but retry rather than finalise.
                 continue
             out={**evaluated,'horizons':{h:result}}
             validate(out,'oracle_outcome.schema.json')

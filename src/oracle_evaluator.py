@@ -167,3 +167,28 @@ def evaluate_forecast(f, frames, now):
         'oracle_config_sha256':f['oracle_config_sha256'],'measurement_config_sha256':f['measurement_config_sha256'],
         'regime':f['regime'],'direction':f['trade_setup']['direction'], 'evaluated_at_utc':iso(now),
         'horizons':{f'{h}h':evaluate_horizon(f,h,frames,now) for h in (1,4,12)}}
+
+
+def verify_outcome(out, forecast, directory):
+    """Recompute archived grades from bound candles before accepting them as feedback."""
+    import json
+    from pathlib import Path
+    from oracle_common import validate
+    from timeframes import decode_candles
+    validate(out,'oracle_outcome.schema.json')
+    if out['forecast_sha256'] != digest(forecast): raise ValueError('Outcome forecast fingerprint mismatch')
+    for horizon, result in out['horizons'].items():
+        if result['status'] in ('partial','unavailable','pending'):
+            raise ValueError('Only fully covered outcomes may be finalised')
+        path=Path(directory)/'oracle/outcome_inputs'/(result['candle_sha256']+'.json')
+        evidence=json.loads(path.read_text())
+        if digest(evidence['candles'])!=result['candle_sha256']:
+            raise ValueError('Outcome candle fingerprint mismatch')
+        if evidence['source_id']!=result['source_id'] or evidence['interval_minutes']!=result['interval_minutes']:
+            raise ValueError('Outcome candle lineage mismatch')
+        frames={evidence['interval_minutes']:decode_candles(evidence['candles'])}
+        expected=evaluate_forecast(forecast,frames,out['evaluated_at_utc'])
+        expected['horizons']={horizon:expected['horizons'][horizon]}
+        single={**out,'horizons':{horizon:result}}
+        if expected!=single: raise ValueError('Archived outcome differs from deterministic recomputation')
+    return True
