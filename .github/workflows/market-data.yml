@@ -66,10 +66,21 @@ jobs:
           if [ -f data/raw/observation_history.json.gz ]; then
             git add data/raw/observation_history.json.gz
           fi
+          if [ -f data/raw/oracle_feature_history.json.gz ]; then
+            git add data/raw/oracle_feature_history.json.gz data/oracle_scorecard.json data/oracle/pending_outcomes.json
+          fi
+          if [ -d data/oracle/outcomes ]; then
+            git add data/oracle/outcomes data/oracle/outcome_inputs
+          fi
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "data: hourly market snapshot"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git commit -m "data: hourly market snapshot and oracle evaluation"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main || exit 1
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          echo "Push race unresolved; no force push or binary archive overwrite attempted"
+          exit 1

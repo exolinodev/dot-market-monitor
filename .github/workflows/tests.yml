@@ -9,7 +9,12 @@ on:
       - "schema/**"
       - "tests/**"
       - "requirements.txt"
-      - "scripts/collection_due.py"
+      - "scripts/**"
+      - "data/oracle/forecasts/**"
+      - "data/oracle/inputs/**"
+      - "data/oracle/outcomes/**"
+      - "data/oracle/outcome_inputs/**"
+      - "CHATGPT_MONITOR_PROMPT.md"
       - ".github/workflows/**"
   pull_request:
     paths:
@@ -18,7 +23,12 @@ on:
       - "schema/**"
       - "tests/**"
       - "requirements.txt"
-      - "scripts/collection_due.py"
+      - "scripts/**"
+      - "data/oracle/forecasts/**"
+      - "data/oracle/inputs/**"
+      - "data/oracle/outcomes/**"
+      - "data/oracle/outcome_inputs/**"
+      - "CHATGPT_MONITOR_PROMPT.md"
       - ".github/workflows/**"
 
 permissions:
@@ -30,6 +40,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.12"
@@ -39,6 +51,11 @@ jobs:
             tests/requirements.txt
       - run: python -m pip install --disable-pip-version-check --progress-bar off -r tests/requirements.txt
       - run: python -m pytest -q
+      - name: Guard immutable Oracle audit records
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python scripts/check_oracle_archive.py --base "$BASE_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
