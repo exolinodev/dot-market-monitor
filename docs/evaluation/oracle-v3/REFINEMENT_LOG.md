@@ -8,6 +8,13 @@
 | 2 | Bound consumer scorecard groups; cache schema validators; atomically create forecast **and input evidence**; reject archive changes in CI; retry pushes without force or conflict replacement. | Compact context remains below 45 KB. Concurrent publication permits exactly one complete forecast. Historical forecasts remain absent rather than fabricated. Final grades are rechecked by deterministic recomputation of archived candle evidence; matured missing coverage is counted and remains retryable. |
 | 2 | Rewrite consumer around actual implemented IDs/schema; preserve original v2 prompt; prepare point-in-time model harness requests. | No model API key: no model invocations or claimed v2/v3 performance comparison. |
 
+Final boundary audit: the existing measurement layer permits a small positive
+source-clock skew. A regression fixture with an OI timestamp one second beyond the
+snapshot reproduced a future Oracle coverage endpoint, even though its value was
+unavailable. Oracle now rejects future source timestamps independently and clears
+invalid/future coverage endpoints. Existing measurement freshness semantics stay
+unchanged. The new regression passes and the historical replay is unchanged.
+
 No signal threshold was optimised or changed after the replay. Fixed scales and
 minimum samples were chosen as transparent starting assumptions. The only config
 addition in refinement caps scorecard context size. No train/holdout profitability

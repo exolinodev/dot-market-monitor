@@ -67,17 +67,19 @@ def build_features(inputs, history=(), cfg=None):
 
     def fresh(ids):
         return bool(ids) and all(sources.get(s, {}).get('fresh') is True and
+            sources[s].get('source_timestamp_utc') is not None and utc(sources[s]['source_timestamp_utc']) <= ref and
             sources[s].get('received_at_utc') is not None and utc(sources[s]['received_at_utc']) <= ref and
             freshness(sources[s].get('source_timestamp_utc'), ref, sources[s].get('max_age_seconds', 120))['fresh']
             for s in ids)
 
     def add(key, val, unit, ids, start=None, end=None, reason=None, extra=None):
-        good = val is not None and fresh(ids) and end is not None and utc(end) <= ref
+        coverage_valid = end is not None and utc(end) <= ref and (start is None or utc(start) <= utc(end))
+        good = val is not None and fresh(ids) and coverage_valid
         f[key] = {'value': val if good else None, 'unit': unit,
             'status': 'ok' if good else 'unavailable',
-            'reason': None if good else reason or 'missing_stale_or_future_input',
-            'source_ids': list(ids), 'coverage': {'start_utc': iso(start) if start else None,
-                'end_utc': iso(end) if end else None, **(extra or {})}, 'methodology': FEATURE_VERSION}
+            'reason': None if good else ('invalid_or_future_coverage' if not coverage_valid and end is not None else reason or 'missing_stale_or_future_input'),
+            'source_ids': list(ids), 'coverage': {'start_utc': iso(start) if start and coverage_valid else None,
+                'end_utc': iso(end) if end and utc(end) <= ref else None, **(extra or {})}, 'methodology': FEATURE_VERSION}
         return value(f, key)
 
     def prior(key, hours=1):

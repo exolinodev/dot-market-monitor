@@ -399,3 +399,13 @@ def test_matured_missing_coverage_is_counted_and_retryable(tmp_path,actual):
     c=build_context(future,tmp_path,persist=True)
     assert all(g['unavailable_partial_count']==0 for g in c['model_scorecard']['groups'])
     assert len(list((tmp_path/'oracle/outcomes').glob('*/*.json')))==3
+
+
+def test_future_input_coverage_is_not_exported_as_a_valid_feature_time(actual):
+    inp=feature_inputs(actual);future=iso(utc(inp['reference_at_utc'])+pd.Timedelta(seconds=1))
+    for h in ('1h','4h','24h'):
+        inp['observations']['components']['spot_perp_history']['data']['changes'][h]['data']['open_interest_dot']['source_timestamp_utc']=future
+    inp['sources']['DOTPERP.ticker']['source_timestamp_utc']=future
+    f=build_features(inp)['features']
+    assert value(f,'oi.1h.change_pct') is None
+    assert all(x['coverage']['end_utc'] is None or utc(x['coverage']['end_utc'])<=utc(inp['reference_at_utc']) for x in f.values())

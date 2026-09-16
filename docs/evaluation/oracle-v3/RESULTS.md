@@ -32,7 +32,7 @@ in `consumer_v2_frozen.md`; the v3 prompt is version 3.0.0.
 
 ## Verification
 
-- Full Python suite: **234 passed** (199 existing plus 35 Oracle cases).
+- Full Python suite: **235 passed** (199 existing plus 36 Oracle cases).
 - Cloudflare scheduler suite: **17 passed**.
 - Root snapshot validates as schema v2: 43 sources, 291,278 bytes.
 - Canonical Oracle context: 23,273 bytes, below its 45,000-byte budget.
