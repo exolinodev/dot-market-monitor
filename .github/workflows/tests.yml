@@ -1,6 +1,12 @@
 name: Tests
 
 on:
+  workflow_dispatch:
+    inputs:
+      live_collection:
+        description: Run a real collector in an isolated directory and upload its outputs
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -61,3 +67,49 @@ jobs:
           node-version: "22"
       - name: Test Cloudflare scheduler
         run: node --test tests/scheduler.test.mjs
+
+  live-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.live_collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --disable-pip-version-check --progress-bar off -r requirements.txt
+      - name: Collect real market data without publishing to main
+        env:
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/oracle-smoke"
+          cp -R data/. "$RUNNER_TEMP/oracle-smoke/"
+          python src/main.py --data-dir "$RUNNER_TEMP/oracle-smoke"
+      - name: Verify fresh Oracle context
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from datetime import datetime, timezone
+          from output import validate_snapshot
+          p = Path(os.environ['RUNNER_TEMP']) / 'oracle-smoke/llm_snapshot.json'
+          s = json.loads(p.read_text())
+          validate_snapshot(s)
+          ref = datetime.fromisoformat(s['meta']['generated_at_utc'].replace('Z', '+00:00'))
+          assert 0 <= (datetime.now(timezone.utc)-ref).total_seconds() <= 900
+          assert s['meta']['fresh'] and s['meta']['status'] in ('ok', 'partial')
+          c = s['markets']['DOTUSD']['oracle_context']
+          assert c['schema_version'] == 1 and c['current_features']['features']
+          print(json.dumps({'generated_at_utc': s['meta']['generated_at_utc'],
+              'status': s['meta']['status'], 'oracle_status': c['status'],
+              'feature_count': len(c['current_features']['features'])}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oracle-live-smoke
+          path: ${{ runner.temp }}/oracle-smoke/
+          retention-days: 7

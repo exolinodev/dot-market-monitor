@@ -58,6 +58,8 @@ def regenerate_snapshot(data_dir=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--data-dir',type=Path,default=DATA_DIR,
+        help='Output/history directory; use an isolated directory for live smoke tests')
     parser.add_argument('--from-latest',action='store_true',help='Rebuild from latest.json without fetching data or advancing its timestamp/history')
     args=parser.parse_args()
-    regenerate_snapshot() if args.from_latest else main()
+    regenerate_snapshot(args.data_dir) if args.from_latest else main(args.data_dir)
