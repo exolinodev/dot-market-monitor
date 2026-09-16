@@ -22,6 +22,8 @@ def main(data_dir=None):
     validate_snapshot(compact)
     write_json(target/'latest.json',data)
     write_json(target/'llm_snapshot.json',compact)
+    from oracle_consumer import write_consumer_bundle
+    write_consumer_bundle(compact,target)
     (target/'latest.md').write_text(markdown_summary(data),encoding='utf-8')
     print(f"Wrote {target/'llm_snapshot.json'} ({(target/'llm_snapshot.json').stat().st_size:,} bytes)")
     print(f"Status: {data['status']}; {len(data['sources'])} sources; {len(data['errors'])} errors")
@@ -52,6 +54,8 @@ def regenerate_snapshot(data_dir=None):
     validate_snapshot(compact)
     write_json(target/'latest.json',data)
     write_json(target/'llm_snapshot.json',compact)
+    from oracle_consumer import write_consumer_bundle
+    write_consumer_bundle(compact,target)
     print(f"Regenerated {target/'llm_snapshot.json'} from saved data at {data['generated_at_utc']}")
     return data
 

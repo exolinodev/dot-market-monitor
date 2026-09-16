@@ -22,7 +22,7 @@ erfolgreich und bietet Abstand zum Verbraucher. GitHub und ChatGPT garantieren
 keinen minutengenauen Start. Die nächste reguläre Sammlung bewertet inzwischen
 gereifte 1h/4h/12h-Horizonte automatisch. Dafür ist kein zusätzlicher LLM-Job nötig.
 
-## Aufgabenprompt 3.0.2
+## Aufgabenprompt 3.0.3
 
 Der private Aufgabenprompt enthält eine eigenständige Betriebsanweisung und lädt
 die ausführliche `CHATGPT_MONITOR_PROMPT.md` sowie das Forecast-Schema am selben
@@ -98,6 +98,38 @@ gestartet. Sie löste zudem einen echten Collector-Wiederanlauf aus:
 erfolgreicher neuer Daten-Commit `3edc0ac38bf452541cfdf2f3242db389242b52bd`.
 Die nächste Prompt-Iteration verhindert die Übernahme des alten v2-Prompts von
 `main` vor dem Rollout und begrenzt Statuspolling. Das Modell blieb unverändert.
+
+## Im Browser gefundener Zugriffsfehler und Korrektur
+
+Der erste echte ChatGPT-Lauf brach nach rund neun Minuten mit NO_TRADE ab:
+Der Recovery war erfolgreich, aber die 289-KB-Snapshot-Datei konnte mit den dort
+verfügbaren Werkzeugausgaben nicht vollständig ausgewertet werden. Das war ein
+Verbraucherproblem, kein Fehler der Marktquellen. Die Aufgabe erfand richtigerweise
+keine fehlenden Werte. Ihre Störungsmeldung begann allerdings noch mit einer
+Erklärung statt ORACLE CALL; der Aufgabenprompt wurde auch dafür präzisiert.
+
+`src/oracle_consumer.py` exportiert deshalb zusätzlich
+`data/oracle/consumer/index.json` mit versioniertem Format, vollständigem
+Snapshot-Hash und Teildateien von höchstens 10.000 Bytes. Deren Pfade sind relativ
+zum Indexverzeichnis. Jeder Record ist ein JSON-Pointer und exakt dessen
+Originalwert. Kein Indikator wird neu berechnet, kein ausgelassenes Feld ersetzt.
+Die Teile enthalten Überblick, Oracle-Metadaten/Feedback, alle Features,
+geschlossene DOT-Zeitrahmen, Struktur, Zeitfenster, ausgewählte Beobachtungen und
+Quellenstatus. Intrabar-Daten und ausgelassene Detailindikatoren sind daraus
+nicht bekannt; bei Bedarf bleibt die vollständige Datei verfügbar.
+
+Im ersten echten Beispiel sind das 14 Teile mit zusammen etwa 101 KB statt
+einer unteilbaren 289-KB-Antwort. Die kleine Indexdatei und Teilgrössen machen
+den Zugriff auch bei gekürzten Dateitools prüfbar. Python berechnet den Hash
+über den vollständigen Snapshot; der Forecast-Writer lädt diesen später selbst
+und validiert die Bindung. Ein Consumer darf den berechneten Index-Hash
+übernehmen, statt ihn zu erraten. Alle Teile müssen vom gleichen Commit stammen.
+
+Vier zusätzliche Tests prüfen jeden exportierten Wert gegen den vollständigen
+Snapshot, deterministische Reihenfolge, Teilegrössen/Hashes, fehlenden v3-Kontext,
+JSON-Pointer-Aufteilung und dass nur rollierende Projektionsdateien ersetzt werden.
+Die echten Testdaten liegen unter `docs/evaluation/oracle-v3/consumer-smoke/`,
+ausdrücklich als Testdatensatz markiert, ohne veröffentlichten Modell-Forecast.
 
 Der produktive v3-Writer kann erst nach Freigabe/Merge des Oracle-PR auf `main`
 ausgeführt werden. Bis dahin benutzt der ChatGPT-Job den expliziten Übergangsmodus.

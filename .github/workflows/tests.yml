@@ -95,6 +95,8 @@ jobs:
           from pathlib import Path
           from datetime import datetime, timezone
           from output import validate_snapshot
+          from oracle_common import digest
+          from oracle_consumer import PART_BYTES
           p = Path(os.environ['RUNNER_TEMP']) / 'oracle-smoke/llm_snapshot.json'
           s = json.loads(p.read_text())
           validate_snapshot(s)
@@ -103,6 +105,12 @@ jobs:
           assert s['meta']['fresh'] and s['meta']['status'] in ('ok', 'partial')
           c = s['markets']['DOTUSD']['oracle_context']
           assert c['schema_version'] == 1 and c['current_features']['features']
+          index = json.loads((p.parent / 'oracle/consumer/index.json').read_text())
+          assert index['snapshot_sha256'] == digest(s)
+          for part in index['parts']:
+              path = p.parent / 'oracle/consumer' / part['path']
+              assert path.stat().st_size == part['bytes'] <= PART_BYTES
+              assert digest(json.loads(path.read_text())) == part['sha256']
           print(json.dumps({'generated_at_utc': s['meta']['generated_at_utc'],
               'status': s['meta']['status'], 'oracle_status': c['status'],
               'feature_count': len(c['current_features']['features'])}))
