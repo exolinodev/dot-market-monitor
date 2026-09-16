@@ -7,6 +7,27 @@ Deterministische, quellengebundene Daten für einen stündlichen ChatGPT DOT-Mon
 
 **Eine Datei für ChatGPT:** [data/llm_snapshot.json](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) · [lesbare Übersicht](data/latest.md) · [Actions](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml)
 
+## Oracle v3
+
+Der additive Block `markets.DOTUSD.oracle_context` verbindet deterministische
+Erschöpfungs-/Fortsetzungsfeatures, historische Marktanalogs und eine nach Versionen
+getrennte Forecast-Scorecard. Der neue [Consumer-Prompt](CHATGPT_MONITOR_PROMPT.md)
+beginnt mit einem bedingten ORACLE CALL und trennt Makrostruktur von taktischer
+Handelsrichtung. **Messwerte bleiben autoritativ; Python bewertet, das LLM prognostiziert.**
+
+Forecasts und gebundene Inputs werden create-only archiviert. Der stündliche Job
+wertet gereifte 1h/4h/12h-Prognosen anhand geschlossener Spot-Candles aus, auch ohne
+erreichbares LLM. Mehrdeutige Barrier-Reihenfolgen bleiben `ambiguous`, fehlende Daten
+bleiben unbekannt. Schema v2 und der bisherige Measurements-only-Vertrag bleiben gültig.
+
+[Architektur, Formeln, Write-back und Grenzen](docs/ORACLE_V3.md) ·
+[Replay und Washout-Fallstudie](docs/evaluation/oracle-v3/RESULTS.md) ·
+[Forecast-Schema](schema/oracle_forecast.schema.json)
+
+Die aktuelle Evidenz reicht für prospektiven Parallelbetrieb, nicht für eine
+Profitabilitätsbehauptung. Es existiert noch kein echter Modell-Scorecard-Verlauf
+und ohne verfügbare Modell-API wurde kein Modell-Prompt-Backtest vorgetäuscht.
+
 ## Instrumente und Timeframes
 
 | Instrument | Timeframes / Daten |
@@ -52,6 +73,11 @@ flowchart LR
 | `src/observations.py`, `observation_*.py` | isolierte Beobachtungen, Candle-/Trade-Messwerte, einjährige Beobachtungshistorie, Offline-Replay |
 | `src/coinbase.py`, `event_calendar.py` | öffentlicher DOT/USD-Quotevergleich und explizit verifizierte Termine |
 | `config/observations.json`, `time_fibs.json`, `scheduled_events.json` | sichtbare Parameter, manuelle Anchor-Auswahl, Terminquellen und Genauigkeit |
+| `src/oracle_*.py` | Features, Archiv, immutable Forecasts, Spot-Evaluator, Analogs, Scorecard und kompakter Kontext |
+| `config/oracle.json`, `schema/oracle*.schema.json` | versionierte Parameter und strikte Oracle-Verträge |
+| `data/raw/oracle_feature_history.json.gz` | tatsächliche Stundenfeatures mit Originalinputs und Configs, ab Collector-Deployment |
+| `data/oracle/forecasts`, `inputs`, `outcomes`, `outcome_inputs` | unveränderliche Forecast- und Evaluationsnachweise |
+| `data/oracle_scorecard.json` | deterministische, nach Strategie und Methodik getrennte Ergebnisse |
 | `src/pipeline.py`, `output.py`, `main.py` | isolierte Sammlung, Ausgabe, Schema-Prüfung |
 | `data/llm_snapshot.json` | kompakter Consumer-Snapshot; keine Raw-Candle-Arrays |
 | `data/latest.json`, `data/latest.md` | detaillierte Messwerte und Übersicht |
@@ -111,6 +137,12 @@ python scripts/validate_snapshot.py --live
 Offline neu generieren: `python src/main.py --from-latest`. Das verwendet die gespeicherten Messwerte, Raw-Trades und Quellen-Empfangszeiten, behält die ursprüngliche Snapshot-Zeit bei und schreibt keine History-/Cache-Beobachtungen hinzu. Neue Quellen, die im alten Raw-Archiv fehlen, bleiben unavailable/partial. Die bestehende v2-Struktur bleibt gültig, wenn der neue Beobachtungsblock fehlt.
 
 Optional: `COINGECKO_API_KEY` als Umgebungsvariable oder GitHub Actions Secret mit einem Demo-API-Key. Kraken braucht keinen Schlüssel. CoinGecko wird ohne Schlüssel versucht; Einschränkungen oder Rate Limits werden als Quellenstatus gemeldet. Keine `.env` oder Tokens committen.
+
+Oracle offline prüfen: `python scripts/oracle_replay.py`. Forecast veröffentlichen:
+`python scripts/oracle.py publish forecast.json --snapshot exact_snapshot.json`.
+Der separate Workflow `oracle-forecast.yml` bietet denselben geprüften Write-back
+mit autorisiertem GitHub-Zugriff. Vorhandene Forecast-IDs werden niemals ersetzt.
+Details und Modell-Evaluationsharness: [Oracle v3](docs/ORACLE_V3.md).
 
 Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; pytest wird nur über `tests/requirements.txt` installiert.
 

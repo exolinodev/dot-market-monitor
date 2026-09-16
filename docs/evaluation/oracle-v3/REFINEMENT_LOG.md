@@ -1,0 +1,16 @@
+# Engineering refinement log
+
+| Iteration | Change and evidence | Result / limitation |
+|---|---|---|
+| 1 | Implement separate deterministic features, immutable forecasts, Python evaluator, scorecard, analogs and optional v2 context. Baseline: 199 Python tests passed. Replay 94 original hourly snapshots. | 12 downside-extension states; four downside and five upside inefficiency states; zero simultaneous A+B+C. Not evidence of forecasting success. |
+| 2 | Review showed that touch-entry/exit candles cannot reveal exact pre-exit extrema. Null trade excursions when ordering is unknown; retain market-path excursions. Add explicit `failure_scope` for pre-entry invalidation. | Target/stop, trigger/target ambiguity, close-trigger ordering, pre-entry failure and gap cases have deterministic tests. No guessed fills or look-ahead. |
+| 2 | Require real aligned DOT/BTC return endpoints, confirmed-candle receipt boundaries, contemporaneous manual anchor selection, future-history exclusion and archived config/input hashes. | Historical replay reproducible from original inputs; unavailable old flow/OI remains missing. |
+| 2 | Bound consumer scorecard groups; cache schema validators; atomically create forecast **and input evidence**; reject archive changes in CI; retry pushes without force or conflict replacement. | Compact context remains below 45 KB. Concurrent publication permits exactly one complete forecast. Historical forecasts remain absent rather than fabricated. Final grades are rechecked by deterministic recomputation of archived candle evidence; matured missing coverage is counted and remains retryable. |
+| 2 | Rewrite consumer around actual implemented IDs/schema; preserve original v2 prompt; prepare point-in-time model harness requests. | No model API key: no model invocations or claimed v2/v3 performance comparison. |
+
+No signal threshold was optimised or changed after the replay. Fixed scales and
+minimum samples were chosen as transparent starting assumptions. The only config
+addition in refinement caps scorecard context size. No train/holdout profitability
+result is reported because no fitting or actual model backtest occurred. The lack
+of simultaneous A/B/C around the washout is an explicit remaining sensitivity
+limitation, not concealed by adapting thresholds to that case.
