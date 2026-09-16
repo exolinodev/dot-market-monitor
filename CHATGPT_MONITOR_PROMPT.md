@@ -30,6 +30,9 @@ vollständigen SHA erneut: der Raw-CDN-Cache kann verzögert sein. Falls weiterh
 nötig, führe höchstens einen Collector-Wiederanlauf gemäss
 `docs/CHATGPT_RECOVERY.md` mit den tatsächlich verfügbaren GitHub-Tools aus.
 Aktive Jobs verhindern Doppelstarts; fehlende Rechte/403 werden nicht wiederholt.
+Nach einem Start höchstens drei Statusabfragen über insgesamt 90 Sekunden, dann
+`main` und Snapshot einmal neu lesen. Ein weiter ausstehender Run wird mit Link
+als ausstehend gemeldet; den Analyselauf abschliessen statt endlos zu warten.
 Prüfe Ergebnis, neuen Commit und tatsächlichen Datenzeitpunkt. Ohne nutzbare
 Daten kurz die Störung und den manuellen Actions-Link nennen.
 
@@ -215,7 +218,9 @@ den Snapshot unter `data/oracle/inputs` und erzeugt create-only
 `data/oracle/forecasts/YYYY/MM/DD/<forecast_id>.json`. Nie eine vorhandene ID
 überschreiben, auch nicht zum „Korrigieren“. Ein neuer Forecast braucht eine neue
 Erstellungszeit und bleibt eine neue Veröffentlichung. Prüfe das Workflow-Ergebnis
-und lies die gespeicherte Datei zurück. Die Publikation akzeptiert maximal 120
+und lies die gespeicherte Datei zurück. Höchstens drei Statusabfragen über
+90 Sekunden; danach einen ausstehenden Run mit Link benennen und abschliessen.
+Die Publikation akzeptiert maximal 120
 Sekunden Abweichung zur Erstellungszeit; bei abgelaufener Warteschlange neu analysieren
 und einen neuen Forecast erstellen, keinen historischen Erfolg nachtragen.
 

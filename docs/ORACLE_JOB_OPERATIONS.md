@@ -34,6 +34,8 @@ alter v2-Repo-Prompt darf die neue Aufgabenanweisung nicht überstimmen. Ein
   Quelle für jede verwendete Aussage.
 - Bei alten Daten den commitgebundenen Abruf vor einem einzigen begrenzten
   Collector-Wiederanlauf; aktive Jobs und 403 verhindern weitere Startversuche.
+- Nach einem Start maximal drei Statusabfragen über insgesamt 90 Sekunden;
+  danach Readback und gegebenenfalls einen ausstehenden Run mit Link melden.
 - Übergangsmodus ohne `oracle_context`: v2-Messungen bleiben verwendbar,
   v3-Evidenz und Veröffentlichung werden nicht erfunden.
 - Identische Snapshot-Zeit/Hash: keine zweite Veröffentlichung.
@@ -85,6 +87,17 @@ Snapshot-Hash:
 Die vorhandenen 238 Python-Tests und 17 Scheduler-Tests bestehen lokal.
 Der erste Live-Lauf zeigte eine Node-20-Deprecation-Warnung der neu ergänzten
 Artifact-Action; diese wurde auf die bestätigte aktuelle Version 7.0.1 aktualisiert.
+Auch die vorhandene Node-Setup-Action wurde auf 7.0.0 aktualisiert.
+
+Der [zweite Live-Test](https://github.com/exolinodev/dot-market-monitor/actions/runs/35146664219)
+bestand in 48 Sekunden einschliesslich Tests, echter Sammlung und Artefakt-Upload.
+Er erfasste 43 Quellen ohne Fehler, Snapshot `2026-09-16T20:28:14.730464Z`.
+Im Browser-Test wurde die bestehende ChatGPT-Aufgabe über „Jetzt ausführen“
+gestartet. Sie löste zudem einen echten Collector-Wiederanlauf aus:
+[Run 35146516237, Versuch 2](https://github.com/exolinodev/dot-market-monitor/actions/runs/35146516237/attempts/2),
+erfolgreicher neuer Daten-Commit `3edc0ac38bf452541cfdf2f3242db389242b52bd`.
+Die nächste Prompt-Iteration verhindert die Übernahme des alten v2-Prompts von
+`main` vor dem Rollout und begrenzt Statuspolling. Das Modell blieb unverändert.
 
 Der produktive v3-Writer kann erst nach Freigabe/Merge des Oracle-PR auf `main`
 ausgeführt werden. Bis dahin benutzt der ChatGPT-Job den expliziten Übergangsmodus.
