@@ -75,6 +75,7 @@ flowchart LR
 | `config/observations.json`, `time_fibs.json`, `scheduled_events.json` | sichtbare Parameter, manuelle Anchor-Auswahl, Terminquellen und Genauigkeit |
 | `src/oracle_*.py` | Features, Archiv, immutable Forecasts, Spot-Evaluator, Analogs, Scorecard und kompakter Kontext |
 | `config/oracle.json`, `schema/oracle*.schema.json` | versionierte Parameter und strikte Oracle-Verträge |
+| `data/raw/oracle_market_outcomes.json.gz` | gereifte historische Markt-Outcomes, unabhängig von Modellforecasts, über den Minuten-Cache hinaus erhalten |
 | `data/raw/oracle_feature_history.json.gz` | tatsächliche Stundenfeatures mit Originalinputs und Configs, ab Collector-Deployment |
 | `data/oracle/forecasts`, `inputs`, `outcomes`, `outcome_inputs` | unveränderliche Forecast- und Evaluationsnachweise |
 | `data/oracle_scorecard.json` | deterministische, nach Strategie und Methodik getrennte Ergebnisse |

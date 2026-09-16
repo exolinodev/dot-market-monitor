@@ -67,7 +67,7 @@ jobs:
             git add data/raw/observation_history.json.gz
           fi
           if [ -f data/raw/oracle_feature_history.json.gz ]; then
-            git add data/raw/oracle_feature_history.json.gz data/oracle_scorecard.json data/oracle/pending_outcomes.json
+            git add data/raw/oracle_feature_history.json.gz data/raw/oracle_market_outcomes.json.gz data/oracle_scorecard.json data/oracle/pending_outcomes.json
           fi
           if [ -d data/oracle/outcomes ]; then
             git add data/oracle/outcomes data/oracle/outcome_inputs

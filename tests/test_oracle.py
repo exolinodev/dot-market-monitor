@@ -241,10 +241,13 @@ def test_end_to_end_lifecycle(tmp_path,actual):
     snapshot=compact_snapshot(actual);f=fixture_forecast(snapshot)
     persist_forecast(f,snapshot,tmp_path/'oracle',f['created_at_utc'])
     future=copy.deepcopy(actual);future['generated_at_utc']='2026-09-17T07:00:00Z'
-    frame=bars();frame.iloc[5,frame.columns.get_loc('high')]=107.
+    frame=bars(start='2026-09-16T18:51:00Z',count=729);frame.iloc[14,frame.columns.get_loc('high')]=107.
     write_json(tmp_path/'raw/ohlc_cache.json.gz',{'DOTUSD.ohlc.1':encode_candles(frame)},compressed=True)
     future['sources']['DOTUSD.ohlc.1'].update(fresh=True,received_at_utc=future['generated_at_utc'])
     c=build_context(future,tmp_path,persist=True)
+    states=json.loads(gzip.decompress((tmp_path/'raw/oracle_market_outcomes.json.gz').read_bytes()))['records']
+    assert len(states)==1 and set(states[0]['labels'])=={'1h','4h','12h'}
+    assert utc(states[0]['identity']['reference_at_utc'])==utc(actual['generated_at_utc'])
     assert len(c['model_scorecard']['groups'])==3
     assert all(g['triggered_count']==1 for g in c['model_scorecard']['groups'])
     paths=list((tmp_path/'oracle/outcomes').glob('*/*.json'));assert len(paths)==3
@@ -409,3 +412,49 @@ def test_future_input_coverage_is_not_exported_as_a_valid_feature_time(actual):
     f=build_features(inp)['features']
     assert value(f,'oi.1h.change_pct') is None
     assert all(x['coverage']['end_utc'] is None or utc(x['coverage']['end_utc'])<=utc(inp['reference_at_utc']) for x in f.values())
+
+
+def test_market_labels_survive_minute_cache_rolloff_and_do_not_need_forecasts(actual,tmp_path,cfg):
+    from oracle_market_history import market_outcome_history,state_id
+    cfg={**cfg,'analog_min_samples':2,'analog_k':4}
+    template=build_features(feature_inputs(actual),cfg=cfg)
+    history=[]
+    for i in range(12):
+        r=copy.deepcopy(template);r['reference_at_utc']=iso(utc('2026-09-16T19:00:00Z')+pd.Timedelta(hours=i));history.append(r)
+    path=tmp_path/'labels.json.gz'
+    labels=market_outcome_history(path,history,{1:bars()},'2026-09-17T07:00:00Z',persist=True)
+    assert labels[state_id(history[0])]['labels']['12h']['outcome']['status']=='ok'
+    before=copy.deepcopy(labels)
+    retained=market_outcome_history(path,history,{},'2026-09-18T07:00:00Z',persist=True)
+    assert retained==before  # No synthetic reconstruction and no missing-candle overwrite.
+    current=copy.deepcopy(template);current['reference_at_utc']='2026-09-18T07:00:00Z'
+    matched=market_analogs(current,history,{},cfg,retained)
+    assert matched['1h']['sample_count']==4 and matched['1h']['forward_return_pct']['mean']==0
+    assert market_analogs(current,history,{},cfg)['1h']['sample_count']==0
+    with pytest.raises(ValueError,match='Future'):market_outcome_history(path,history,{},'2026-09-16T20:00:00Z')
+
+
+def test_market_history_retention_and_version_isolation(actual,tmp_path,cfg):
+    from oracle_market_history import market_outcome_history
+    old=build_features(feature_inputs(actual),cfg=cfg);old['reference_at_utc']='2026-09-16T19:00:00Z'
+    path=tmp_path/'labels.json.gz'
+    stored=market_outcome_history(path,[old],{1:bars()},'2026-09-17T07:00:00Z',persist=True)
+    current=copy.deepcopy(old);current['reference_at_utc']='2026-09-18T07:00:00Z';current['oracle_config_sha256']='f'*64
+    assert market_analogs(current,[old],{},cfg,stored)['1h']['sample_count']==0
+    assert market_outcome_history(path,[],{},'2026-09-19T07:00:00Z',days=1)=={}
+
+
+def test_twelve_hour_analogs_accumulate_beyond_live_minute_cache(actual,tmp_path,cfg):
+    from oracle_market_history import market_outcome_history
+    template=build_features(feature_inputs(actual),cfg=cfg);history=[]
+    path=tmp_path/'market_labels.json.gz'
+    for i in range(22):
+        start=utc('2026-09-16T19:00:00Z')+pd.Timedelta(hours=12*i)
+        r=copy.deepcopy(template);r['reference_at_utc']=iso(start);history.append(r)
+        # Simulate a rolling cache exposing only this state's forward window.
+        retained=market_outcome_history(path,history,{1:bars(start=start)},start+pd.Timedelta(hours=12),persist=True)
+    current=copy.deepcopy(template);current['reference_at_utc']=iso(start+pd.Timedelta(days=2))
+    analogs=market_analogs(current,history,{},cfg,retained)
+    assert analogs['12h']['sample_count']==22
+    assert analogs['12h']['calibration_status']=='descriptive_only'
+    assert analogs['12h']['forward_return_pct']['median']==0

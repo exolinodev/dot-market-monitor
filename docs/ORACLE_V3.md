@@ -14,6 +14,9 @@ flowchart LR
   M[Source-bound measurements] --> F[Deterministic Oracle features]
   F --> A[Actual hourly feature archive]
   A --> N[Historical market analogs]
+  A --> H[Retained market-state outcomes]
+  S --> H
+  H --> N
   F --> C[Compact Oracle context]
   N --> C
   C --> L[Separate LLM consumer]
@@ -36,8 +39,9 @@ raw observations and pivot confirmation rules are preserved.
 Modules are intentionally separate: `oracle_features` (causal measurements),
 `oracle_history` (hourly feature archive), `oracle_forecasts` (schema and immutable
 publication), `oracle_evaluator` (future labels), `oracle_scorecard` (model results),
-`oracle_analogs` (forecast-independent history), `oracle_context` (assembly/isolation).
-Schemas cover config, feature record, forecast, outcome, scorecard and context.
+`oracle_analogs` / `oracle_market_history` (forecast-independent history and retained labels), `oracle_context` (assembly/isolation).
+Schemas cover config, feature record, forecast, outcome, retained market labels,
+scorecard and context.
 
 ## Inputs, lineage and features
 
@@ -112,7 +116,16 @@ statistical independence across market regimes.
 Only sufficiently many neighbours (default 20 of at most 40) produce descriptive
 mean/median/p10/p90 returns and excursions, or positive-return rates. Smaller samples
 still report count/distance/IDs but return null statistics. These are historical
-frequencies, not calibrated event probabilities. Each horizon's baseline is solely
+frequencies, not calibrated event probabilities.
+
+`data/raw/oracle_market_outcomes.json.gz` fills each genuine feature-state/horizon
+label once when closed-candle coverage matures. It retains method/config/input
+identity, observation and evaluation times, forward returns, market MFE/MAE,
+source interval and candle hash. Labels survive minute-cache rolloff and expire with
+the configured history retention. Missing windows are retried, never synthesised;
+existing labels are not overwritten. This allows 12h analog samples to accumulate
+across weeks without requiring model forecasts or an unbounded minute cache.
+Original hourly Git cache revisions remain the input evidence for replay. Each horizon's baseline is solely
 information available before that particular reference timestamp.
 
 ## Forecast publication and audit
@@ -235,7 +248,10 @@ from live collector-owned outputs. The report contains the measured sample sizes
 coverage and timestamp-specific washout case. The replay scans original Git snapshot
 revisions (default `origin/main`, or pin `--ref COMMIT_SHA` for reproduction), deduplicates true UTC hours and walks forward. Stored source freshness,
 measurements and missing fields remain as observed. It does not recreate old OI or
-flow from current candles. Later spot candles are used **only** for outcome labels.
+flow from current candles. Original candle-cache revisions are walked in chronological order and matured
+market labels are retained as they become available. This recovers genuine early
+outcomes that are no longer present in the final rolling cache. Future spot candles
+are used **only** for outcome labels.
 All original measurement snapshots replay twice identically before reporting.
 
 For controlled model experiments, export historical contexts and freeze a prompt:

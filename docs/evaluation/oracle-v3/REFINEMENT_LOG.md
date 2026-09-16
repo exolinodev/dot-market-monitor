@@ -15,6 +15,16 @@ unavailable. Oracle now rejects future source timestamps independently and clear
 invalid/future coverage endpoints. Existing measurement freshness semantics stay
 unchanged. The new regression passes and the historical replay is unchanged.
 
+Iteration 3 was justified by a concrete long-term lifecycle defect: on-demand
+analog labels disappeared after minute-cache rolloff, preventing a sufficient
+horizon-spaced 12h sample from ever accumulating. Add a separate retained market
+outcome archive with one-time matured labels and source/config/time identity.
+A simulation with 22 successive 12h states and a rolling 12h candle cache now
+retains all 22 neighbours after the cache is empty. This is a lifecycle test, not
+a profitability result. Replay now walks every original historical cache revision,
+so genuine early outcome windows are recovered instead of being declared missing
+solely because they have left the final cache. No signal thresholds changed.
+
 No signal threshold was optimised or changed after the replay. Fixed scales and
 minimum samples were chosen as transparent starting assumptions. The only config
 addition in refinement caps scorecard context size. No train/holdout profitability

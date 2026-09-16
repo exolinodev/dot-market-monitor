@@ -20,6 +20,7 @@ from output import compact_snapshot,validate_snapshot
 from oracle_features import feature_inputs,build_features
 from oracle_context import outcome_frames
 from oracle_evaluator import forward_outcome
+from oracle_market_history import market_outcome_history,state_id
 from observation_common import utc
 from common import write_json
 
@@ -43,16 +44,23 @@ def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
     cfg,_=configuration()
     snapshots=historical_snapshots(repo,source_ref)
     latest=snapshots[-1][1]
-    cache_bytes=subprocess.check_output(['git','show',snapshots[-1][0]+':data/raw/ohlc_cache.json.gz'],cwd=repo)
-    with tempfile.TemporaryDirectory(prefix='oracle-labels-') as temp:
-        raw=Path(temp)/'raw';raw.mkdir()
-        (raw/'ohlc_cache.json.gz').write_bytes(cache_bytes)
-        frames=outcome_frames(latest,temp)
+    cache_bytes=b''
+    retained_labels={}
+    cache_manifest=[]
     cutoff=latest['generated_at_utc']
     rows=[];history=[];availability=collections.Counter();counts=collections.Counter();max_size=0
     for sha,data in snapshots:
+        cache_bytes=subprocess.check_output(['git','show',sha+':data/raw/ohlc_cache.json.gz'],cwd=repo)
+        with tempfile.TemporaryDirectory(prefix='oracle-labels-') as temp:
+            raw=Path(temp)/'raw';raw.mkdir()
+            (raw/'ohlc_cache.json.gz').write_bytes(cache_bytes)
+            frames=outcome_frames(data,temp)
+        cache_manifest.append({'git_commit':sha,'reference_at_utc':data['generated_at_utc'],
+                               'cache_sha256':hashlib.sha256(cache_bytes).hexdigest()})
         inp=feature_inputs(data)
         record=build_features(inp,history,cfg)
+        retained_labels=market_outcome_history(None,history+[record],frames,record['reference_at_utc'],
+            cfg['history_days'],previous=retained_labels)
         # Same input and same prior history must be bit-identical.
         assert record==build_features(inp,history,cfg)
         if export_snapshots is not None:
@@ -62,7 +70,7 @@ def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
                 'schema_version':1,'feature_version':cfg['feature_version'],'strategy_version':cfg['strategy_version'],
                 'oracle_config_sha256':digest(cfg),'reference_at_utc':record['reference_at_utc'],
                 'status':record['status'],'reason':None,'current_features':record,
-                'market_analogs':market_analogs(record,history,frames,cfg),
+                'market_analogs':market_analogs(record,history,frames,cfg,retained_labels),
                 'model_scorecard':{**scorecard([],[],record['reference_at_utc']),'pending_or_unavailable_count':0},
                 'recent_forecasts':[],'recent_matured_outcomes':[]}
             compact=compact_snapshot(exported)
@@ -76,12 +84,17 @@ def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
         for side,g in gates.items():
             for stage in ('extension_feature_ids','efficiency_loss_feature_ids','abc_ready','trigger_candidate'):
                 if g[stage]: counts[side+'.'+stage]+=1
-        labels={f'{h}h':forward_outcome(record['reference_at_utc'],h,frames,cutoff) for h in (1,4,12)}
+        labels={}
         max_size=max(max_size,len(canonical(record).encode()))
         candle=data['markets']['DOTUSD']['timeframes']['1h'].get('last_closed') or {}
         rows.append({'git_commit':sha,'record':record,'labels':labels,
                      'closed_1h':{k:candle.get(k) for k in ('asof_utc','open','high','low','close')},
                      'rsi14':(candle.get('indicators') or {}).get('rsi14')})
+    for row in rows:
+        record=row['record']
+        saved=retained_labels.get(state_id(record),{}).get('labels',{})
+        row['labels']={f'{h}h':saved[f'{h}h']['outcome'] if f'{h}h' in saved
+            else forward_outcome(record['reference_at_utc'],h,frames,cutoff) for h in (1,4,12)}
     # Forensic case selection only; this literal never enters production calculations.
     washout=[r for r in rows if r['closed_1h']['low'] is not None and abs(r['closed_1h']['low']-.9342)<.00001]
     case=[]
@@ -97,7 +110,7 @@ def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
             'adverse_4h_return_count':sum(r['labels']['4h']['forward_return_pct']*(1 if side=='downside' else -1)<0 for r in known),
             'interpretation':'diagnostic only; no threshold fitting, no LLM forecast, no execution backtest'}
     report={'source_ref_sha':subprocess.check_output(['git','rev-parse',source_ref],cwd=repo,text=True).strip(),
-        'label_cache_sha256':hashlib.sha256(cache_bytes).hexdigest(),'methodology':'git-snapshot-walk-forward-v1','feature_version':cfg['feature_version'],
+        'label_cache_sha256':hashlib.sha256(cache_bytes).hexdigest(),'historical_label_caches':cache_manifest,'methodology':'git-snapshot-walk-forward-v1','feature_version':cfg['feature_version'],
         'config_sha256':digest(cfg),'actual_snapshot_count':len(rows),
         'first_reference':rows[0]['record']['reference_at_utc'],'last_reference':rows[-1]['record']['reference_at_utc'],
         'availability_count':dict(availability),'evidence_gate_counts':dict(counts),'outcome_coverage':label_counts,
@@ -111,13 +124,13 @@ def replay(repo,output,export_snapshots=None,source_ref='origin/main'):
                 'structure.1h.transition','structure.1h.new_low')},
             'reversal_gates':r['record']['evidence']['reversal_gates'],'labels':r['labels']} for r in case],'threshold_tuning':False,'holdout_status':'No tuning or claimed validated profitability; full sample diagnostic replay',
         'model_prompt_backtest':'not_run_no_historical_model_invocations','synthetic_backfill':False,
-        'limitations':['Candle-cache labels may lack earlier minute coverage; unavailable labels stay missing.',
+        'limitations':['Labels use only original archived caches as they became available; any missing windows remain unavailable.',
             'Original snapshots before observations rollout do not contain Oracle flow-window inputs.',
             'Features are recomputed by current methodology, not historical published forecasts.']}
     output.mkdir(parents=True,exist_ok=True)
     write_json(output/'replay_summary.json',report)
     write_json(output/'replay_records.json.gz',{'report_type':'retrospective_features_from_actual_snapshots','rows':rows},compressed=True)
-    print(json.dumps({k:v for k,v in report.items() if k not in ('availability_count','forensic_case')},indent=2))
+    print(json.dumps({k:v for k,v in report.items() if k not in ('availability_count','forensic_case','historical_label_caches')},indent=2))
     return report
 
 

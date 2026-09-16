@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_market_history.schema.json",
+  "$defs": {
+    "label": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "evaluated_at_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        "outcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "ok"
+            },
+            "anchor_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "end_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "anchor_delay_seconds": {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 60
+            },
+            "interval_minutes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "forward_return_pct": {
+              "type": "number"
+            },
+            "mfe_pct": {
+              "type": "number",
+              "minimum": 0
+            },
+            "mae_pct": {
+              "type": "number",
+              "maximum": 0
+            },
+            "candle_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "source_id": {
+              "type": "string",
+              "pattern": "^DOTUSD\\.ohlc\\.[0-9]+$"
+            }
+          },
+          "required": [
+            "status",
+            "anchor_at_utc",
+            "end_at_utc",
+            "anchor_delay_seconds",
+            "interval_minutes",
+            "forward_return_pct",
+            "mfe_pct",
+            "mae_pct",
+            "candle_sha256",
+            "source_id"
+          ]
+        }
+      },
+      "required": [
+        "evaluated_at_utc",
+        "outcome"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "methodology": {
+      "const": "retained-market-labels-v1"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "identity": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "schema_version": {
+                "const": 1
+              },
+              "feature_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "oracle_config_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "measurement_config_sha256": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reference_at_utc": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              "input_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "schema_version",
+              "feature_version",
+              "oracle_config_sha256",
+              "measurement_config_sha256",
+              "reference_at_utc",
+              "input_sha256"
+            ]
+          },
+          "labels": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "1h": {
+                "$ref": "#/$defs/label"
+              },
+              "4h": {
+                "$ref": "#/$defs/label"
+              },
+              "12h": {
+                "$ref": "#/$defs/label"
+              }
+            },
+            "required": [],
+            "minProperties": 1
+          }
+        },
+        "required": [
+          "state_id",
+          "identity",
+          "labels"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "methodology",
+    "records"
+  ]
+}

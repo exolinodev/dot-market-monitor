@@ -10,6 +10,7 @@ from oracle_forecasts import validate_forecast, create_only
 from oracle_evaluator import evaluate_forecast, verify_outcome
 from oracle_scorecard import scorecard
 from oracle_analogs import market_analogs
+from oracle_market_history import market_outcome_history
 from observation_common import utc, iso
 from timeframes import decode_candles
 
@@ -58,6 +59,8 @@ def build_context(data, directory, persist=False, cfg=None):
     current=build_features(inputs,past,cfg)
     validate(current,'oracle_features.schema.json')
     frames=outcome_frames(data,root)
+    labels=market_outcome_history(root/'raw/oracle_market_outcomes.json.gz',
+        past+[current],frames,ref,cfg['history_days'],persist=False)
     fs=load_forecasts(root,ref)
     outcomes=[]
     pending=[]
@@ -108,7 +111,7 @@ def build_context(data, directory, persist=False, cfg=None):
     matured=sorted(outcomes,key=lambda o:(o['evaluated_at_utc'],o['forecast_id']))[-limit:]
     context={'schema_version':1,'feature_version':FEATURE_VERSION,'strategy_version':cfg['strategy_version'],
         'oracle_config_sha256':digest(cfg),'reference_at_utc':iso(ref),'status':current['status'],'reason':None,
-        'current_features':current,'market_analogs':market_analogs(current,past,frames,cfg),
+        'current_features':current,'market_analogs':market_analogs(current,past,frames,cfg,labels),
         'model_scorecard':{**scores,'groups':relevant, 'pending_or_unavailable_count':len(pending), 'omitted_compatible_groups':omitted_groups},
         'recent_forecasts':[{'forecast_id':f['forecast_id'],'created_at_utc':f['created_at_utc'],
             'strategy_version':f['strategy_version'],'regime':f['regime'],'direction':f['trade_setup']['direction']} for f in recent],
@@ -119,6 +122,9 @@ def build_context(data, directory, persist=False, cfg=None):
     if len(canonical(context).encode())>cfg['max_context_bytes']: raise ValueError('Oracle context exceeds configured byte budget')
     if persist:
         archive.update(current,inputs,cfg)
+        write_json(root/'raw/oracle_market_outcomes.json.gz',
+            {'schema_version':1,'methodology':'retained-market-labels-v1',
+             'records':sorted(labels.values(),key=lambda r:(r['identity']['reference_at_utc'],r['state_id']))},compressed=True)
         write_json(root/'oracle_scorecard.json',scores)
         write_json(root/'oracle/pending_outcomes.json',{'reference_at_utc':iso(ref),'items':pending})
     return context

@@ -4,11 +4,13 @@ import pandas as pd
 from oracle_common import compatible, value, number
 from oracle_evaluator import forward_outcome
 from oracle_scorecard import distribution
+from oracle_market_history import state_id
 from observation_common import utc
 
 
-def market_analogs(current, history, frames, cfg):
+def market_analogs(current, history, frames, cfg, retained_labels=None):
     result={}
+    retained_labels=retained_labels or {}
     ref=utc(current['reference_at_utc'])
     for hours in (1,4,12):
         candidates=[]
@@ -27,7 +29,9 @@ def market_analogs(current, history, frames, cfg):
             # Missing coordinates cost distance; sparse neighbours cannot look artificially perfect.
             distance+=(len(cfg['analog_feature_scales'])-len(shared))/len(cfg['analog_feature_scales'])
             if distance>cfg['analog_max_distance']: continue
-            out=forward_outcome(ts,hours,frames,ref)
+            saved=retained_labels.get(state_id(past),{}).get('labels',{}).get(f'{hours}h')
+            out=(saved['outcome'] if saved and utc(saved['evaluated_at_utc'])<=ref
+                 else forward_outcome(ts,hours,frames,ref))
             if out['status']=='ok': candidates.append((distance,past['reference_at_utc'],out))
         # Non-overlapping outcomes avoid counting one move as many independent analogs.
         chosen=[]

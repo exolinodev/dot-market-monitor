@@ -32,7 +32,7 @@ in `consumer_v2_frozen.md`; the v3 prompt is version 3.0.0.
 
 ## Verification
 
-- Full Python suite: **235 passed** (199 existing plus 36 Oracle cases).
+- Full Python suite: **238 passed** (199 existing plus 39 Oracle cases).
 - Cloudflare scheduler suite: **17 passed**.
 - Root snapshot validates as schema v2: 43 sources, 291,278 bytes.
 - Canonical Oracle context: 23,273 bytes, below its 45,000-byte budget.
@@ -62,14 +62,16 @@ in `consumer_v2_frozen.md`; the v3 prompt is version 3.0.0.
 
 | Forward spot labels | Fully covered | Partial | Pending |
 |---|---:|---:|---:|
-| 1h | 67 | 25 | 2 |
-| 4h | 64 | 25 | 5 |
-| 12h | 56 | 25 | 13 |
+| 1h | 92 | 0 | 2 |
+| 4h | 89 | 0 | 5 |
+| 12h | 81 | 0 | 13 |
 
 The next complete minute is the outcome anchor, with the delay explicitly recorded.
-Twenty-five early snapshots lack exact minute-aligned coverage in the retained
-cache. Coarser candles cannot silently include pre-publication movement. No partial
-window was reported as a win.
+The final replay walks every original hourly cache revision and retains labels
+as they mature. This recovers 25 early windows per horizon that had rolled out of
+the final cache; they are genuine historical candles, not synthetic backfill.
+All matured windows in this pinned sample are covered. Coarser candles never
+silently include pre-publication movement, and pending windows remain pending.
 
 The default rules identified 12 downside-extension states, four downside-flow
 inefficiency states and five upside-flow inefficiency states. **Zero snapshots
@@ -153,10 +155,11 @@ have been unwarranted. They are not strategy returns because no forecast was iss
 
 ## Refinement and readiness
 
-See [REFINEMENT_LOG](REFINEMENT_LOG.md). Iteration 2 kept all signal thresholds
-unchanged. It improved timestamp validation, explicit failure scope, entry/exit
+See [REFINEMENT_LOG](REFINEMENT_LOG.md). Iterations 2 and 3 kept all signal thresholds
+unchanged. The third iteration preserves mature analog labels beyond cache rolloff. It improved timestamp validation, explicit failure scope, entry/exit
 ambiguity, strict schema coverage, bounded context and atomic publication evidence.
-The replay counts remained stable after those corrections.
+Feature/gate counts remained stable. The chronological cache replay recovered
+25 genuinely archived outcome windows per horizon; this changes coverage, not signals.
 
 Recommendation: **ready for prospective parallel/shadow testing**, with human
 review of the first published forecasts and the resulting deterministic labels.
