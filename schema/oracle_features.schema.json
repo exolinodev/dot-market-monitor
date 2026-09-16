@@ -1,0 +1,2099 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_features.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "feature_version": {
+      "const": "3.0.0"
+    },
+    "oracle_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "measurement_config_sha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reference_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "input_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "oi.1h.change_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "oi.1h.change_pct.percentile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentile_0_100"
+                }
+              }
+            }
+          ]
+        },
+        "oi.1h.price_relation": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "oi.4h.change_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "oi.4h.change_pct.percentile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentile_0_100"
+                }
+              }
+            }
+          ]
+        },
+        "oi.4h.price_relation": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "oi.24h.change_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "oi.24h.change_pct.percentile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentile_0_100"
+                }
+              }
+            }
+          ]
+        },
+        "oi.24h.price_relation": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.signed_dot": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "DOT"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.absolute_dot": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "DOT"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.fraction": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": -1,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.return_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.impact_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps_per_signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.alignment": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.signed_dot.percentile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentile_0_100"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.impact_change_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps_per_signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.efficiency_loss": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "boolean"
+                }
+              }
+            }
+          ]
+        },
+        "flow.spot.divergence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.signed_dot": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "DOT"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.absolute_dot": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "DOT"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.fraction": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": -1,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.return_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.impact_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps_per_signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.alignment": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.signed_dot.percentile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentile_0_100"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.impact_change_bps": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "bps_per_signed_fraction"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.efficiency_loss": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "boolean"
+                }
+              }
+            }
+          ]
+        },
+        "flow.perp.divergence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "category"
+                }
+              }
+            }
+          ]
+        },
+        "candle.1h.clv": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "fraction_0_1"
+                }
+              }
+            }
+          ]
+        },
+        "candle.1h.lower_wick_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.1h.upper_wick_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.1h.body_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.1h.ema20_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.1h.transition": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "structure.1h.low_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.1h.new_low": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "structure.1h.high_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.1h.new_high": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "levels.1h.reactions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "level_usd": {
+                            "type": "number"
+                          },
+                          "distance_atr": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "failed_breakdown": {
+                            "type": "boolean"
+                          },
+                          "failed_breakout": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "level_usd",
+                          "distance_atr",
+                          "failed_breakdown",
+                          "failed_breakout"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_and_ATR_and_boolean"
+                }
+              }
+            }
+          ]
+        },
+        "levels.1h.breakdown_persistence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_levels"
+                }
+              }
+            }
+          ]
+        },
+        "levels.1h.breakout_persistence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_levels"
+                }
+              }
+            }
+          ]
+        },
+        "candle.4h.clv": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "fraction_0_1"
+                }
+              }
+            }
+          ]
+        },
+        "candle.4h.lower_wick_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.4h.upper_wick_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.4h.body_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "candle.4h.ema20_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.4h.transition": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "structure.4h.low_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.4h.new_low": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "structure.4h.high_distance_atr": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "structure.4h.new_high": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "confirmed_pivot_category"
+                }
+              }
+            }
+          ]
+        },
+        "levels.4h.reactions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "level_usd": {
+                            "type": "number"
+                          },
+                          "distance_atr": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "failed_breakdown": {
+                            "type": "boolean"
+                          },
+                          "failed_breakout": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "level_usd",
+                          "distance_atr",
+                          "failed_breakdown",
+                          "failed_breakout"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_and_ATR_and_boolean"
+                }
+              }
+            }
+          ]
+        },
+        "levels.4h.breakdown_persistence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_levels"
+                }
+              }
+            }
+          ]
+        },
+        "levels.4h.breakout_persistence": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "USD_levels"
+                }
+              }
+            }
+          ]
+        },
+        "extension.anchored_vwap": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "anchor_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "distance_atr": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "anchor_id",
+                          "distance_atr"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "ATR"
+                }
+              }
+            }
+          ]
+        },
+        "relative.1h.ratio_return_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "relative.1h.acceleration_pp": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentage_points"
+                }
+              }
+            }
+          ]
+        },
+        "relative.4h.ratio_return_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "relative.4h.acceleration_pp": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentage_points"
+                }
+              }
+            }
+          ]
+        },
+        "relative.24h.ratio_return_pct": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percent"
+                }
+              }
+            }
+          ]
+        },
+        "relative.24h.acceleration_pp": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentage_points"
+                }
+              }
+            }
+          ]
+        },
+        "breadth.1h.positive_fraction": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "fraction_0_1"
+                }
+              }
+            }
+          ]
+        },
+        "breadth.1h.turn_pp": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/feature"
+            },
+            {
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "const": "percentage_points"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "oi.1h.change_pct",
+        "oi.1h.change_pct.percentile",
+        "oi.1h.price_relation",
+        "oi.4h.change_pct",
+        "oi.4h.change_pct.percentile",
+        "oi.4h.price_relation",
+        "oi.24h.change_pct",
+        "oi.24h.change_pct.percentile",
+        "oi.24h.price_relation",
+        "flow.spot.signed_dot",
+        "flow.spot.absolute_dot",
+        "flow.spot.fraction",
+        "flow.spot.return_bps",
+        "flow.spot.impact_bps",
+        "flow.spot.alignment",
+        "flow.spot.signed_dot.percentile",
+        "flow.spot.impact_change_bps",
+        "flow.spot.efficiency_loss",
+        "flow.spot.divergence",
+        "flow.perp.signed_dot",
+        "flow.perp.absolute_dot",
+        "flow.perp.fraction",
+        "flow.perp.return_bps",
+        "flow.perp.impact_bps",
+        "flow.perp.alignment",
+        "flow.perp.signed_dot.percentile",
+        "flow.perp.impact_change_bps",
+        "flow.perp.efficiency_loss",
+        "flow.perp.divergence",
+        "candle.1h.clv",
+        "candle.1h.lower_wick_atr",
+        "candle.1h.upper_wick_atr",
+        "candle.1h.body_atr",
+        "candle.1h.ema20_distance_atr",
+        "structure.1h.transition",
+        "structure.1h.low_distance_atr",
+        "structure.1h.new_low",
+        "structure.1h.high_distance_atr",
+        "structure.1h.new_high",
+        "levels.1h.reactions",
+        "levels.1h.breakdown_persistence",
+        "levels.1h.breakout_persistence",
+        "candle.4h.clv",
+        "candle.4h.lower_wick_atr",
+        "candle.4h.upper_wick_atr",
+        "candle.4h.body_atr",
+        "candle.4h.ema20_distance_atr",
+        "structure.4h.transition",
+        "structure.4h.low_distance_atr",
+        "structure.4h.new_low",
+        "structure.4h.high_distance_atr",
+        "structure.4h.new_high",
+        "levels.4h.reactions",
+        "levels.4h.breakdown_persistence",
+        "levels.4h.breakout_persistence",
+        "extension.anchored_vwap",
+        "relative.1h.ratio_return_pct",
+        "relative.1h.acceleration_pp",
+        "relative.4h.ratio_return_pct",
+        "relative.4h.acceleration_pp",
+        "relative.24h.ratio_return_pct",
+        "relative.24h.acceleration_pp",
+        "breadth.1h.positive_fraction",
+        "breadth.1h.turn_pp"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "families": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "price_momentum": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "derivatives_deleveraging": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "executed_flow": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "level_reaction": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "relative_market": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "confirmed_structure": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "price_momentum",
+            "derivatives_deleveraging",
+            "executed_flow",
+            "level_reaction",
+            "relative_market",
+            "confirmed_structure"
+          ]
+        },
+        "reversal_gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "downside": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "extension_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "efficiency_loss_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "response_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "abc_ready": {
+                  "type": "boolean"
+                },
+                "new_structure_confirmation": {
+                  "type": "boolean"
+                },
+                "trigger_candidate": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "extension_feature_ids",
+                "efficiency_loss_feature_ids",
+                "response_feature_ids",
+                "abc_ready",
+                "new_structure_confirmation",
+                "trigger_candidate"
+              ]
+            },
+            "upside": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "extension_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "efficiency_loss_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "response_feature_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "abc_ready": {
+                  "type": "boolean"
+                },
+                "new_structure_confirmation": {
+                  "type": "boolean"
+                },
+                "trigger_candidate": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "extension_feature_ids",
+                "efficiency_loss_feature_ids",
+                "response_feature_ids",
+                "abc_ready",
+                "new_structure_confirmation",
+                "trigger_candidate"
+              ]
+            }
+          },
+          "required": [
+            "downside",
+            "upside"
+          ]
+        },
+        "independence_warning": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "families",
+        "reversal_gates",
+        "independence_warning"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "feature_version",
+    "oracle_config_sha256",
+    "measurement_config_sha256",
+    "reference_at_utc",
+    "input_sha256",
+    "features",
+    "evidence",
+    "status"
+  ],
+  "$defs": {
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {},
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start_utc": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "end_utc": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "return_semantics": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sample_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minimum_samples": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "current_hour_excluded": {
+              "type": "boolean"
+            },
+            "peers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "start_utc",
+            "end_utc"
+          ]
+        },
+        "methodology": {
+          "const": "3.0.0"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "status",
+        "reason",
+        "source_ids",
+        "coverage",
+        "methodology"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "not": {
+                  "type": "null"
+                }
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

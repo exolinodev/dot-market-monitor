@@ -345,6 +345,8 @@ class Collector:
                                     'timeframe_asof_utc':{k:v['received_at_utc'] for k,v in self.sources.items() if '.ohlc.' in k}}}
         self.compute('raw.save',lambda:write_json(self.data_dir/'raw'/'latest.json.gz',raw,compressed=True))
         output['status']='partial' if self.errors else 'ok'
+        from oracle_context import attach_oracle
+        attach_oracle(output, self.data_dir, persist=True)
         return json_safe(output)
 
 

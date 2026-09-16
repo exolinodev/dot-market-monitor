@@ -223,3 +223,54 @@ Every fetch and derived component is isolated. One API failure produces a null c
 Wall persistence matches **side + exact price**, tracks first-seen time and successive snapshots, size/notional and distance to current mid. New/stable and closer-to-market are measurements. A level disappearing from the top-three rank is checked against the complete visible book. If outside visible range, removal is unknown. If absent within visible range, executions at the same price and correct taker side are checked only over the observed tape. `execution_observed_at_price=true` is consistent with a fill but does not prove it was this wall. `wall_removed_without_observed_trade` is null when tape coverage is incomplete, false if still visible, otherwise the absence of a matching observed execution. Order identity, cancellations, movements between hourly snapshots and spoofing intent cannot be proven by this sampler.
 
 A separate `relocation_candidates` heuristic pairs an absent prior wall with exactly one newly appearing same-side wall when base size differs by at most 10% and price by at most 25bps. It reports both prices, size/price change, and whether the new distance to mid is smaller. `wall_moved_closer_candidate` is conditional on that matching rule; `identity_proven=false` always. Observed execution volume and its ratio to the previous wall size are included for removed walls without asserting that the wall itself was filled.
+
+## Oracle v3 formulas
+
+This additive layer is outside `observations.contract=measurements_only`.
+Every feature names its source IDs, coverage, units, status and method version.
+`config/oracle.json` is canonical-JSON SHA256 fingerprinted alongside the existing
+measurement config. All formula inputs are available at the feature reference;
+future prices enter only the evaluator's labels.
+
+| Feature | Formula / guard | Units |
+|---|---|---|
+| OI change, 1h/4h/24h | `100*(current/reference-1)`, positive reference, valid contract units, source-time separation within existing tolerance | percent |
+| Historical extremity | `100*(count(past<x)+0.5*count(past==x))/n`; matching versions/configs, 30-day baseline, current hour excluded, n>=168 | percentile, not probability |
+| Flow signed / absolute | `buy-sell` / `buy+sell`, complete executed window only | DOT |
+| Signed-flow fraction | `signed/absolute`, absolute >=1 DOT | [-1,1] |
+| Tape return | `10000*(last_executed_price/first_executed_price-1)` in the same complete window | bps |
+| Impact efficiency | `return_bps / signed_flow_fraction`, only `abs(fraction)>=0.05` | bps per signed fraction |
+| Efficiency loss flag | comparable adjacent equal windows, same flow sign, `abs(signed_current)>=abs(signed_previous)`, previous impact >0 and current impact <=0.5*previous impact | boolean |
+| Flow/price divergence | negative flow fraction <=-0.05 with return >=-5bps, or positive fraction >=0.05 with return <=5bps | observed category |
+| CLV | `(close-low)/(high-low)`; zero range unavailable | [0,1] |
+| Wicks / body | `(min(open,close)-low)/ATR`, `(high-max(open,close))/ATR`, `abs(close-open)/ATR`; positive ATR14 | ATR |
+| EMA extension | `(closed_close-EMA20)/ATR14` | signed ATR |
+| AVWAP / level / pivot distance | `(closed_close-reference_level)/ATR14`; AVWAP requires contemporaneously registered anchor | signed ATR |
+| Failed breakdown/out | `low<level<close` / `high>level>close`; levels are configured/exported or pivots confirmed before candle start | boolean per USD level |
+| Reclaim persistence | previous comparable timeframe candle had failed penetration; next distinct closed candle remains on reclaimed side; exact adjacent candle boundaries required | array of held USD levels |
+| Structure transition | previous and latest classified confirmed fractal lows/highs, e.g. `LL/LH->HL/HH`; new-pivot flags only on the confirmation-close bar | category |
+| Relative acceleration | current h-hour DOT/BTC ratio return minus same return observed h hours earlier, same configs and comparable snapshot time | percentage points |
+| Breadth turn | `100*(current_positive_fraction-prior_hour_positive_fraction)`; same full eight-peer universe | percentage points |
+
+Necessary reversal candidate gates: A = EMA20 extension >=2 ATR against trend on
+closed 1h or 4h; B = same-direction executed-flow efficiency loss; C = strong hourly
+close off the relevant extreme (CLV>=.75 / <=.25), failed penetration, appropriate
+flow/price divergence, relative-strength acceleration or a newly confirmed HL/LH. All require actual available
+values. `abc_ready=A and B and C`. A `trigger_candidate` additionally requires a
+newly confirmed hourly HL for downside / LH for upside. These are candidate flags,
+not a deterministic market regime or calibrated probability. RSI is not a gate.
+
+Analogs: RMS distance of shared numeric coordinates divided by fixed configured
+scales, plus `(total_coordinates-shared_coordinates)/total_coordinates`. At least
+four of six shared coordinates; default distance cap 1.5. Matching version/configs,
+compatible EMA-extension sign, outcome labels matured as of current snapshot,
+nearest 40 with horizon-spaced starts. At least 20 neighbours before statistics.
+Fixed scales do not use future returns, future medians, or a fitted full-history scaler.
+
+Outcome labels: anchor at next complete minute after creation, forward return
+`100*(last_close/first_open-1)`; market MFE `max(0,100*(max_high/first_open-1))`,
+MAE `min(0,100*(min_low/first_open-1))`. Directional trade excursions use entry and
+trade sign, only where intrabar ordering permits them. Theoretical R uses signed
+exit-minus-entry divided by absolute entry-minus-failure; full-size T3/stop/horizon
+exit, no assumed T1/T2 partial fills or execution costs. Ambiguous same-candle
+barriers give no R. See [Oracle evaluation rules](ORACLE_V3.md#evaluator-rules).

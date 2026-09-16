@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "strategy_version": "oracle-v3.0.0",
+  "forecast_id": "20260916T202328Z-f63a9647d907-oracle-v3",
+  "created_at_utc": "2026-09-16T20:23:28.280069Z",
+  "snapshot_generated_at_utc": "2026-09-16T20:23:28.280069Z",
+  "snapshot_sha256": "f63a9647d907cf17166e1d57d030e77de0be4ce9e77a988bca862524d0615e49",
+  "market": "DOTUSD",
+  "primary_market": "SPOT",
+  "measurement_config_sha256": "b0419c4ed2b156a6723551ea2a8cd5b32c6ed08f70261b6c0bad818b0fe445a9",
+  "oracle_feature_version": "3.0.0",
+  "oracle_config_sha256": "298a079a85bb0cc92ff6438699b9dac212f8beba447537a596ce61a9e8f3fe77",
+  "macro_bias": "BEARISH",
+  "swing_bias": "BULLISH",
+  "intraday_bias": "BULLISH",
+  "execution_bias": "NEUTRAL",
+  "regime": "EXHAUSTION_WATCH",
+  "forecast_horizons": {
+    "1h": {
+      "direction": "FLAT",
+      "rationale": "Der geschlossene 1h-Impuls ist stark, aber mit 2.10 ATR Abstand zur 1h-EMA20 bereits gedehnt; ohne A+B+C ist weder eine Umkehr noch eine saubere Fortsetzung bestätigt."
+    },
+    "4h": {
+      "direction": "UP",
+      "rationale": "1h-Strukturtransition HL/LH->HL/HH, hoher 4h-CLV, positiver Spot-Flow und positive DOT/BTC-Relativrendite stützen den Rebound, solange 0.9898 nicht verloren geht."
+    },
+    "12h": {
+      "direction": "ABSTAIN",
+      "rationale": "Der bullische Swing kollidiert mit der bearischen Wochenstruktur; OI-Änderungen, historische Analogs und Scorecard-Samples fehlen."
+    }
+  },
+  "trade_setup": {
+    "direction": "NONE",
+    "status": "NO_TRADE",
+    "trigger": null,
+    "failure": null,
+    "targets": [],
+    "target_roles": {
+      "T1": "Nicht aktiv: kein aktuelles Trade-Setup.",
+      "T2": "Nicht aktiv: kein aktuelles Trade-Setup.",
+      "T3": "Nicht aktiv: kein aktuelles Trade-Setup."
+    },
+    "asymmetry": {
+      "assessment": "UNKNOWN",
+      "reward_risk_t1": null,
+      "reason": "Kein aktueller Einstieg wird freigegeben: der direkte Breakout-Chase hat schlechte nominale Asymmetrie, während der bessere Pullback-Reclaim-Pfad erst künftige Bedingungen erfüllen muss."
+    },
+    "failure_scope": "setup_and_trade"
+  },
+  "paths": {
+    "primary": {
+      "when": "Spot testet 0.9977-0.9898, bleibt über 0.9898 und eine nachfolgende geschlossene 1h-Kerze schliesst über 1.0063602.",
+      "then": "Bullische Fortsetzung zunächst zur Reaktionszone 1.03; darüber 1.0372 und 1.0593112 prüfen.",
+      "why": "Die bestätigte 1h-Struktur ist bullisch, Spot-Signed-Flow ist positiv und DOT/BTC zeigt positive Relativrendite; der Pullback vermeidet das Nachjagen der aktuellen Überdehnung."
+    },
+    "alternative": {
+      "when": "Eine geschlossene 1h-Kerze schliesst direkt über 1.03, bevor ein sauberer Pullback entsteht.",
+      "then": "1.0372 wird T1, danach 1.0593112 und 1.0949; der direkte Chase bleibt wegen der grossen Stopdistanz unattraktiv.",
+      "why": "1.03 ist das nächste exportierte 1h/4h-Reaktionslevel, aber der Abstand zu 0.9977 macht die nominale T1/Risiko-Asymmetrie schwach."
+    },
+    "squeeze_failure": {
+      "when": "Eine geschlossene 1h-Kerze schliesst unter 0.9898.",
+      "then": "Der bullische Swing-Pfad ist verworfen; 0.9562, 0.9379 und 0.9342 werden die nächsten exportierten Reaktionszonen.",
+      "why": "0.9898 ist aktuell als 1h-Failed-Breakdown-Reaktionslevel belegt; ein Schluss darunter würde die jüngste bullische Strukturtransition deutlich schwächen."
+    }
+  },
+  "evidence": {
+    "supporting_feature_ids": [
+      "structure.1h.transition",
+      "candle.1h.clv",
+      "candle.4h.clv",
+      "flow.spot.signed_dot",
+      "relative.4h.ratio_return_pct",
+      "levels.1h.reactions"
+    ],
+    "opposing_feature_ids": [
+      "candle.1h.ema20_distance_atr",
+      "flow.perp.divergence",
+      "structure.4h.transition"
+    ],
+    "decisive_timeframes": [
+      "1h",
+      "4h",
+      "1d",
+      "1w"
+    ]
+  },
+  "calibration_context": {
+    "status": "uncalibrated",
+    "confidence": "LOW",
+    "analog_sample_count": 0,
+    "scorecard_sample_count": 0,
+    "limitations": [
+      "oracle_context ist partial.",
+      "OI-Änderungen und OI-Perzentile sind unavailable.",
+      "Flow-Perzentile und mehrere Effizienz-/Beschleunigungsfelder fehlen.",
+      "Alle 1h/4h/12h-Analogs haben sample_count 0.",
+      "Die Modell-Scorecard ist leer.",
+      "Die Smoke-Projektion enthält keine belastbare Slippage-Messung für diesen Setup-Vergleich."
+    ]
+  },
+  "text_summary": "TEST-Entwurf: Makro bearish, Swing und Intraday bullisch, aber der Rebound ist überdehnt; keine REVERSAL_ARMED/TRIGGERED-Lage und kein aktueller Trade, bis ein Pullback-Reclaim oder ein bestätigter 1h-Breakout neue Asymmetrie schafft."
+}

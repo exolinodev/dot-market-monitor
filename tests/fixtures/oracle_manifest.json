@@ -1,0 +1,8 @@
+{
+  "description": "Original captured measurement snapshot, frozen for Oracle regression tests; no synthetic model forecast.",
+  "repository": "exolinodev/dot-market-monitor",
+  "source_commit": "adfd6e3f80dee69607002a3ec3aed23316392e71",
+  "source_path": "data/latest.json",
+  "snapshot_generated_at_utc": "2026-09-16T18:50:47.945878Z",
+  "fixture_sha256": "4bac6f5ead4317c6658ae36b0f9ef99d60f4803cae7d5ded79f77a626ad35ab3"
+}

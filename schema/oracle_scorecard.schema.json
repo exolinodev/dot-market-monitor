@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_scorecard.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "methodology": {
+      "const": "version-partitioned-scorecard-v1"
+    },
+    "reference_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "probabilistic_calibration": {
+      "const": "disabled_no_probabilistic_forecasts"
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "strategy_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "forecast_schema_version": {
+            "type": "integer"
+          },
+          "oracle_feature_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "oracle_config_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "measurement_config_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "evaluator_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "horizon": {
+            "enum": [
+              "1h",
+              "4h",
+              "12h"
+            ]
+          },
+          "direction": {
+            "enum": [
+              "LONG",
+              "SHORT",
+              "NONE"
+            ]
+          },
+          "regime": {
+            "type": "string",
+            "minLength": 1
+          },
+          "forecast_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "triggered_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "invalidated_before_trigger_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "no_trigger_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ambiguous_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unavailable_partial_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "no_trade_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "directional_abstention_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resolved_triggered_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "directional_sample_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "directional_correct_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minimum_samples": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "target_before_failure_rates": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "T1": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "T2": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "T3": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "T1",
+              "T2",
+              "T3"
+            ]
+          },
+          "mfe_pct": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mean": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "median": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p10": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p90": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "mean",
+              "median",
+              "p10",
+              "p90"
+            ]
+          },
+          "mae_pct": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mean": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "median": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p10": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p90": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "mean",
+              "median",
+              "p10",
+              "p90"
+            ]
+          },
+          "r_multiple": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mean": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "median": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p10": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "p90": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "mean",
+              "median",
+              "p10",
+              "p90"
+            ]
+          },
+          "directional_accuracy": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calibration_status": {
+            "enum": [
+              "descriptive_only",
+              "insufficient_samples"
+            ]
+          }
+        },
+        "required": [
+          "strategy_version",
+          "forecast_schema_version",
+          "oracle_feature_version",
+          "oracle_config_sha256",
+          "measurement_config_sha256",
+          "evaluator_version",
+          "horizon",
+          "direction",
+          "regime",
+          "forecast_count",
+          "triggered_count",
+          "invalidated_before_trigger_count",
+          "no_trigger_count",
+          "ambiguous_count",
+          "unavailable_partial_count",
+          "no_trade_count",
+          "directional_abstention_count",
+          "resolved_triggered_count",
+          "directional_sample_count",
+          "directional_correct_count",
+          "minimum_samples",
+          "target_before_failure_rates",
+          "mfe_pct",
+          "mae_pct",
+          "r_multiple",
+          "directional_accuracy",
+          "calibration_status"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "methodology",
+    "reference_at_utc",
+    "probabilistic_calibration",
+    "groups"
+  ]
+}

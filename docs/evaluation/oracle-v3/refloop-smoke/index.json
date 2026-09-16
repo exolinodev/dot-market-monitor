@@ -1,0 +1,36 @@
+{
+  "test_only": true,
+  "notice": "Synthetic contract test, not market evidence or actual published performance. Storage receipts are simulated. Do not publish any fixture to data/oracle.",
+  "cases": [
+    {
+      "case_id": "a",
+      "path": "a.json",
+      "sha256": "7bdd2b10c0bb09daf4017e53ccf98ac380665f7ebbde75538e80a1cca8758499"
+    },
+    {
+      "case_id": "b",
+      "path": "b.json",
+      "sha256": "a0184bfaec8261ac30eb0f941c61514decb394a9bfc1a5a8ea882a3d0dace534"
+    },
+    {
+      "case_id": "c",
+      "path": "c.json",
+      "sha256": "6b9a90a129f95dead498aac9f963b3888ed96899789f6886f644cb3a85ecf03a"
+    },
+    {
+      "case_id": "d",
+      "path": "d.json",
+      "sha256": "f9422aea1d2c039449b0de17df6227710ff3862db31baf53cd27a76ec4b4ab6c"
+    },
+    {
+      "case_id": "e",
+      "path": "e.json",
+      "sha256": "415a0810c425fadcced4e24426cbcc55de671403ec8e3d845038ea01bdae7291"
+    },
+    {
+      "case_id": "f",
+      "path": "f.json",
+      "sha256": "6dd6efc9f5f44c69c51a726c28950d967683fbb810c702d4d9a737aa2b51811f"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "feature_version": "3.0.0",
+  "strategy_version": "oracle-v3.0.0",
+  "history_days": 365,
+  "history_tolerance_minutes": 20,
+  "percentile_min_samples": 168,
+  "percentile_lookback_days": 30,
+  "min_abs_flow_fraction": 0.05,
+  "min_volume_dot": 1.0,
+  "impact_reduction_fraction": 0.5,
+  "extension_atr": 2.0,
+  "strong_close_location": 0.75,
+  "flat_return_bps": 5.0,
+  "analog_k": 40,
+  "analog_min_samples": 20,
+  "analog_min_shared_features": 4,
+  "analog_max_distance": 1.5,
+  "analog_feature_scales": {
+    "candle.1h.ema20_distance_atr": 2.0,
+    "candle.1h.clv": 0.5,
+    "oi.4h.change_pct": 5.0,
+    "flow.spot.fraction": 0.5,
+    "flow.perp.fraction": 0.5,
+    "relative.4h.ratio_return_pct": 2.0
+  },
+  "scorecard_min_samples": 30,
+  "recent_limit": 3,
+  "max_context_bytes": 45000,
+  "context_scorecard_groups": 9
+}

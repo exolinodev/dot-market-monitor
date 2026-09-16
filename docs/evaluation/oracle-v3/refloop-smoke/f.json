@@ -1,0 +1,124 @@
+{
+  "test_only": true,
+  "synthetic_market_data": true,
+  "case_id": "f",
+  "reference_at_utc": "2026-09-16T19:30:00Z",
+  "expected_current_strategy_version": "oracle-v3.0.0",
+  "forecast": {
+    "schema_version": 1,
+    "strategy_version": "oracle-v3.0.0",
+    "forecast_id": "20260916T190000Z-666666666666-oracle-v3",
+    "created_at_utc": "2026-09-16T19:00:00Z",
+    "snapshot_generated_at_utc": "2026-09-16T19:00:00Z",
+    "snapshot_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "market": "DOTUSD",
+    "primary_market": "SPOT",
+    "measurement_config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "oracle_feature_version": "3.0.0",
+    "oracle_config_sha256": "298a079a85bb0cc92ff6438699b9dac212f8beba447537a596ce61a9e8f3fe77",
+    "macro_bias": "BEARISH",
+    "swing_bias": "BEARISH",
+    "intraday_bias": "BULLISH",
+    "execution_bias": "NEUTRAL",
+    "regime": "EXHAUSTION_WATCH",
+    "forecast_horizons": {
+      "1h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      },
+      "4h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      },
+      "12h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      }
+    },
+    "trade_setup": {
+      "direction": "LONG",
+      "status": "ARMED",
+      "failure_scope": "after_trigger",
+      "trigger": {
+        "kind": "touch_above",
+        "price_usd": 100.0,
+        "interval_minutes": 1,
+        "description": "Fixture touch"
+      },
+      "failure": {
+        "kind": "touch_below",
+        "price_usd": 98.0,
+        "interval_minutes": 1,
+        "description": "Fixture failure"
+      },
+      "targets": [
+        {
+          "id": "T1",
+          "price_usd": 102.0
+        },
+        {
+          "id": "T2",
+          "price_usd": 104.0
+        },
+        {
+          "id": "T3",
+          "price_usd": 106.0
+        }
+      ],
+      "target_roles": {
+        "T1": "reaction",
+        "T2": "mean reversion / reversal zone",
+        "T3": "structural decision"
+      },
+      "asymmetry": {
+        "assessment": "FAVOURABLE",
+        "reward_risk_t1": 1.0,
+        "reason": "Fixture only"
+      }
+    },
+    "paths": {
+      "primary": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      },
+      "alternative": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      },
+      "squeeze_failure": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      }
+    },
+    "evidence": {
+      "supporting_feature_ids": [],
+      "opposing_feature_ids": [],
+      "decisive_timeframes": [
+        "1h"
+      ]
+    },
+    "calibration_context": {
+      "status": "uncalibrated",
+      "confidence": "LOW",
+      "analog_sample_count": 0,
+      "scorecard_sample_count": 0,
+      "limitations": [
+        "Synthetic fixture, not a published forecast"
+      ]
+    },
+    "text_summary": "Synthetic fixture: macro bearish, tactical long conditional."
+  },
+  "storage_readback_fixture": {
+    "submission_exists": true,
+    "writer_status": "queued",
+    "final_forecast_path": "data/oracle/forecasts/2026/09/16/20260916T190000Z-666666666666-oracle-v3.json",
+    "final_forecast_exists": false,
+    "final_forecast_sha256": null
+  },
+  "outcome": null,
+  "scorecard": null,
+  "previously_consulted_outcome_ids": []
+}

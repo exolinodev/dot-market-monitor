@@ -1,0 +1,289 @@
+{
+  "prompt_sha256": "18292d804adb3f93984475ad63e1ec5ad95e1a692836cb02b8815c610cbf3cec",
+  "model": null,
+  "snapshot_sha256": [
+    "fed4ae2ef5a975881600f42b08236a466d2268858ab5f7d9b0a823820d41c4ed",
+    "3505c816d3e47813b20c37dfe426e48fde7a1b98fa3cf53bb5b9abbd8fab3f63",
+    "1da8f59f660b426e58fdfffb71ad8b42544c51ffdb86181d90418d99aa73b24f",
+    "f888684f4ecf9dd95da03d306531989198a92dc94956bf66d18139f80b614fd0",
+    "1ffb3ec8550e5139c85159ccf5732072e35e92d7c5b747d1e46f89baeb9fb791",
+    "9fe1dae5a1285564ad421c4eb026db62ddb89166aff1fa27604aaf8a92e8c2d1",
+    "c58c9f350ece9f3de06cde49641151964798f274f5b733dc5df96f85fe07e428",
+    "fbebf0c62f2197c174317634d0a5b2d5cbf2935af8a6b61009f7b06f3869097d",
+    "334c827f0daaa3ca82618c0f1e4cccb442f125eedf7c5485264144da37726f4d",
+    "7476ee987da2623011b56c3c74a43dd8ecd08f05895e7c4343390d1016ac7ccb",
+    "aa1aecc3c9e654b048b9080749748235d5545acf13f5b9e3ba0c7fc53936a8cd",
+    "59ba729371956235f20b361a846d192aecbaf55c2dfcc5d7bbcbeb1e33ffa0a0",
+    "3e7b5c5ab89fb84c05e300fb17fd13e2ea5a829e58baf2b49f924aab48cde32e",
+    "0a110da53b1474eeac41efd9f55b9204796ed08516c428f7bce66c82d6683294",
+    "e87f09e918dc0b582dcf5eaa63bcd9901ef179493fcb09758070e47dc6fd0192",
+    "4ad0694246ca960339f2cb3307edbcb9ac19d0600eb51edc6dc121306b28254a",
+    "66300b6975b0e634ee123f52fe13d01f4e7a8810fa35b2a75c43efff5462b710",
+    "545d7694c8fa9b2c22f433709d7f814000cb74105a9573e395d656a768a5e24a",
+    "4d7eb9674432a17906443920c8effb0483f1d57634eadd056751fb1d3b5101b0",
+    "a6d059590438450019cf44a2309b1b3eb9c5ee91ac5a1e3dddb478083f64ecaf",
+    "c9c731333c3ff90c89f4753d527ba2a693c54f096da8c6e3683db94d1c28b7f4",
+    "0b6634a68c6149e4e13628dd581836e5612a3cbd082748cda4d9888c750affc0",
+    "886a7b40c7aa959231edae671dc37d625dea578cd9b600f9f6ed3c5c3bbdc630",
+    "6564c03b7d6974afa677cafdeb63ae793fa21f45dd8d54490b169fb8ec67200a",
+    "b52e8e29cf14ce5544d2b5a0f6f364cc722e51b8b2f6034423859ab013c867d6",
+    "df9f4d73053529a1e55d92804b4c7edd17641aeb818b6afa94051cf5e481c745",
+    "54120ce612a8560391daef0f728fc4c29391eda6b538162134a9cbe80e69f4f1",
+    "07aa4c4f66948d81c06aa79c4ebcf725994f8399e4cb654b566281cc58137962",
+    "a3bf65c8ae2cd31660546ebe35528a678cdbec7bdd4e02b283daafeaa3e81310",
+    "8aed4afcefb0bd144d56dacb98202b1d8f3711a09b8992a9f63e0bce67a4840f",
+    "1fa1e0fe00efc280a079b3a44e9d0a5bba5ca8a2c180ea0150902262ac4a47c5",
+    "bab045442520e9beb365df7cdbe4ea18d683f8e94d360b0097e3a96bad42fbbe",
+    "be69a0d57e9f1dde6739171ef51cb0a5ec8b4daf0763d325cb8c27b3a4594cf3",
+    "cd86787cbe1d7c4575bfb446c1c85ab52360eba515706c90c17380039ef8b0da",
+    "daf2d660637966fcf5b2e44536fef73230cbb56a3aea965e7716222a45626df6",
+    "2264f7e83dad3afa2e34b3845ab378dbebaab4e18812399038726be7c30812a8",
+    "b517ada3e6842ec2f50db19f1f59b68ab7a05367d1408e7eab92bc2f4c45bb3d",
+    "337fd939d2464cd2ab51b11a06f9f2282cd73c75cc198101efa6f53ae30ae1ea",
+    "ea5e50d3e8466bdb6dfcc944864409e7ef69f997ee77c6fdbffa4a37d8772a07",
+    "0dd97ab405e26fb0750d90a3c28f16e2fb4c68000898759e957056b4abc5b373",
+    "35e0cc49d633823513fd2e0e476af086bd3706a9c3d977bc4757b8677bd692fa",
+    "9645db4f952c4687b63d5717aaa9e84b18e7a87750739fec3a345f3c7f42002c",
+    "4b51497d7467f89b15ae8340d041ac5194cfc459d05a0d716ad107bb1254b55e",
+    "7166e366892db0899b760a3297456c28804b50e82a42ffebe962a45d59138549",
+    "4c617ad244acdd32edafb2778db1f8cb33290e095ff5bd0b7440da44b75bced6",
+    "baf9aa4f25e147d1db3be425045dc7b9d57df55d22b06d7cda1a9927f17c4f36",
+    "9c23b254ae7c0f135d835676d9b8e2ed4fa2d5ccf520f3663e01b7e754296b34",
+    "593e229e8eb9df762c5a8332843623837081860db4bb4e9ba85bee2615dd7ea0",
+    "6eb767c85edeb7a01e9f14e920aea6b7e93d2663d4506866e463b5aa9917235b",
+    "bbaf90f93e1f9eb9b878a4097b33592262a545a3b50dd047493e945b7a9336e2",
+    "a264d7963c5dd1716e0c29a7ec2249c20e6a5cbb310cffdea3944630f05fdb1e",
+    "acfbffa3f6eca26eb000b85bb4483f11529073e050ef9996b2a7a1d11a6a9ad8",
+    "4b070d6ead0f7a85f78d38543e2840fca4bff6979a3013ae909ba46756889dcb",
+    "5d2c65c2126823a5f1ca456ce6a4487afc23f5a8144a950772817e041f4eaa43",
+    "771b4b27f323f54d5d9e32f259af7147ae2cef3cf636e3426196c6ef56c9e653",
+    "1d02a606b82375a25e31620957f07ff0b2e59e61e46ad76f706576c3ed75c68e",
+    "5e18719b33eb341c6cdd2050e52c2cf5493585f2b28581b53c37171aabc44d5f",
+    "370bde3bacd0ad50c9c0b80076c5372b685830343b72d79c771ebb38416770bd",
+    "882b4a38e97ee504292de4395f66866b7aff9c065bb6078fb4ffc1fcb7f4ff6f",
+    "7309de1b5d73b2a82824b8a8b51b7a2d0138257672b1f3fd709ce30b7ca8ae57",
+    "57a3e82513d4b011d5c201e18b8f20ef961f251268a2be6c07ea2bc08eefdf9a",
+    "35d3554b9a208f05273fcd8d1bdd74e6c482d6460b7d6d5e1a2207c71e684672",
+    "60cd36dde115ecb0da7e4714b1b6ceb59aaf7c2988f0b1c4c0788b029265d900",
+    "1251690394ff2d596e8320ec9e581bef04e4541b5d483a91e18aa6eece4c3d80",
+    "ca3491c72f36c8ef379ab189e19419f746e1d7d3525d409c4bb36678b0df43ea",
+    "6edb067c8af8166215b16cc5fc98b389fd070dd6d14507f2f8d9d2d163984151",
+    "4fe80d22f2c15b51a1c38c99e8f6b04e1ee373a5731dae41d44d6eca42b3a89b",
+    "5f1b88a4bdff8034d46133816fbd625a1cd3b447ffe402a1538ae949c0c2d9b4",
+    "559393d724dc610c643f0723e2cb090f5e759f1be0d3cc9092ef6f4f48e4c6e9",
+    "2e2dafccab1743954f4528ad9d0ac14f4e141f143c638b9b70eac78b936054a8",
+    "8652a3e5224409cf984ecc720216770a5a715065756a24f3e933c5441575ea9b",
+    "e1958f82307b575f1c68f97b0f957106b1c9cded4ebaf099549ee3e760d0814e",
+    "dc25e025a1b559feccd13ef4fa0740b2f96f8da79f0b7845b77e5acde12a3a2f",
+    "a1ba020c04254d20e6b584b9344373bb313686ee19993dbfdbc51076c465a654",
+    "b64d842655d1953d50230e27a82ff13fa1631533a4fbc6a6a646ba3a97bcbc4d",
+    "a4ac532c5f1d53b814943eeae05a546af240bbfef89f4626093d17ed945fc882",
+    "d691eeb20954fce60115d29e6d10717327cbe0bbba20f5ca515a8769aba21643",
+    "1d62a72996a340621f18b29cf731026a3d28ea5b06e92a325f73d76393c1c9b2",
+    "a4b5c5b272e77fc98706fa947502912f1d474fe052639f15b553059bb62f7bde",
+    "29b74c77f3091cf295c9038d196edc93f0d078691d0802c58e1fd8b6e70252f7",
+    "b859197feb37bfc1996ec2a506c70c31b5cc1fd05efd62009b095a0218dd1362",
+    "fae2352a18fb1a8af6ddf8ac6cd47db6f79a8330e6c2e0ab80e5b49ff127b979",
+    "4dc23a875d59eea76cb9164df1cab6c39c11a7d644096fba8d09f94e2ca33fe3",
+    "b8a538e6b73bf83be79370cc4fb2e2129ab0a50868ee697928ee1667f9b99f11",
+    "2c9bb59b610815a731fd874e9e1d73a85b18dd50ee86df8eae5313f121bcf9f9",
+    "ea2e057abf281f8fe3d64c1a3eeff6daee088db5588aac29708b975857afeb92",
+    "4cf910d4b950d6e37a8d3facc8a8e07e3752993e715cfe58c262b0af5bc2446f",
+    "69a9bf81d35941855c68e0ed33c22525d4ee8ec3b94d1cf55d36c3526f170334",
+    "196f974f7cfc9dd7471b5d04804b58a075b5744f92f34001a93108ba5bb32e0c",
+    "6fb303c6b0dfdd52fec44d6c1e1c718703bb12a785dd25e05e73723b8fdb2c79",
+    "747d75160b4859bbbf2682f5246d291d4388a00518aa9b914d1c7ab82afe31ce",
+    "5e1b67b385d456857448d165fe2baa803823fb8c7d908c8662afa9a47c80df3b",
+    "12da417c5e7188fce683d163efd31bf1dbd1ab1dd9b2c0728f5b92b4d6619ac3",
+    "5639094154f36187acbb9f564b1f218547417573834bd487f0998c8433358ea5"
+  ],
+  "eligible_snapshot_count": 48,
+  "skipped_snapshots": [
+    {
+      "snapshot_sha256": "fed4ae2ef5a975881600f42b08236a466d2268858ab5f7d9b0a823820d41c4ed",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "3505c816d3e47813b20c37dfe426e48fde7a1b98fa3cf53bb5b9abbd8fab3f63",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "1da8f59f660b426e58fdfffb71ad8b42544c51ffdb86181d90418d99aa73b24f",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "f888684f4ecf9dd95da03d306531989198a92dc94956bf66d18139f80b614fd0",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "1ffb3ec8550e5139c85159ccf5732072e35e92d7c5b747d1e46f89baeb9fb791",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "9fe1dae5a1285564ad421c4eb026db62ddb89166aff1fa27604aaf8a92e8c2d1",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "c58c9f350ece9f3de06cde49641151964798f274f5b733dc5df96f85fe07e428",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "fbebf0c62f2197c174317634d0a5b2d5cbf2935af8a6b61009f7b06f3869097d",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "334c827f0daaa3ca82618c0f1e4cccb442f125eedf7c5485264144da37726f4d",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "7476ee987da2623011b56c3c74a43dd8ecd08f05895e7c4343390d1016ac7ccb",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "aa1aecc3c9e654b048b9080749748235d5545acf13f5b9e3ba0c7fc53936a8cd",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "59ba729371956235f20b361a846d192aecbaf55c2dfcc5d7bbcbeb1e33ffa0a0",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "3e7b5c5ab89fb84c05e300fb17fd13e2ea5a829e58baf2b49f924aab48cde32e",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "0a110da53b1474eeac41efd9f55b9204796ed08516c428f7bce66c82d6683294",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "e87f09e918dc0b582dcf5eaa63bcd9901ef179493fcb09758070e47dc6fd0192",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "4ad0694246ca960339f2cb3307edbcb9ac19d0600eb51edc6dc121306b28254a",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "66300b6975b0e634ee123f52fe13d01f4e7a8810fa35b2a75c43efff5462b710",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "545d7694c8fa9b2c22f433709d7f814000cb74105a9573e395d656a768a5e24a",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "4d7eb9674432a17906443920c8effb0483f1d57634eadd056751fb1d3b5101b0",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "a6d059590438450019cf44a2309b1b3eb9c5ee91ac5a1e3dddb478083f64ecaf",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "c9c731333c3ff90c89f4753d527ba2a693c54f096da8c6e3683db94d1c28b7f4",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "0b6634a68c6149e4e13628dd581836e5612a3cbd082748cda4d9888c750affc0",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "886a7b40c7aa959231edae671dc37d625dea578cd9b600f9f6ed3c5c3bbdc630",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "6564c03b7d6974afa677cafdeb63ae793fa21f45dd8d54490b169fb8ec67200a",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "b52e8e29cf14ce5544d2b5a0f6f364cc722e51b8b2f6034423859ab013c867d6",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "df9f4d73053529a1e55d92804b4c7edd17641aeb818b6afa94051cf5e481c745",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "54120ce612a8560391daef0f728fc4c29391eda6b538162134a9cbe80e69f4f1",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "07aa4c4f66948d81c06aa79c4ebcf725994f8399e4cb654b566281cc58137962",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "a3bf65c8ae2cd31660546ebe35528a678cdbec7bdd4e02b283daafeaa3e81310",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "8aed4afcefb0bd144d56dacb98202b1d8f3711a09b8992a9f63e0bce67a4840f",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "1fa1e0fe00efc280a079b3a44e9d0a5bba5ca8a2c180ea0150902262ac4a47c5",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "bab045442520e9beb365df7cdbe4ea18d683f8e94d360b0097e3a96bad42fbbe",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "be69a0d57e9f1dde6739171ef51cb0a5ec8b4daf0763d325cb8c27b3a4594cf3",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "cd86787cbe1d7c4575bfb446c1c85ab52360eba515706c90c17380039ef8b0da",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "daf2d660637966fcf5b2e44536fef73230cbb56a3aea965e7716222a45626df6",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "2264f7e83dad3afa2e34b3845ab378dbebaab4e18812399038726be7c30812a8",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "b517ada3e6842ec2f50db19f1f59b68ab7a05367d1408e7eab92bc2f4c45bb3d",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "337fd939d2464cd2ab51b11a06f9f2282cd73c75cc198101efa6f53ae30ae1ea",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "ea5e50d3e8466bdb6dfcc944864409e7ef69f997ee77c6fdbffa4a37d8772a07",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "0dd97ab405e26fb0750d90a3c28f16e2fb4c68000898759e957056b4abc5b373",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "35e0cc49d633823513fd2e0e476af086bd3706a9c3d977bc4757b8677bd692fa",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "9645db4f952c4687b63d5717aaa9e84b18e7a87750739fec3a345f3c7f42002c",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "4b51497d7467f89b15ae8340d041ac5194cfc459d05a0d716ad107bb1254b55e",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "7166e366892db0899b760a3297456c28804b50e82a42ffebe962a45d59138549",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "4c617ad244acdd32edafb2778db1f8cb33290e095ff5bd0b7440da44b75bced6",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    },
+    {
+      "snapshot_sha256": "baf9aa4f25e147d1db3be425045dc7b9d57df55d22b06d7cda1a9927f17c4f36",
+      "reason": "original_measurement_config_or_oracle_inputs_unavailable"
+    }
+  ],
+  "mode": "prepare_only",
+  "future_context_in_requests": false
+}
