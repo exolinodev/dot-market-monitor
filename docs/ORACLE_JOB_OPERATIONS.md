@@ -12,7 +12,7 @@ ChatGPT-Aufgabenprompt; diese Datei dokumentiert nur den technischen Betrieb.
 | Cloudflare-Starter | Prüfung alle fünf Minuten, neue Runde ab :50 UTC | Ein Collector bei Bedarf, mit Doppelstartprüfung |
 | GitHub-Collector | :52 UTC als unabhängiger Ersatz; manuell / Code-Push | Messungen, Featurehistorie, gereifte Outcomes, Scorecard, Snapshot |
 | ChatGPT Oracle | Bestehender Stundentakt um die volle Stunde | Bedingte Analyse und bei erfüllten Voraussetzungen Forecast |
-| Forecast-Writer | Pro tatsächlichem neuen Forecast, kein eigener Cron | Create-only Forecast und gebundener Snapshot |
+| Forecast-Writer | Push einer neuen Einreichung auf main oder manueller Dispatch, kein eigener Cron | Create-only Forecast und gebundener Snapshot |
 | Tests mit optionalem Live-Collector | Manueller Start auf gewähltem Branch | Isolierte Daten und sieben Tage verfügbares Actions-Artefakt |
 
 Collector und Consumer bleiben stündlich: Die Quelle liefert stündliche
@@ -22,7 +22,7 @@ erfolgreich und bietet Abstand zum Verbraucher. GitHub und ChatGPT garantieren
 keinen minutengenauen Start. Die nächste reguläre Sammlung bewertet inzwischen
 gereifte 1h/4h/12h-Horizonte automatisch. Dafür ist kein zusätzlicher LLM-Job nötig.
 
-## Aufgabenprompt 3.0.4
+## Aufgabenprompt 3.1.0
 
 Der private Aufgabenprompt enthält eine eigenständige Betriebsanweisung und lädt
 die ausführliche `CHATGPT_MONITOR_PROMPT.md` sowie das Forecast-Schema am selben
@@ -45,6 +45,46 @@ alter v2-Repo-Prompt darf die neue Aufgabenanweisung nicht überstimmen. Ein
   keine Selbstauswertung oder Übernahme alter Count-Preise als aktuelle Messwerte.
 - Erzeugung nach tatsächlichem Schema und exaktes Hashing per Werkzeug;
   Erfolg erst nach Workflow-Ergebnis und Readback.
+- REFLOOP als geprüfte Zustandsfolge, Abgleich des vorherigen Writers, konkrete
+  Outcome-Dateien und versionsgleiche Scoregruppen vor der nächsten Analyse.
+- Outcome-Identitäten und qualitative Konsequenz im neuen text_summary als
+  unveränderlicher Nachweis, welche Erkenntnis verwendet wurde. Wiederholtes
+  Lesen erzeugt keine zusätzliche Stichprobe; bei fehlendem Vorcheckpoint bleibt
+  die Erstverwendung unbekannt.
+
+Der bestehende Job wurde über die ChatGPT-Weboberfläche gespeichert und erneut
+geöffnet: Prompt 3.1.0 stimmt vollständig mit dem eingegebenen Text überein,
+Intervall weiterhin eine Stunde. Die privaten Positionsangaben wurden unverändert
+erhalten. Es wurde keine lokale Codex-Automation angelegt.
+
+## Einreichung aus den verfügbaren ChatGPT-Werkzeugen
+
+Die verbundenen GitHub-Werkzeuge bieten Datei-Erstellung, aber nicht durchgehend
+einen Workflow-Dispatch mit frei belegbaren Inputs. Die alte Anweisung, direkt
+den Writer aufzurufen, war daher kein ausreichender operativer Pfad. Neu legt
+ChatGPT mit seinem vorhandenen autorisierten Create-File-Zugriff genau eine Datei
+`data/oracle/submissions/<forecast_id>.json` auf main an:
+
+```json
+{"schema_version":1,"snapshot_commit":"<vollständiger Analyse-SHA>","forecast":{}}
+```
+
+`forecast` steht hier für das vollständige Objekt des tatsächlichen Forecast-
+Schemas, nicht für ein zulässiges leeres Objekt. Der Push startet den Writer,
+der die Originaldatei aus dem auslösenden Commit liest und den bestehenden
+Publisher benutzt. Einreichungs-ID/Dateiname, neue reguläre Datei, eindeutiger
+Push, main-Abstammung, Snapshot-Bindung, Zeit und Schema werden geprüft.
+Die vorhandenen Rechte genügen; es braucht weder neue Credentials noch einen
+weiteren Modelljob. Änderungen/Löschungen und wiederverwendete IDs werden abgelehnt.
+
+Der Consumer nennt zuerst „eingereicht“. „Persistiert“ gilt erst nach dem eigenen
+erfolgreichen Run und dem vollständigen Readback aus `data/oracle/forecasts`.
+Der Collector bewertet spätere Horizonte und reicht die Ergebnisse im nächsten
+Oracle-Kontext zurück. Ein Feld mit dem Namen recent_matured_outcomes kann auch
+vorläufige partial/unavailable-Zeilen enthalten; der tatsächliche Status zählt.
+Finaler R=-1 und T1 vor Failure können gleichzeitig korrekt sein: Ein Zieltreffer
+beweist keinen realisierten Handelsgewinn. Ohne geeignete Samples keine neue
+kalibrierte Wahrscheinlichkeit und keine automatische Schwellenoptimierung.
 
 Der Writer behält die 120-Sekunden-Publikationsgrenze. Die CI-Warteschlange kann
 sie überschreiten. Dann ist die Veröffentlichung fehlgeschlagen; die Uhrzeit

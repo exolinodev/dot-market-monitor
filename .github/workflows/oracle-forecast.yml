@@ -1,5 +1,9 @@
 name: Publish Oracle forecast
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/oracle/submissions/**'
   workflow_dispatch:
     inputs:
       snapshot_commit:

@@ -1,0 +1,249 @@
+{
+  "test_only": true,
+  "synthetic_market_data": true,
+  "case_id": "c",
+  "reference_at_utc": "2026-09-17T07:00:00Z",
+  "expected_current_strategy_version": "oracle-v3.0.0",
+  "forecast": {
+    "schema_version": 1,
+    "strategy_version": "oracle-v3.0.0",
+    "forecast_id": "20260916T190000Z-333333333333-oracle-v3",
+    "created_at_utc": "2026-09-16T19:00:00Z",
+    "snapshot_generated_at_utc": "2026-09-16T19:00:00Z",
+    "snapshot_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "market": "DOTUSD",
+    "primary_market": "SPOT",
+    "measurement_config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "oracle_feature_version": "3.0.0",
+    "oracle_config_sha256": "298a079a85bb0cc92ff6438699b9dac212f8beba447537a596ce61a9e8f3fe77",
+    "macro_bias": "BEARISH",
+    "swing_bias": "BEARISH",
+    "intraday_bias": "BULLISH",
+    "execution_bias": "NEUTRAL",
+    "regime": "EXHAUSTION_WATCH",
+    "forecast_horizons": {
+      "1h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      },
+      "4h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      },
+      "12h": {
+        "direction": "UP",
+        "rationale": "Fixture"
+      }
+    },
+    "trade_setup": {
+      "direction": "LONG",
+      "status": "ARMED",
+      "failure_scope": "after_trigger",
+      "trigger": {
+        "kind": "touch_above",
+        "price_usd": 100.0,
+        "interval_minutes": 1,
+        "description": "Fixture touch"
+      },
+      "failure": {
+        "kind": "touch_below",
+        "price_usd": 98.0,
+        "interval_minutes": 1,
+        "description": "Fixture failure"
+      },
+      "targets": [
+        {
+          "id": "T1",
+          "price_usd": 102.0
+        },
+        {
+          "id": "T2",
+          "price_usd": 104.0
+        },
+        {
+          "id": "T3",
+          "price_usd": 106.0
+        }
+      ],
+      "target_roles": {
+        "T1": "reaction",
+        "T2": "mean reversion / reversal zone",
+        "T3": "structural decision"
+      },
+      "asymmetry": {
+        "assessment": "FAVOURABLE",
+        "reward_risk_t1": 1.0,
+        "reason": "Fixture only"
+      }
+    },
+    "paths": {
+      "primary": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      },
+      "alternative": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      },
+      "squeeze_failure": {
+        "when": "Fixture trigger",
+        "then": "Fixture outcome",
+        "why": "Fixture inputs"
+      }
+    },
+    "evidence": {
+      "supporting_feature_ids": [],
+      "opposing_feature_ids": [],
+      "decisive_timeframes": [
+        "1h"
+      ]
+    },
+    "calibration_context": {
+      "status": "uncalibrated",
+      "confidence": "LOW",
+      "analog_sample_count": 0,
+      "scorecard_sample_count": 0,
+      "limitations": [
+        "Synthetic fixture, not a published forecast"
+      ]
+    },
+    "text_summary": "Synthetic fixture: macro bearish, tactical long conditional."
+  },
+  "storage_readback_fixture": {
+    "submission_exists": true,
+    "writer_status": "completed_success",
+    "final_forecast_path": "data/oracle/forecasts/2026/09/16/20260916T190000Z-333333333333-oracle-v3.json",
+    "final_forecast_exists": true,
+    "final_forecast_sha256": "c3636751426210817327abcd85be62136f705cdef7a76752970e40ae683b9d50"
+  },
+  "outcome": {
+    "schema_version": 1,
+    "evaluator_version": "1.0.0",
+    "forecast_id": "20260916T190000Z-333333333333-oracle-v3",
+    "forecast_sha256": "c3636751426210817327abcd85be62136f705cdef7a76752970e40ae683b9d50",
+    "strategy_version": "oracle-v3.0.0",
+    "forecast_schema_version": 1,
+    "oracle_feature_version": "3.0.0",
+    "oracle_config_sha256": "298a079a85bb0cc92ff6438699b9dac212f8beba447537a596ce61a9e8f3fe77",
+    "measurement_config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "regime": "EXHAUSTION_WATCH",
+    "direction": "LONG",
+    "evaluated_at_utc": "2026-09-17T07:00:00Z",
+    "horizons": {
+      "1h": {
+        "status": "ambiguous",
+        "anchor_at_utc": "2026-09-16T19:00:00Z",
+        "end_at_utc": "2026-09-16T20:00:00Z",
+        "anchor_delay_seconds": 0.0,
+        "interval_minutes": 1,
+        "forward_return_pct": 0.0,
+        "mfe_pct": 3.0000000000000027,
+        "mae_pct": -3.0000000000000027,
+        "candle_sha256": "faa1e6ae6bd68feb96b8f1ca4e6c742a803e6318812efe29fc40a26f694d5b03",
+        "source_id": "DOTUSD.ohlc.1",
+        "triggered": true,
+        "trigger_time": {
+          "candle_open_utc": "2026-09-16T19:00:00Z",
+          "candle_close_utc": "2026-09-16T19:01:00Z"
+        },
+        "failure_time": {
+          "candle_open_utc": "2026-09-16T19:04:00Z",
+          "candle_close_utc": "2026-09-16T19:05:00Z"
+        },
+        "targets": [
+          {
+            "id": "T1",
+            "time": {
+              "candle_open_utc": "2026-09-16T19:04:00Z",
+              "candle_close_utc": "2026-09-16T19:05:00Z"
+            },
+            "before_failure": null
+          },
+          {
+            "id": "T2",
+            "time": null,
+            "before_failure": false
+          },
+          {
+            "id": "T3",
+            "time": null,
+            "before_failure": false
+          }
+        ],
+        "target_before_failure": null,
+        "entry_price_usd": 100.0,
+        "mfe_trade_pct": null,
+        "mae_trade_pct": null,
+        "r_multiple": null,
+        "time_to_t1_minutes": null,
+        "timing_status": "barrier_order_unknown_within_smallest_candle",
+        "excursion_status": "unavailable"
+      }
+    }
+  },
+  "scorecard": {
+    "schema_version": 1,
+    "methodology": "version-partitioned-scorecard-v1",
+    "reference_at_utc": "2026-09-17T07:00:00Z",
+    "probabilistic_calibration": "disabled_no_probabilistic_forecasts",
+    "groups": [
+      {
+        "strategy_version": "oracle-v3.0.0",
+        "forecast_schema_version": 1,
+        "oracle_feature_version": "3.0.0",
+        "oracle_config_sha256": "298a079a85bb0cc92ff6438699b9dac212f8beba447537a596ce61a9e8f3fe77",
+        "measurement_config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "evaluator_version": "1.0.0",
+        "horizon": "1h",
+        "direction": "LONG",
+        "regime": "EXHAUSTION_WATCH",
+        "forecast_count": 1,
+        "triggered_count": 1,
+        "invalidated_before_trigger_count": 0,
+        "no_trigger_count": 0,
+        "ambiguous_count": 1,
+        "unavailable_partial_count": 0,
+        "no_trade_count": 0,
+        "directional_abstention_count": 0,
+        "resolved_triggered_count": 0,
+        "target_before_failure_rates": {
+          "T1": null,
+          "T2": null,
+          "T3": null
+        },
+        "mfe_pct": {
+          "mean": null,
+          "median": null,
+          "p10": null,
+          "p90": null
+        },
+        "mae_pct": {
+          "mean": null,
+          "median": null,
+          "p10": null,
+          "p90": null
+        },
+        "r_multiple": {
+          "mean": null,
+          "median": null,
+          "p10": null,
+          "p90": null
+        },
+        "directional_sample_count": 1,
+        "directional_correct_count": 0,
+        "directional_accuracy": null,
+        "calibration_status": "insufficient_samples",
+        "minimum_samples": 30
+      }
+    ]
+  },
+  "previously_consulted_outcome_ids": [
+    [
+      "20260916T190000Z-333333333333-oracle-v3",
+      "1h",
+      "1.0.0"
+    ]
+  ]
+}

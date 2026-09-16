@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_submission.schema.json",
+  "title": "Oracle forecast submission (not proof of publication)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_commit", "forecast"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "snapshot_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "forecast": {"$ref": "oracle_forecast.schema.json"}
+  }
+}

@@ -149,7 +149,10 @@ Optional: `COINGECKO_API_KEY` als Umgebungsvariable oder GitHub Actions Secret m
 Oracle offline prüfen: `python scripts/oracle_replay.py`. Forecast veröffentlichen:
 `python scripts/oracle.py publish forecast.json --snapshot exact_snapshot.json`.
 Der separate Workflow `oracle-forecast.yml` bietet denselben geprüften Write-back
-mit autorisiertem GitHub-Zugriff. Vorhandene Forecast-IDs werden niemals ersetzt.
+mit autorisiertem GitHub-Zugriff. ChatGPT kann dafür eine neue Datei unter
+`data/oracle/submissions/<forecast_id>.json` auf main anlegen; der Push startet
+den Writer. Eine Einreichung ist erst nach erfolgreichem Writer und Readback des
+finalen Forecasts persistiert. Vorhandene Forecast-IDs werden niemals ersetzt.
 Details und Modell-Evaluationsharness: [Oracle v3](docs/ORACLE_V3.md).
 
 Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; pytest wird nur über `tests/requirements.txt` installiert.

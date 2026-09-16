@@ -161,15 +161,24 @@ An unchanged JSON input snapshot is retained to verify evidence later. No real
 historical model forecasts were created for this implementation. Synthetic test
 fixtures remain in tests and are not admitted as actual model performance.
 
-With authorised GitHub access, the consumer may dispatch `oracle-forecast.yml`
-with `snapshot_commit` (full main commit SHA) and `forecast_json`. The workflow reads
+With authorised GitHub file access, the consumer creates one UTF-8 file at
+`data/oracle/submissions/<forecast_id>.json` on main, with exactly
+`{"schema_version":1,"snapshot_commit":"<full SHA>","forecast":{...}}`.
+The main push starts `oracle-forecast.yml`. The writer accepts exactly one newly
+added regular file, validates its name/schema and reads the bytes from the
+triggering commit, not the mutable checkout. Its snapshot commit must predate
+the submission and belong to main. Modified, deleted, reused or multiple
+submissions are rejected. The consumer never creates final archive files itself.
+An actual dispatch tool remains an alternative, taking `snapshot_commit` and
+`forecast_json`; a rerun of an old publish job is not a new submission.
+The workflow reads
 that precise main snapshot, validates/publishes, commits only forecast evidence,
 and reads no model service. Queueing longer than the publication tolerance can
 reject a forecast; create a fresh, reanalysed forecast rather than backdating it.
 The consumer must verify workflow success and read the saved forecast back.
 Without tools/access it must explicitly report an unpersisted draft.
 
-CI rejects modifications/deletions of tracked forecasts, bound snapshots, final
+CI rejects modifications/deletions of tracked submissions, forecasts, bound snapshots, final
 outcomes and outcome candle evidence. Repository administrators can still bypass
 Git controls: branch protection and required archive-integrity checks are needed
 for an organisational immutability guarantee. Git plus create-only code is an audit

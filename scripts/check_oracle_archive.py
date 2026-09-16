@@ -12,7 +12,7 @@ from oracle_evaluator import verify_outcome
 
 
 def check(base,head='HEAD',repo=Path('.')):
-    paths=['data/oracle/forecasts','data/oracle/inputs','data/oracle/outcomes','data/oracle/outcome_inputs']
+    paths=['data/oracle/submissions','data/oracle/forecasts','data/oracle/inputs','data/oracle/outcomes','data/oracle/outcome_inputs']
     changes=subprocess.check_output(['git','diff','--no-renames','--name-status',base,head,'--',*paths],cwd=repo,text=True)
     for line in changes.splitlines():
         status,path=line.split('\t',1)
