@@ -6,7 +6,7 @@ from common import read_json, write_json
 from oracle_common import configuration, FEATURE_VERSION, STRATEGY_VERSION, EVALUATOR_VERSION, canonical, validate, digest
 from oracle_features import feature_inputs, build_features
 from oracle_history import FeatureArchive
-from oracle_forecasts import validate_forecast, create_only
+from oracle_forecasts import validate_forecast, create_only, ensure_unique_snapshots
 from oracle_evaluator import evaluate_forecast, verify_outcome
 from oracle_scorecard import scorecard
 from oracle_analogs import market_analogs
@@ -46,6 +46,7 @@ def load_forecasts(directory, reference):
         validate_forecast(f,snapshot)
         fs.append(f)
     if len({f['forecast_id'] for f in fs})!=len(fs): raise ValueError('Duplicate forecast ID')
+    ensure_unique_snapshots(fs)
     return fs
 
 

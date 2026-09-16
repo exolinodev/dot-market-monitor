@@ -1,5 +1,6 @@
 """Strict forecast validation and atomic, create-only publication."""
 import os
+import json
 from pathlib import Path
 import tempfile
 import pandas as pd
@@ -83,6 +84,19 @@ def create_only(path, value):
     return create_only_bytes(path, (canonical(value)+'\n').encode())
 
 
+def snapshot_strategy_key(f):
+    return digest({k:f[k] for k in ('snapshot_sha256','strategy_version')})
+
+
+def ensure_unique_snapshots(forecasts):
+    seen = set()
+    for f in forecasts:
+        key = snapshot_strategy_key(f)
+        if key in seen:
+            raise ValueError('Duplicate snapshot/strategy forecast in archive')
+        seen.add(key)
+
+
 def persist_forecast(f, snapshot, directory, now):
     validate_forecast(f, snapshot)
     if abs((utc(now)-utc(f['created_at_utc'])).total_seconds()) > 120:
@@ -90,6 +104,15 @@ def persist_forecast(f, snapshot, directory, now):
     day = utc(f['created_at_utc']).strftime('%Y/%m/%d')
     root = Path(directory)
     path = root/'forecasts'/day/(f['forecast_id']+'.json')
+    key = snapshot_strategy_key(f)
+    claim = root/'forecast_keys'/(key+'.json')
+    if claim.exists() or path.exists():
+        raise FileExistsError('Snapshot/strategy or forecast ID already published/reserved')
+    # Older archives need no rewrite/backfill. Their published forecasts also count.
+    for existing in (root/'forecasts').glob('*/*/*/*.json'):
+        prior = json.loads(existing.read_text())
+        if snapshot_strategy_key(prior) == key:
+            raise FileExistsError('Snapshot/strategy already published: '+prior['forecast_id'])
     # Bound input snapshot is also create-only; repeated same snapshot is verified.
     evidence = root/'inputs'/(f['snapshot_sha256']+'.json.gz')
     import gzip
@@ -100,4 +123,10 @@ def persist_forecast(f, snapshot, directory, now):
     except FileExistsError:
         if gzip.decompress(evidence.read_bytes()) != canonical(snapshot).encode():
             raise ValueError('Existing snapshot evidence mismatch')
+    # Atomic shared-filesystem arbiter. Distinct clones commit the same key path;
+    # add/add conflicts prevent two different winners from rebasing onto main.
+    # A crash after reservation fails closed, never admits a replacement forecast.
+    create_only(claim, {'schema_version':1,'snapshot_sha256':f['snapshot_sha256'],
+        'strategy_version':f['strategy_version'],'forecast_id':f['forecast_id'],
+        'forecast_sha256':digest(f),'forecast_path':path.relative_to(root).as_posix()})
     return create_only(path, f)

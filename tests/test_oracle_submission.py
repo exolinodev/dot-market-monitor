@@ -9,6 +9,8 @@ import pytest
 
 from oracle_common import validate
 from oracle_submission import read_push_submission, publish_submission
+from oracle_forecasts import forecast_id, snapshot_strategy_key
+from datetime import datetime, timedelta, timezone
 
 ROOT = Path(__file__).parents[1]
 
@@ -135,3 +137,147 @@ def test_deleted_submission_id_cannot_be_reused(submission):
     event['after'] = commit(repo)
     with pytest.raises(ValueError, match='already existed'):
         read_push_submission(event, event['after'], repo)
+
+
+def later(envelope, seconds=1):
+    result = copy.deepcopy(envelope)
+    f = result['forecast']
+    f['created_at_utc'] = (datetime.fromisoformat(f['created_at_utc'].replace('Z','+00:00'))
+        + timedelta(seconds=seconds)).isoformat().replace('+00:00','Z')
+    f['forecast_id'] = forecast_id(f['created_at_utc'],f['snapshot_sha256'])
+    return result
+
+
+def test_new_time_cannot_republish_same_snapshot_even_for_no_trade(submission):
+    repo, _, envelope, _ = submission
+    original = publish_submission(envelope,envelope['forecast']['created_at_utc'],repo)
+    before = original.read_bytes()
+    fresh = later(envelope)
+    assert fresh['forecast']['trade_setup']['direction'] == 'NONE'
+    with pytest.raises(FileExistsError, match='Snapshot/strategy'):
+        publish_submission(fresh,fresh['forecast']['created_at_utc'],repo)
+    assert original.read_bytes() == before
+    assert len(list((repo/'data/oracle/forecasts').glob('*/*/*/*.json'))) == 1
+    fresh['forecast']['strategy_version'] = 'oracle-v3.1.0-test'
+    assert publish_submission(fresh,fresh['forecast']['created_at_utc'],repo).exists()
+
+
+def test_legacy_forecast_without_key_still_prevents_duplicate(submission):
+    repo, _, envelope, _ = submission
+    f = envelope['forecast']
+    # Represents an old archive, before reservation files existed.
+    path = repo/'data/oracle/forecasts/2026/09/16'/(f['forecast_id']+'.json')
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(f))
+    fresh = later(envelope)
+    with pytest.raises(FileExistsError,match='already published'):
+        publish_submission(fresh,fresh['forecast']['created_at_utc'],repo)
+
+
+def test_different_ids_race_for_one_snapshot_key(submission):
+    from concurrent.futures import ThreadPoolExecutor
+    repo, _, envelope, _ = submission
+    def attempt(i):
+        e = later(envelope,i)
+        try:
+            return publish_submission(e,e['forecast']['created_at_utc'],repo)
+        except FileExistsError:
+            return None
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(attempt,range(6)))
+    assert len([p for p in results if p]) == 1
+    assert len(list((repo/'data/oracle/forecast_keys').glob('*.json'))) == 1
+
+
+def test_independent_git_writers_cannot_rebase_two_snapshot_winners(submission,tmp_path_factory):
+    repo, _, envelope, _ = submission
+    remote = tmp_path_factory.mktemp('remote')/'repo.git'
+    git(repo,'clone','--bare',str(repo),str(remote))
+    clones = []
+    for i in range(2):
+        clone = tmp_path_factory.mktemp('writer')/'repo'
+        git(repo,'clone',str(remote),str(clone))
+        git(clone,'config','user.name','Test')
+        git(clone,'config','user.email','test@example.invalid')
+        e = later(envelope,i)
+        publish_submission(e,e['forecast']['created_at_utc'],clone)
+        commit(clone)
+        clones.append(clone)
+    git(clones[0],'push','origin','HEAD:main')
+    git(clones[1],'fetch','origin','main')
+    with pytest.raises(subprocess.CalledProcessError):
+        git(clones[1],'rebase','origin/main')
+    assert len(list((clones[0]/'data/oracle/forecasts').glob('*/*/*/*.json'))) == 1
+
+
+def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('publish_dispatch',ROOT/'scripts/publish_oracle_dispatch.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    frozen = datetime.fromisoformat((now or envelope['forecast']['created_at_utc']).replace('Z','+00:00'))
+    class Clock:
+        @staticmethod
+        def now(tz): return frozen
+    monkeypatch.setattr(module,'datetime',Clock)
+    monkeypatch.chdir(repo)
+    monkeypatch.setenv('GITHUB_EVENT_NAME',route)
+    monkeypatch.setenv('SNAPSHOT_COMMIT',envelope['snapshot_commit'])
+    monkeypatch.setenv('FORECAST_JSON',json.dumps(envelope['forecast']))
+    monkeypatch.setenv('GITHUB_SHA',event['after'])
+    payload = repo/'event.json'
+    payload.write_text(json.dumps(event))
+    monkeypatch.setenv('GITHUB_EVENT_PATH',str(payload))
+    module.main()
+
+
+@pytest.mark.parametrize('route',['workflow_dispatch','push'])
+def test_workflow_entrypoints_publish_exact_input_and_enforce_dedup(submission,monkeypatch,route):
+    repo, _, envelope, event = submission
+    run_entrypoint(monkeypatch,repo,envelope,event,route)
+    f = envelope['forecast']
+    path = repo/'data/oracle/forecasts/2026/09/16'/(f['forecast_id']+'.json')
+    assert json.loads(path.read_text()) == f
+    import gzip
+    bound = json.loads(gzip.decompress((repo/'data/oracle/inputs'/(f['snapshot_sha256']+'.json.gz')).read_bytes()))
+    from oracle_common import digest
+    assert digest(bound) == f['snapshot_sha256']
+    with pytest.raises(FileExistsError):
+        run_entrypoint(monkeypatch,repo,envelope,event,route)
+
+
+@pytest.mark.parametrize('route',['workflow_dispatch','push'])
+@pytest.mark.parametrize('invalid',['hash','id','old_creation','future_creation','stale_snapshot',
+    'measurement','oracle_config','feature_version','evidence','reversal','geometry','target_order'])
+def test_both_writer_routes_reject_invalid_forecasts(submission,monkeypatch,route,invalid):
+    from test_oracle import fixture_forecast
+    repo, inbox, envelope, event = submission
+    f = envelope['forecast']
+    now = f['created_at_utc']
+    if invalid=='hash':
+        f['snapshot_sha256']='0'*64
+        f['forecast_id']=forecast_id(f['created_at_utc'],f['snapshot_sha256'])
+    elif invalid=='id': f['forecast_id']='20260916T202328Z-000000000000-oracle-v3'
+    elif invalid=='old_creation': now=later(envelope,121)['forecast']['created_at_utc']
+    elif invalid=='future_creation': now=later(envelope,-121)['forecast']['created_at_utc']
+    elif invalid=='stale_snapshot':
+        envelope=later(envelope,91*60);f=envelope['forecast'];now=f['created_at_utc']
+    elif invalid=='measurement': f['measurement_config_sha256']='0'*64
+    elif invalid=='oracle_config': f['oracle_config_sha256']='0'*64
+    elif invalid=='feature_version': f['oracle_feature_version']='99.0.0'
+    elif invalid=='evidence': f['evidence']['supporting_feature_ids']=['not_a_feature']
+    else:
+        f['trade_setup']=fixture_forecast()['trade_setup']
+        if invalid=='reversal': f['regime']='REVERSAL_ARMED'
+        elif invalid=='geometry': f['trade_setup']['failure']['price_usd']=101
+        else: f['trade_setup']['targets'].reverse()
+    # Route the exact invalid JSON through the real push-event parser as well.
+    if route=='push':
+        inbox.unlink()
+        inbox=inbox.with_name(f['forecast_id']+'.json')
+        inbox.write_text(json.dumps(envelope))
+        if git(repo,'status','--porcelain'):
+            event['after']=commit(repo)
+    with pytest.raises((ValueError,ValidationError)):
+        run_entrypoint(monkeypatch,repo,envelope,event,route,now)
+    assert not list((repo/'data/oracle/forecasts').glob('*/*/*/*.json'))

@@ -9,6 +9,9 @@ from oracle_common import canonical, digest
 from common import write_json
 
 PART_BYTES = 10000
+OBSERVATION_COMPONENTS = ('price_levels', 'anchored_vwap', 'historical_context',
+    'market_relative', 'flow_windows', 'volume_profile', 'spot_perp_history',
+    'cross_venue', 'scheduled_events', 'input_lineage')
 
 
 def pointer(parts):
@@ -63,18 +66,20 @@ def build_consumer_bundle(snapshot):
         if tf in ('1w', '1d', '4h', '1h'):
             add('structure', *base, 'structure')
     add('timing', *dot, 'time_fibs')
-    for key in ('price_levels', 'scheduled_events', 'spot_perp_history'):
+    for key in OBSERVATION_COMPONENTS:
         add('observations', *dot, 'observations', 'components', key)
     for key in sorted(snapshot.get('sources', {})):
         add('sources', 'sources', key)
 
     files = {}
     manifest = {
-        'schema_version': 1, 'projection_version': 'oracle-consumer-v1',
+        'schema_version': 1, 'projection_version': 'oracle-consumer-v2',
         'snapshot_path': 'data/llm_snapshot.json', 'snapshot_sha256': snapshot_hash,
         'snapshot_generated_at_utc': snapshot['meta']['generated_at_utc'],
         'scope': 'exact_selected_fields; omitted fields remain unknown; no intrabar confirmation',
         'part_max_bytes': PART_BYTES, 'parts': [],
+        'observation_components': [k for k in OBSERVATION_COMPONENTS if k in
+            snapshot['markets']['DOTUSD'].get('observations', {}).get('components', {})],
     }
 
     def wrap(records):

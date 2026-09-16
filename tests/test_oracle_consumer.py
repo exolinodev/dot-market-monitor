@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import pytest
 from oracle_common import canonical, digest
-from oracle_consumer import PART_BYTES, build_consumer_bundle, write_consumer_bundle
+from oracle_consumer import PART_BYTES, OBSERVATION_COMPONENTS, build_consumer_bundle, write_consumer_bundle
 
 
 @pytest.fixture
@@ -76,3 +76,26 @@ def test_large_records_split_without_losing_json_pointer_semantics(snapshot):
     selected = [r for r in records if '/recent_forecasts/' in r['path']]
     assert len(selected) == 3
     assert all(resolve(snapshot, r['path']) == r['value'] for r in selected)
+
+
+def test_all_required_observations_are_fully_exported(snapshot):
+    manifest, parts = build_consumer_bundle(snapshot)
+    assert manifest['projection_version'] == 'oracle-consumer-v2'
+    assert set(manifest['observation_components']) == set(OBSERVATION_COMPONENTS)
+    records = [r for p in parts.values() for r in p['records']]
+    for key in OBSERVATION_COMPONENTS:
+        path = '/markets/DOTUSD/observations/components/' + key
+        assert {'path': path, 'value': resolve(snapshot, path)} in records
+
+
+def test_split_observation_arrays_retain_every_leaf_and_escaped_pointer(snapshot):
+    original = [{'a/b~c': 'x' * 6000, 'value': i} for i in range(4)]
+    snapshot['markets']['DOTUSD']['observations']['components']['volume_profile'] = original
+    _, parts = build_consumer_bundle(snapshot)
+    prefix = '/markets/DOTUSD/observations/components/volume_profile/'
+    records = [r for p in parts.values() for r in p['records'] if r['path'].startswith(prefix)]
+    assert len(records) == 4
+    assert [r['value'] for r in records] == original
+    for p in parts.values():
+        assert len((canonical(p)+'\n').encode()) <= PART_BYTES
+        assert all(resolve(snapshot,r['path']) == r['value'] for r in p['records'])
