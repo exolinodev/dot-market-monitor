@@ -203,3 +203,49 @@ Der produktive v3-Writer kann erst nach Freigabe/Merge des Oracle-PR auf `main`
 ausgeführt werden. Bis dahin benutzt der ChatGPT-Job den expliziten Übergangsmodus.
 Der ursprüngliche Auftrag verbietet automatisches Mergen. Ein erfolgreicher
 Collector-/Browser-Test ist kein Nachweis prognostischer Profitabilität.
+
+## Refloop-Test des ChatGPT-Verbrauchers, Prompt 3.1.0
+
+Der bestehende Chat wurde über den Browser mit sechs ausdrücklich synthetischen,
+kleinen Vertragsfällen aufgerufen. Festgehaltener Test-Commit:
+`01d1215e37a7dff6ea63ea0b015d1bd1bcd70ebd`. Der Test lief laut ChatGPT-Anzeige
+2m 17s. Die Fälle enthalten Original-Fixture-Forecasts, Ergebnisse des echten
+Python-Evaluators und dessen Scorecard. Speicherbelege sind ausdrücklich simuliert.
+Reproduktion: `python tests/refloop_fixture.py`; die automatisierte Prüfung
+vergleicht alle Dateien vollständig und hält jede unter 10 KB.
+
+| Fall | Python-/Speicherbefund | Beobachtetes ChatGPT-Verhalten |
+| --- | --- | --- |
+| a | gespeichert simuliert; 1h pending | kein Gewinn/Verlust und keine Anpassung |
+| b | T1 vor Failure; final failure, R=-1 | unterscheidet Zielberührung von Gewinn; 1/30 Samples, nur begrenzte qualitative Konsequenz |
+| c | ambiguous; Outcome schon konsultiert | keine Reihenfolge erfunden; kein neues Sample; Trade-n 0, Direction-n 1 getrennt |
+| d | Failure mit inkompatibler Strategie | aus aktueller v3-Statistik und v3-Anpassung ausgeschlossen |
+| e | NO_TRADE/ABSTAIN, Python abstained | kein erfolgreicher Trade; beide Performance-Samples 0 |
+| f | Einreichung vorhanden, Writer queued, finale Datei fehlt | nur eingereicht; kein persistiert, kein Outcome, kein Doppelversuch |
+
+Alle sechs Fälle wurden korrekt unterschieden. Die Antwort begann mit
+`ORACLE CALL: NO_TRADE – isolierter Refloop-Test` und lieferte einen Checkpoint
+sowie eine text_summary-Passage mit der tatsächlichen Test-Outcome-Identität.
+Nicht gelieferte 4h/12h-Resultate blieben unbekannt. Der Job erklärte ausdrücklich,
+dass die Testbelege keine produktive Speicherung oder Performance nachweisen.
+Die Fähigkeiten wurden im Chat selbst durch read-only Werkzeugentdeckung geprüft:
+`GitHub.create_file` ist verfügbar mit repository_full_name, path, content,
+message und optional branch; ein freier workflow_dispatch wurde nicht gefunden.
+Der direkte Read von `.github/workflows/oracle-forecast.yml` auf main lieferte
+404, während der festgehaltene Test-Commit beide Einreichungswege enthält.
+
+Die 259 Python-Tests und 17 Scheduler-Tests bestanden lokal und in
+[GitHub CI](https://github.com/exolinodev/dot-market-monitor/actions/runs/35150401268).
+16 neue Git-/Publisher-Fälle prüfen Original-Commit statt veränderter Arbeitsdatei,
+create-only Forecast/Inputs, veraltete Zeit, falsche Snapshot-Bindung, Änderungen,
+Löschungen, Umbenennung, mehrere Dateien, ID-Zuordnung, zukünftigen Snapshot-Commit,
+Symlink, Extrafelder, falsche Branch-/Commit-Zuordnung und Wiederverwendung einer ID.
+
+Anschliessend wurde im Browser beim gespeicherten Job „Jetzt ausführen“ gewählt.
+Der automatische Freigabeprüfer blockierte den Aufruf vor der Ausführung, weil
+der reale Job Collection und Forecast-Write-back auslösen kann und keine explizite
+Produktionsfreigabe anerkannt wurde. Es wurde kein Ausweichen auf einen indirekten
+Start versucht. Der ursprüngliche Auftrag untersagt zusätzlich automatisches
+Mergen. Offen bleibt daher die ausdrücklich freigegebene Übernahme nach main und
+die echte Speicherung samt späterem 1h/4h/12h-Readback; die synthetische Prüfung
+darf diesen fehlenden Nachweis nicht ersetzen.
