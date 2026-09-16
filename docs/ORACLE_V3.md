@@ -229,7 +229,9 @@ python src/main.py --from-latest
 python scripts/validate_snapshot.py
 ```
 
-[Replay results](evaluation/oracle-v3/RESULTS.md) contain the measured sample sizes,
+[Replay results](evaluation/oracle-v3/RESULTS.md) and the compressed
+`example_llm_snapshot.json.gz` preserve the verified historical example separately
+from live collector-owned outputs. The report contains the measured sample sizes,
 coverage and timestamp-specific washout case. The replay scans original Git snapshot
 revisions (default `origin/main`, or pin `--ref COMMIT_SHA` for reproduction), deduplicates true UTC hours and walks forward. Stored source freshness,
 measurements and missing fields remain as observed. It does not recreate old OI or

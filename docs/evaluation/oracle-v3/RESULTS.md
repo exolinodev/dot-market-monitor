@@ -3,7 +3,9 @@
 This report is a deterministic feature replay, **not an LLM backtest or realised
 trading-performance claim**. No compatible model API key was available. No real
 historical Oracle forecasts were invented. Original data end at
-2026-09-16 18:50:47 UTC; this is also the preserved timestamp of the example snapshot.
+2026-09-16 18:50:47 UTC; this is also the preserved timestamp of `example_llm_snapshot.json.gz`.
+Collector-owned files on the PR branch retain the latest main data and are not
+replaced by this older example.
 
 ## Scope and reproducibility
 
