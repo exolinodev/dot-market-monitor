@@ -5,7 +5,7 @@
 
 Deterministische, quellengebundene Daten für einen stündlichen ChatGPT DOT-Monitor. Python liefert Messwerte, Indikatoren, Struktur und mathematische Flags. Elliott-Counts, Wahrscheinlichkeiten, Handelsinterpretation und fundamentale Bedeutungsbewertung bleiben ausserhalb des Scripts.
 
-**Eine Datei für ChatGPT:** [data/llm_snapshot.json](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) · [lesbare Übersicht](data/latest.md) · [Actions](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml)
+**Vollständiger Snapshot:** [data/llm_snapshot.json](https://raw.githubusercontent.com/exolinodev/dot-market-monitor/main/data/llm_snapshot.json) · [lesbare Übersicht](data/latest.md) · [Actions](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml)
 
 ## Oracle v3
 
@@ -19,6 +19,12 @@ Forecasts und gebundene Inputs werden create-only archiviert. Der stündliche Jo
 wertet gereifte 1h/4h/12h-Prognosen anhand geschlossener Spot-Candles aus, auch ohne
 erreichbares LLM. Mehrdeutige Barrier-Reihenfolgen bleiben `ambiguous`, fehlende Daten
 bleiben unbekannt. Schema v2 und der bisherige Measurements-only-Vertrag bleiben gültig.
+
+Für Dateitools mit gekürzten Antworten erzeugt der Collector zusätzlich
+`data/oracle/consumer/index.json` und verknüpfte Teile von höchstens 10 KB.
+Sie enthalten Originalwerte mit Feldpfad und bindendem Snapshot-Hash. Der
+[Job-Betrieb samt echtem Browser-Test](docs/ORACLE_JOB_OPERATIONS.md) beschreibt
+Stundentakt, Übergangsmodus, begrenzten Wiederanlauf und die Zugriffskorrektur.
 
 [Architektur, Formeln, Write-back und Grenzen](docs/ORACLE_V3.md) ·
 [Replay und Washout-Fallstudie](docs/evaluation/oracle-v3/RESULTS.md) ·
@@ -79,6 +85,7 @@ flowchart LR
 | `data/raw/oracle_feature_history.json.gz` | tatsächliche Stundenfeatures mit Originalinputs und Configs, ab Collector-Deployment |
 | `data/oracle/forecasts`, `inputs`, `outcomes`, `outcome_inputs` | unveränderliche Forecast- und Evaluationsnachweise |
 | `data/oracle_scorecard.json` | deterministische, nach Strategie und Methodik getrennte Ergebnisse |
+| `data/oracle/consumer/` | rollierender Index und begrenzte Originalfeld-Projektionen für Dateitools |
 | `src/pipeline.py`, `output.py`, `main.py` | isolierte Sammlung, Ausgabe, Schema-Prüfung |
 | `data/llm_snapshot.json` | kompakter Consumer-Snapshot; keine Raw-Candle-Arrays |
 | `data/latest.json`, `data/latest.md` | detaillierte Messwerte und Übersicht |

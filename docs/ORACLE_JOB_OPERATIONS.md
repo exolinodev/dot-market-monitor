@@ -22,7 +22,7 @@ erfolgreich und bietet Abstand zum Verbraucher. GitHub und ChatGPT garantieren
 keinen minutengenauen Start. Die nächste reguläre Sammlung bewertet inzwischen
 gereifte 1h/4h/12h-Horizonte automatisch. Dafür ist kein zusätzlicher LLM-Job nötig.
 
-## Aufgabenprompt 3.0.3
+## Aufgabenprompt 3.0.4
 
 Der private Aufgabenprompt enthält eine eigenständige Betriebsanweisung und lädt
 die ausführliche `CHATGPT_MONITOR_PROMPT.md` sowie das Forecast-Schema am selben
@@ -130,6 +130,34 @@ Snapshot, deterministische Reihenfolge, Teilegrössen/Hashes, fehlenden v3-Konte
 JSON-Pointer-Aufteilung und dass nur rollierende Projektionsdateien ersetzt werden.
 Die echten Testdaten liegen unter `docs/evaluation/oracle-v3/consumer-smoke/`,
 ausdrücklich als Testdatensatz markiert, ohne veröffentlichten Modell-Forecast.
+
+Der [abschliessende echte Collector-Lauf](https://github.com/exolinodev/dot-market-monitor/actions/runs/35147819567)
+bestand einschliesslich aller 242 Python- und 17 Scheduler-Tests, Sammlung,
+Index-/Teil-Hashprüfung und Upload. Snapshot `2026-09-16T20:39:53.582368Z`,
+43 Quellen, null Quellenfehler, 64 Features (45 verfügbar, 19 unbekannt).
+Die 14 Teile umfassen 101.660 Bytes, der grösste 9.984 Bytes.
+
+Der zweite echte ChatGPT-Browserlauf verwendete ausschliesslich den festgehaltenen
+Testdatensatz vom ersten Collector-Lauf. Nach 4m 59s lieferte er ORACLE CALL zuerst,
+getrennte Macro-/Swing-/Intraday-/Execution-Ebenen, drei bedingte Pfade,
+Asymmetrie und den originalen JSON-Entwurf `consumer-smoke/browser_forecast.json`.
+Alle 14 kleinen Dateien waren laut Abrufnachweis vollständig lesbar; eine erste
+gekürzte Darstellung von `structure-01.json` wurde vollständig nachgelesen.
+Python `validate_forecast(forecast, snapshot)` bestätigt Schema, Zeit, Snapshot-
+und Config-Bindung, sämtliche verwendeten Feature-IDs und Setup-Konsistenz.
+Forecast-Hash: `ef7f8c7ad30ab9b11d7144c97fc0362f90e87054c5c152afc3cbc1a5d50aa9c5`.
+
+Der Entwurf trennt bearishen Macro-Bias von bullishem Swing/Intraday, bleibt
+bei `EXHAUSTION_WATCH` und `NO_TRADE`, ohne falsche A+B+C-Aktivierung. Er weist
+null Analog-/Scorecard-Samples korrekt als unkalibriert aus. Die 1h-Rationale
+verband fehlendes A+B+C sprachlich zu stark mit fehlender Fortsetzungsbestätigung;
+der Prompt stellt nun klar, dass dieses Gate ausschliesslich Reversal-Regime
+betrifft. Der ursprüngliche Testentwurf wird dafür nicht nachträglich verändert.
+
+Die Testzeit im JSON ist eine ausdrücklich festgelegte Experimentkonvention,
+kein echter Publikationszeitpunkt. Dieser Einzeltest im bestehenden Chat ist
+kein verblindeter historischer Vergleich und keine Profitabilitätsmessung.
+Es erfolgte kein Write-back in die Produktions-Scorecard.
 
 Der produktive v3-Writer kann erst nach Freigabe/Merge des Oracle-PR auf `main`
 ausgeführt werden. Bis dahin benutzt der ChatGPT-Job den expliziten Übergangsmodus.

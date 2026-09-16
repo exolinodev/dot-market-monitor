@@ -150,6 +150,13 @@ data/oracle/inputs/<snapshot-sha256>.json.gz
 
 `forecast_id` binds creation time to the first 12 hex digits of the snapshot hash.
 The hash uses canonical sorted compact Python JSON with `allow_nan=False`.
+The additive `data/oracle/consumer/index.json` projection index supplies this
+Python-computed hash to consumers whose file tools truncate the full snapshot.
+Its bounded parts contain exact JSON-Pointer/value records, never new market
+calculations. Consumers bind to the full snapshot hash from the same commit;
+the writer still retrieves and validates the complete authoritative snapshot.
+Missing projected fields cannot be inferred. See
+[job operations and browser verification](ORACLE_JOB_OPERATIONS.md).
 An unchanged JSON input snapshot is retained to verify evidence later. No real
 historical model forecasts were created for this implementation. Synthetic test
 fixtures remain in tests and are not admitted as actual model performance.
