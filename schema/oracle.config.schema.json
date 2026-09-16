@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle.config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "feature_version": {
+      "const": "3.0.0"
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "history_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "history_tolerance_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "percentile_min_samples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "percentile_lookback_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "min_abs_flow_fraction": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1
+    },
+    "min_volume_dot": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "impact_reduction_fraction": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1
+    },
+    "extension_atr": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "strong_close_location": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1
+    },
+    "flat_return_bps": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "analog_k": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "analog_min_samples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "analog_min_shared_features": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "analog_max_distance": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "analog_feature_scales": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "scorecard_min_samples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recent_limit": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_context_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "context_scorecard_groups": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9
+    }
+  },
+  "required": [
+    "version",
+    "feature_version",
+    "strategy_version",
+    "history_days",
+    "history_tolerance_minutes",
+    "percentile_min_samples",
+    "percentile_lookback_days",
+    "min_abs_flow_fraction",
+    "min_volume_dot",
+    "impact_reduction_fraction",
+    "extension_atr",
+    "strong_close_location",
+    "flat_return_bps",
+    "analog_k",
+    "analog_min_samples",
+    "analog_min_shared_features",
+    "analog_max_distance",
+    "analog_feature_scales",
+    "scorecard_min_samples",
+    "recent_limit",
+    "max_context_bytes",
+    "context_scorecard_groups"
+  ]
+}

@@ -1,0 +1,988 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_outcome.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "evaluator_version": {
+      "const": "1.0.0"
+    },
+    "forecast_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "forecast_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "forecast_schema_version": {
+      "type": "integer"
+    },
+    "oracle_feature_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "oracle_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "measurement_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "regime": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": {
+      "enum": [
+        "LONG",
+        "SHORT",
+        "NONE"
+      ]
+    },
+    "evaluated_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "horizons": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "1h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "partial",
+                "unavailable",
+                "abstained",
+                "no_trigger",
+                "triggered_unresolved",
+                "targets_complete",
+                "failure",
+                "ambiguous",
+                "invalidated_before_trigger"
+              ]
+            },
+            "anchor_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "end_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "anchor_delay_seconds": {
+              "type": "number"
+            },
+            "interval_minutes": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "forward_return_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "candle_sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "triggered": {
+              "type": "boolean"
+            },
+            "trigger_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "failure_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "T1",
+                      "T2",
+                      "T3"
+                    ]
+                  },
+                  "time": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "candle_open_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          },
+                          "candle_close_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          }
+                        },
+                        "required": [
+                          "candle_open_utc",
+                          "candle_close_utc"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "before_failure": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "time",
+                  "before_failure"
+                ]
+              }
+            },
+            "target_before_failure": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "entry_price_usd": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "r_multiple": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "time_to_t1_minutes": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timing_status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "excursion_status": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "anchor_at_utc",
+            "end_at_utc",
+            "anchor_delay_seconds",
+            "interval_minutes",
+            "forward_return_pct",
+            "mfe_pct",
+            "mae_pct",
+            "candle_sha256",
+            "source_id",
+            "triggered",
+            "trigger_time",
+            "failure_time",
+            "targets",
+            "target_before_failure",
+            "entry_price_usd",
+            "mfe_trade_pct",
+            "mae_trade_pct",
+            "r_multiple",
+            "time_to_t1_minutes",
+            "timing_status",
+            "excursion_status"
+          ]
+        },
+        "4h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "partial",
+                "unavailable",
+                "abstained",
+                "no_trigger",
+                "triggered_unresolved",
+                "targets_complete",
+                "failure",
+                "ambiguous",
+                "invalidated_before_trigger"
+              ]
+            },
+            "anchor_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "end_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "anchor_delay_seconds": {
+              "type": "number"
+            },
+            "interval_minutes": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "forward_return_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "candle_sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "triggered": {
+              "type": "boolean"
+            },
+            "trigger_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "failure_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "T1",
+                      "T2",
+                      "T3"
+                    ]
+                  },
+                  "time": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "candle_open_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          },
+                          "candle_close_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          }
+                        },
+                        "required": [
+                          "candle_open_utc",
+                          "candle_close_utc"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "before_failure": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "time",
+                  "before_failure"
+                ]
+              }
+            },
+            "target_before_failure": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "entry_price_usd": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "r_multiple": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "time_to_t1_minutes": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timing_status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "excursion_status": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "anchor_at_utc",
+            "end_at_utc",
+            "anchor_delay_seconds",
+            "interval_minutes",
+            "forward_return_pct",
+            "mfe_pct",
+            "mae_pct",
+            "candle_sha256",
+            "source_id",
+            "triggered",
+            "trigger_time",
+            "failure_time",
+            "targets",
+            "target_before_failure",
+            "entry_price_usd",
+            "mfe_trade_pct",
+            "mae_trade_pct",
+            "r_multiple",
+            "time_to_t1_minutes",
+            "timing_status",
+            "excursion_status"
+          ]
+        },
+        "12h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "partial",
+                "unavailable",
+                "abstained",
+                "no_trigger",
+                "triggered_unresolved",
+                "targets_complete",
+                "failure",
+                "ambiguous",
+                "invalidated_before_trigger"
+              ]
+            },
+            "anchor_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "end_at_utc": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "Z$"
+            },
+            "anchor_delay_seconds": {
+              "type": "number"
+            },
+            "interval_minutes": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "forward_return_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "candle_sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "triggered": {
+              "type": "boolean"
+            },
+            "trigger_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "failure_time": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "candle_open_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    },
+                    "candle_close_utc": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  },
+                  "required": [
+                    "candle_open_utc",
+                    "candle_close_utc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "T1",
+                      "T2",
+                      "T3"
+                    ]
+                  },
+                  "time": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "candle_open_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          },
+                          "candle_close_utc": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "Z$"
+                          }
+                        },
+                        "required": [
+                          "candle_open_utc",
+                          "candle_close_utc"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "before_failure": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "time",
+                  "before_failure"
+                ]
+              }
+            },
+            "target_before_failure": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "entry_price_usd": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mfe_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mae_trade_pct": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "r_multiple": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "time_to_t1_minutes": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timing_status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "excursion_status": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "anchor_at_utc",
+            "end_at_utc",
+            "anchor_delay_seconds",
+            "interval_minutes",
+            "forward_return_pct",
+            "mfe_pct",
+            "mae_pct",
+            "candle_sha256",
+            "source_id",
+            "triggered",
+            "trigger_time",
+            "failure_time",
+            "targets",
+            "target_before_failure",
+            "entry_price_usd",
+            "mfe_trade_pct",
+            "mae_trade_pct",
+            "r_multiple",
+            "time_to_t1_minutes",
+            "timing_status",
+            "excursion_status"
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "evaluator_version",
+    "forecast_id",
+    "forecast_sha256",
+    "strategy_version",
+    "forecast_schema_version",
+    "oracle_feature_version",
+    "oracle_config_sha256",
+    "measurement_config_sha256",
+    "regime",
+    "direction",
+    "evaluated_at_utc",
+    "horizons"
+  ]
+}

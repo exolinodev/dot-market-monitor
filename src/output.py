@@ -75,7 +75,8 @@ def compact_snapshot(data):
 def validate_snapshot(data):
     schema=json.loads(SCHEMA.read_text())
     observation_schema=json.loads(SCHEMA.with_name('observations.schema.json').read_text())
-    registry=Registry().with_resource(observation_schema['$id'],Resource.from_contents(observation_schema))
+    schemas=[observation_schema]+[json.loads(p.read_text()) for p in SCHEMA.parent.glob('oracle*.schema.json')]
+    registry=Registry().with_resources((s['$id'],Resource.from_contents(s)) for s in schemas)
     jsonschema.Draft202012Validator(schema,registry=registry,format_checker=jsonschema.FormatChecker()).validate(data)
     def visit(value,path=''):
         if isinstance(value,dict):
@@ -101,6 +102,23 @@ def validate_snapshot(data):
             elif isinstance(value,list):
                 for item in value: check_observation(item)
         check_observation(observation)
+    oracle=data['markets']['DOTUSD'].get('oracle_context')
+    if oracle:
+        from oracle_common import validate
+        validate(oracle, 'oracle_context.schema.json')
+        reference=utc(data['meta']['generated_at_utc'])
+        if utc(oracle['reference_at_utc'])!=reference:
+            raise ValueError('Oracle reference differs from snapshot')
+        current=oracle.get('current_features')
+        if current:
+            if utc(current['reference_at_utc'])!=reference:
+                raise ValueError('Feature reference differs from snapshot')
+            for feature in current['features'].values():
+                end=feature['coverage']['end_utc']
+                if end and utc(end)>reference:
+                    raise ValueError('Future feature coverage')
+                if feature['status']=='ok' and any(s not in data['sources'] for s in feature['source_ids']):
+                    raise ValueError('Unknown feature source')
     for name,required in [('DOTUSD',DOT_TIMEFRAMES),('DOTBTC',DOTBTC_TIMEFRAMES),('BTCUSD',BTC_TIMEFRAMES)]:
         if set(data['markets'][name]['timeframes'])!=set(required): raise ValueError(name+' timeframe inventory mismatch')
     for name,market in data['markets'].items():

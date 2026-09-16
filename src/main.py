@@ -46,6 +46,8 @@ def regenerate_snapshot(data_dir=None):
         observation['components']['spot_perp_history']=block(status='error',reason=archive_error)
         observation['status']='partial'
     data['markets']['DOTUSD']['observations']=observation
+    from oracle_context import attach_oracle
+    attach_oracle(data, target, persist=False)
     compact=compact_snapshot(data)
     validate_snapshot(compact)
     write_json(target/'latest.json',data)

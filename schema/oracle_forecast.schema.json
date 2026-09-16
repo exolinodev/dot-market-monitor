@@ -1,0 +1,600 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_forecast.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "forecast_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3$"
+    },
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "snapshot_generated_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "snapshot_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "market": {
+      "const": "DOTUSD"
+    },
+    "primary_market": {
+      "const": "SPOT"
+    },
+    "measurement_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "oracle_feature_version": {
+      "const": "3.0.0"
+    },
+    "oracle_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "macro_bias": {
+      "enum": [
+        "BULLISH",
+        "BEARISH",
+        "NEUTRAL",
+        "UNKNOWN"
+      ]
+    },
+    "swing_bias": {
+      "enum": [
+        "BULLISH",
+        "BEARISH",
+        "NEUTRAL",
+        "UNKNOWN"
+      ]
+    },
+    "intraday_bias": {
+      "enum": [
+        "BULLISH",
+        "BEARISH",
+        "NEUTRAL",
+        "UNKNOWN"
+      ]
+    },
+    "execution_bias": {
+      "enum": [
+        "BULLISH",
+        "BEARISH",
+        "NEUTRAL",
+        "UNKNOWN"
+      ]
+    },
+    "regime": {
+      "enum": [
+        "CONTINUATION",
+        "EXHAUSTION_WATCH",
+        "REVERSAL_ARMED",
+        "REVERSAL_TRIGGERED",
+        "BREAKOUT_ARMED",
+        "BREAKOUT_TRIGGERED",
+        "NO_TRADE"
+      ]
+    },
+    "forecast_horizons": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "1h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        },
+        "4h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        },
+        "12h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        }
+      },
+      "required": [
+        "1h",
+        "4h",
+        "12h"
+      ]
+    },
+    "trade_setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "LONG",
+            "SHORT",
+            "NONE"
+          ]
+        },
+        "status": {
+          "enum": [
+            "WATCH",
+            "ARMED",
+            "TRIGGERED",
+            "NO_TRADE"
+          ]
+        },
+        "trigger": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "touch_above",
+                    "touch_below",
+                    "close_above",
+                    "close_below"
+                  ]
+                },
+                "price_usd": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "interval_minutes": {
+                  "enum": [
+                    1,
+                    5,
+                    15,
+                    60,
+                    240
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "price_usd",
+                "interval_minutes",
+                "description"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "touch_above",
+                          "touch_below"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "interval_minutes": {
+                        "const": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "touch_above",
+                    "touch_below",
+                    "close_above",
+                    "close_below"
+                  ]
+                },
+                "price_usd": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "interval_minutes": {
+                  "enum": [
+                    1,
+                    5,
+                    15,
+                    60,
+                    240
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "price_usd",
+                "interval_minutes",
+                "description"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "touch_above",
+                          "touch_below"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "interval_minutes": {
+                        "const": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "enum": [
+                  "T1",
+                  "T2",
+                  "T3"
+                ]
+              },
+              "price_usd": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "price_usd"
+            ]
+          },
+          "maxItems": 3
+        },
+        "target_roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "T1": {
+              "type": "string",
+              "minLength": 1
+            },
+            "T2": {
+              "type": "string",
+              "minLength": 1
+            },
+            "T3": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "T1",
+            "T2",
+            "T3"
+          ]
+        },
+        "asymmetry": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assessment": {
+              "enum": [
+                "FAVOURABLE",
+                "UNFAVOURABLE",
+                "UNKNOWN"
+              ]
+            },
+            "reward_risk_t1": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "assessment",
+            "reward_risk_t1",
+            "reason"
+          ]
+        },
+        "failure_scope": {
+          "enum": [
+            "after_trigger",
+            "setup_and_trade"
+          ]
+        }
+      },
+      "required": [
+        "direction",
+        "status",
+        "trigger",
+        "failure",
+        "targets",
+        "target_roles",
+        "asymmetry",
+        "failure_scope"
+      ]
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "when": {
+              "type": "string",
+              "minLength": 1
+            },
+            "then": {
+              "type": "string",
+              "minLength": 1
+            },
+            "why": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "when",
+            "then",
+            "why"
+          ]
+        },
+        "alternative": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "when": {
+              "type": "string",
+              "minLength": 1
+            },
+            "then": {
+              "type": "string",
+              "minLength": 1
+            },
+            "why": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "when",
+            "then",
+            "why"
+          ]
+        },
+        "squeeze_failure": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "when": {
+              "type": "string",
+              "minLength": 1
+            },
+            "then": {
+              "type": "string",
+              "minLength": 1
+            },
+            "why": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "when",
+            "then",
+            "why"
+          ]
+        }
+      },
+      "required": [
+        "primary",
+        "alternative",
+        "squeeze_failure"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "supporting_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "opposing_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "decisive_timeframes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "supporting_feature_ids",
+        "opposing_feature_ids",
+        "decisive_timeframes"
+      ]
+    },
+    "calibration_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "uncalibrated"
+        },
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNAVAILABLE"
+          ]
+        },
+        "analog_sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scorecard_sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "status",
+        "confidence",
+        "analog_sample_count",
+        "scorecard_sample_count",
+        "limitations"
+      ]
+    },
+    "text_summary": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "strategy_version",
+    "forecast_id",
+    "created_at_utc",
+    "snapshot_generated_at_utc",
+    "snapshot_sha256",
+    "market",
+    "primary_market",
+    "measurement_config_sha256",
+    "oracle_feature_version",
+    "oracle_config_sha256",
+    "macro_bias",
+    "swing_bias",
+    "intraday_bias",
+    "execution_bias",
+    "regime",
+    "forecast_horizons",
+    "trade_setup",
+    "paths",
+    "evidence",
+    "calibration_context",
+    "text_summary"
+  ]
+}

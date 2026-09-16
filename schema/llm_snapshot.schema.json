@@ -226,6 +226,7 @@
         "properties": {
           "time_fibs": {"$ref": "#/$defs/timeFibs"},
           "observations": {"$ref": "observations.schema.json"},
+          "oracle_context": {"$ref": "oracle_context.schema.json"},
           "timeframes": {
             "type": "object",
             "additionalProperties": {
