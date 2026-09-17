@@ -259,9 +259,7 @@
                 "kind": {
                   "enum": [
                     "touch_above",
-                    "touch_below",
-                    "close_above",
-                    "close_below"
+                    "touch_below"
                   ]
                 },
                 "price_usd": {
@@ -269,13 +267,7 @@
                   "exclusiveMinimum": 0
                 },
                 "interval_minutes": {
-                  "enum": [
-                    1,
-                    5,
-                    15,
-                    60,
-                    240
-                  ]
+                  "const": 1
                 },
                 "description": {
                   "type": "string",

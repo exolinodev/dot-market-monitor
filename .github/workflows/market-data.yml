@@ -73,6 +73,7 @@ jobs:
           if [ -d data/oracle/outcomes ]; then
             git add data/oracle/outcomes data/oracle/outcome_inputs
           fi
+          python scripts/check_oracle_archive.py --staged
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0

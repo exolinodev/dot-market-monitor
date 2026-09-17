@@ -4,8 +4,19 @@ from pathlib import Path
 import re
 import subprocess
 
-from oracle_common import validate
-from oracle_forecasts import persist_forecast
+from oracle_common import validate, digest
+from oracle_forecasts import persist_forecast, validate_forecast, create_only
+
+
+def strict_json(payload):
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Duplicate JSON key: ' + key)
+            value[key] = item
+        return value
+    return json.loads(payload, object_pairs_hook=unique)
 
 
 def full_sha(value):
@@ -42,7 +53,7 @@ def read_push_submission(event, event_sha, repo=Path('.')):
     tree = git(repo, 'ls-tree', after, '--', path)
     if not tree.startswith(b'100644 blob '):
         raise ValueError('Submission must be a regular JSON file')
-    envelope = json.loads(git(repo, 'show', after + ':' + path))
+    envelope = strict_json(git(repo, 'show', after + ':' + path))
     validate(envelope, 'oracle_submission.schema.json')
     if envelope['forecast']['forecast_id'] != match[1]:
         raise ValueError('Submission filename must match forecast ID')
@@ -51,9 +62,56 @@ def read_push_submission(event, event_sha, repo=Path('.')):
     return envelope
 
 
-def publish_submission(envelope, now, repo=Path('.')):
+def read_pr_submission(event, repository, repo=Path('.')):
+    """Read data only from a single-commit, same-repository draft; never run head code."""
+    pr = event['pull_request']
+    if (event.get('action') != 'opened' or not pr.get('draft') or
+            pr['base']['ref'] != 'main' or
+            pr['base']['repo']['full_name'] != repository or
+            pr['head']['repo']['full_name'] != repository or
+            not re.fullmatch(r'oracle-submission/[0-9]{8}T[0-9]{6}Z', pr['head']['ref'])):
+        raise ValueError('Only a new same-repository Oracle draft PR is accepted')
+    head = full_sha(pr['head']['sha'])
+    parents = git(repo, 'rev-list', '--parents', '-n', '1', head).decode().split()
+    if len(parents) != 2:
+        raise ValueError('Submission must be a single-parent commit')
+    parent = parents[1]
+    ancestor(repo, parent, 'origin/main')
+    ancestor(repo, full_sha(pr['base']['sha']), 'origin/main')
+    # Inspect every changed path, including files outside the inbox. No head checkout.
+    changes = git(repo, 'diff', '--no-renames', '--name-status', '-z', parent, head).split(b'\0')
+    if len(changes) != 3 or changes[0] != b'A' or changes[-1] != b'':
+        raise ValueError('Draft must add exactly one submission and no other files')
+    path = changes[1].decode()
+    match = re.fullmatch(r'data/oracle/submissions/([0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3)\.json', path)
+    if not match or not git(repo, 'ls-tree', head, '--', path).startswith(b'100644 blob '):
+        raise ValueError('Draft must contain one regular submission JSON file')
+    if git(repo, 'log', '-1', '--format=%H', 'origin/main', '--', path).strip():
+        raise ValueError('Submission ID already existed in main history')
+    envelope = strict_json(git(repo, 'show', head + ':' + path))
+    validate(envelope, 'oracle_submission.schema.json')
+    if envelope['forecast']['forecast_id'] != match[1]:
+        raise ValueError('Submission filename must match forecast ID')
+    ancestor(repo, envelope['snapshot_commit'], parent)
+    return envelope
+
+
+def publish_submission(envelope, now, repo=Path('.'), archive_submission=False):
     validate(envelope, 'oracle_submission.schema.json')
     commit = full_sha(envelope['snapshot_commit'])
     ancestor(repo, commit, 'origin/main')
     snapshot = json.loads(git(repo, 'show', commit + ':data/llm_snapshot.json'))
-    return persist_forecast(envelope['forecast'], snapshot, repo / 'data/oracle', now)
+    validate_forecast(envelope['forecast'], snapshot)
+    path = persist_forecast(envelope['forecast'], snapshot, repo / 'data/oracle', now)
+    if archive_submission:
+        submission_path = repo / 'data/oracle/submissions' / (envelope['forecast']['forecast_id'] + '.json')
+        if submission_path.exists():
+            if strict_json(submission_path.read_bytes()) != envelope:
+                raise ValueError('Existing submission differs from validated envelope')
+        else:
+            create_only(submission_path, envelope)
+    # A small readable receipt attests actual server-side decompression/hash verification.
+    from oracle_receipts import make_receipt
+    receipt = make_receipt(envelope, repo / 'data')
+    create_only(repo / 'data/oracle/receipts' / (envelope['forecast']['forecast_id'] + '.json'), receipt)
+    return path
