@@ -24,11 +24,19 @@ are rejected, including manual reruns. The retired push-to-main intake function
 is retained for historical compatibility tests; it is no longer a workflow
 trigger or an authorised consumer write path.
 
-Ordinary code merges require PRs and the GitHub Actions `test` check. The only
-automation exception is GitHub Actions (integration 15368) for the trusted
-collector/writer. ChatGPT has no main bypass and only prepares draft branches.
-The independent no-delete/no-force ruleset remains non-bypassable. The privileged
-workflows execute exclusively on main; untrusted PR CI has contents:read.
+All main changes require PRs and the GitHub Actions `test` check, with no bypass
+actors. The trusted collector/writer stages only allowlisted data and uses
+`scripts/promote_data.py` to create a unique automation branch. It runs archive
+integrity, snapshot schema, all Python tests and scheduler tests on the exact
+commit before publishing a `test` check and normally merging its data PR with
+SHA binding. GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
+to the actual producer test logs. Failed checks never create a success result or
+merge. A main advance leaves the publication unmerged instead of replaying stale
+data. Input drafts close only after successful data promotion. No code from the
+input draft runs and its tree is never merged. The repository permits Actions to
+create PRs; no review approval or bypass is used. The independent no-delete/no-force
+ruleset stays active. Privileged workflows execute exclusively on main; untrusted
+PR CI has contents:read. ChatGPT only prepares the isolated input draft branch.
 
 ## Readable bound-input receipts
 
