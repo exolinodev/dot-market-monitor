@@ -48,7 +48,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            tests/requirements.txt
 
       - name: Install dependencies
         if: steps.freshness.outputs.due == 'true'

@@ -71,6 +71,49 @@ def verify(base):
         subprocess.run(command, check=True)
 
 
+def delete_branch(branch, head):
+    """Delete only this run's ref, atomically refusing a changed branch head."""
+    if not re.fullmatch(r'automation/(collector|oracle)-[0-9]+-[0-9]+', branch):
+        raise ValueError('Ref cleanup is restricted to producer branches')
+    if not re.fullmatch(r'[0-9a-f]{40}', head):
+        raise ValueError('Ref cleanup requires the tested commit')
+    ref = f'refs/heads/{branch}'
+    # This is a leased deletion, never a force-update of branch history.
+    run(['git', 'push', 'origin', f'--force-with-lease={ref}:{head}', f':{ref}'])
+
+
+def cleanup_action(action):
+    """Attempt every cleanup even if GitHub is unavailable; preserve the failure."""
+    try:
+        action()
+    except Exception as error:
+        print(f'::warning::Producer cleanup requires attention: {error}', file=sys.stderr)
+
+
+def abort_publication(repo, branch, head, pr, check_run):
+    # A PR-create/merge response may be lost after GitHub accepted the operation.
+    # Recover this unique run's PR before deciding whether to revoke its check.
+    try:
+        if pr is None:
+            matches = api(repo, f'pulls?state=all&head={repo.split("/")[0]}:{branch}&base=main')
+            pr = next((p for p in matches if p['head']['ref'] == branch), None)
+        current = api(repo, f'pulls/{pr["number"]}') if pr else None
+    except Exception as error:
+        print(f'::warning::Could not reconcile aborted publication: {error}', file=sys.stderr)
+        current = None
+    if not (current and current.get('merged')):
+        if check_run:
+            cleanup_action(lambda: api(repo, f'check-runs/{check_run["id"]}', 'PATCH', {
+                'status': 'completed', 'conclusion': 'failure',
+                'output': {'title': 'Data publication aborted',
+                           'summary': 'This check no longer authorizes a merge. See producer logs.'},
+            }))
+        if pr:
+            cleanup_action(lambda: api(repo, f'pulls/{pr["number"]}', 'PATCH', {'state': 'closed'}))
+    # Original Oracle submission branches are never passed here or deleted.
+    cleanup_action(lambda: delete_branch(branch, head))
+
+
 def promote(kind, env=None):
     env = os.environ if env is None else env
     if env.get('GITHUB_REF') != 'refs/heads/main' or env.get('GITHUB_EVENT_NAME') not in {
@@ -106,40 +149,47 @@ def promote(kind, env=None):
     if run(['git', 'rev-parse', 'HEAD']) != head:
         raise ValueError('Tested commit changed')
     run(['git', 'diff', '--exit-code', 'HEAD'])
-    run(['git', 'push', 'origin', f'HEAD:refs/heads/{branch}'])
     run_url = f'https://github.com/{repo}/actions/runs/{run_id}'
-    pr = api(repo, 'pulls', 'POST', {
-        'title': f'data: validated {kind} publication ({run_id})',
-        'head': branch, 'base': 'main',
-        'body': f'Trusted main producer. Archive and snapshot validation, full Python tests and scheduler tests passed on `{head}`.\n\nEvidence: {run_url}\n\nNo strategy or code changes.',
-    })
-    if pr['head']['sha'] != head or pr['base']['ref'] != 'main':
-        raise ValueError('Created PR does not match the tested data commit')
-    api(repo, 'check-runs', 'POST', {
-        'name': 'test', 'head_sha': head, 'status': 'completed', 'conclusion': 'success',
-        'details_url': run_url,
-        'output': {'title': 'Trusted producer tests passed',
-                   'summary': f'Archive integrity, snapshot schema, full pytest and scheduler tests passed on {head}. Logs: {run_url}'},
-    })
-    # Wait only for GitHub to calculate mergeability. No admin/bypass flag.
-    for _ in range(10):
-        current = api(repo, f'pulls/{pr["number"]}')
-        if current['head']['sha'] != head:
-            raise ValueError('Data PR head changed after tests')
-        if current.get('mergeable') is not None:
-            break
-        time.sleep(2)
-    # Require the exact base too, so a concurrent main change cannot silently
-    # invalidate the test evidence or replace a newer market snapshot.
-    if api(repo, 'git/ref/heads/main')['object']['sha'] != base:
-        raise ValueError('Main advanced after testing; leave the data PR unmerged')
-    result = api(repo, f'pulls/{pr["number"]}/merge', 'PUT',
-                 {'sha': head, 'merge_method': 'merge'})
-    if not result.get('merged'):
-        raise ValueError('Normal protected-branch merge did not succeed')
-    merged = api(repo, f'pulls/{pr["number"]}')
-    if not merged.get('merged') or merged['merge_commit_sha'] != result['sha']:
-        raise ValueError('Merged PR readback failed')
+    pr = check_run = None
+    try:
+        run(['git', 'push', 'origin', f'HEAD:refs/heads/{branch}'])
+        pr = api(repo, 'pulls', 'POST', {
+            'title': f'data: validated {kind} publication ({run_id})',
+            'head': branch, 'base': 'main',
+            'body': f'Trusted main producer. Archive and snapshot validation, full Python tests and scheduler tests passed on `{head}`.\n\nEvidence: {run_url}\n\nNo strategy or code changes.',
+        })
+        if pr['head']['sha'] != head or pr['base']['ref'] != 'main':
+            raise ValueError('Created PR does not match the tested data commit')
+        check_run = api(repo, 'check-runs', 'POST', {
+            'name': 'test', 'head_sha': head, 'status': 'completed', 'conclusion': 'success',
+            'details_url': run_url,
+            'output': {'title': 'Trusted producer tests passed',
+                       'summary': f'Archive integrity, snapshot schema, full pytest and scheduler tests passed on {head}. Logs: {run_url}'},
+        })
+        # Wait only for GitHub to calculate mergeability. No admin/bypass flag.
+        for _ in range(10):
+            current = api(repo, f'pulls/{pr["number"]}')
+            if current['head']['sha'] != head:
+                raise ValueError('Data PR head changed after tests')
+            if current.get('mergeable') is not None:
+                break
+            time.sleep(2)
+        # The strict required-check rule also covers a base change after this read.
+        if api(repo, 'git/ref/heads/main')['object']['sha'] != base:
+            raise ValueError('Main advanced after testing; revoke and close the data PR')
+        result = api(repo, f'pulls/{pr["number"]}/merge', 'PUT',
+                     {'sha': head, 'merge_method': 'merge'})
+        if not result.get('merged'):
+            raise ValueError('Normal protected-branch merge did not succeed')
+        merged = api(repo, f'pulls/{pr["number"]}')
+        if not merged.get('merged') or merged['merge_commit_sha'] != result['sha']:
+            raise ValueError('Merged PR readback failed')
+    except Exception:
+        abort_publication(repo, branch, head, pr, check_run)
+        raise
+    # Publication already succeeded. A cleanup outage must not masquerade as a
+    # failed forecast or cause an invalid rerun; surface it as an explicit warning.
+    cleanup_action(lambda: delete_branch(branch, head))
     print(json.dumps({'data_pr': pr['html_url'], 'tested_sha': head,
                       'merge_commit': result['sha'], 'test_evidence': run_url}))
     return result

@@ -24,15 +24,38 @@ are rejected, including manual reruns. The retired push-to-main intake function
 is retained for historical compatibility tests; it is no longer a workflow
 trigger or an authorised consumer write path.
 
-All main changes require PRs and the GitHub Actions `test` check, with no bypass
-actors. The trusted collector/writer stages only allowlisted data and uses
+The target main policy requires PRs and an up-to-date GitHub Actions `test` check,
+with no bypass actors. Activate that policy only after the data-PR workflows are
+merged; the earlier direct-push producers cannot operate under it. The repository
+Actions setting must allow PR creation before the merge. GitHub couples creation
+with review approval in one setting; these workflows never approve reviews.
+
+Rollout checkpoint, 17 September: Actions PR creation is enabled with default
+workflow permissions still `read`. Ruleset `23616485` (`main: require validated
+PRs`) is prepared but disabled pending the reviewed merge of PR #5. It requires
+`test` from GitHub Actions integration 15368 and an up-to-date branch, with no
+bypass actors. Activate it immediately after merging #5 and verify a real
+collector and genuine Oracle publication under the policy. Until then only the
+independent no-delete/no-force ruleset `23566182` is enforced; do not describe the
+required test policy as already deployed.
+
+The trusted collector/writer stages only allowlisted data and uses
 `scripts/promote_data.py` to create a unique automation branch. It runs archive
 integrity, snapshot schema, all Python tests and scheduler tests on the exact
 commit before publishing a `test` check and normally merging its data PR with
 SHA binding. GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
 to the actual producer test logs. Failed checks never create a success result or
-merge. A main advance leaves the publication unmerged instead of replaying stale
-data. Input drafts close only after successful data promotion. No code from the
+merge. A main advance aborts publication instead of replaying stale data. After
+an abort, the producer revokes its success check, closes its data PR and removes
+its own unchanged branch. A PR-creation failure also cleans the pushed branch;
+an ambiguous API response is reconciled against the unique run's PR. After a
+confirmed merge, the automation branch is removed. Ref deletion uses a Git lease
+on the exact tested SHA, so newer branch work is preserved. Cleanup failures are
+explicit workflow warnings and do not turn an already confirmed publication into
+a failed forecast. Original Oracle submission branches remain audit evidence and
+are never removed by this cleanup.
+
+Input drafts close only after successful data promotion. No code from the
 input draft runs and its tree is never merged. The repository permits Actions to
 create PRs; no review approval or bypass is used. The independent no-delete/no-force
 ruleset stays active. Privileged workflows execute exclusively on main; untrusted
