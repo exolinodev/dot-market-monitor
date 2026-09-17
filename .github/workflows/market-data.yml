@@ -18,6 +18,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  checks: write
 
 concurrency:
   group: dot-market-data
@@ -27,13 +29,14 @@ jobs:
   collect:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Skip collection when the snapshot is already current
         id: freshness
@@ -45,11 +48,13 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            tests/requirements.txt
 
       - name: Install dependencies
         if: steps.freshness.outputs.due == 'true'
-        run: python -m pip install --disable-pip-version-check --progress-bar off -r requirements.txt
+        run: python -m pip install --disable-pip-version-check --progress-bar off -r tests/requirements.txt
 
       - name: Collect market data and indicators
         if: steps.freshness.outputs.due == 'true'
@@ -57,8 +62,16 @@ jobs:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
         run: python src/main.py
 
-      - name: Commit fresh snapshot
+      - name: Set up Node for scheduler checks
         if: steps.freshness.outputs.due == 'true'
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Publish tested snapshot through a protected data PR
+        if: steps.freshness.outputs.due == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "dot-market-bot"
           git config user.email "dot-market-bot@users.noreply.github.com"
@@ -73,16 +86,4 @@ jobs:
           if [ -d data/oracle/outcomes ]; then
             git add data/oracle/outcomes data/oracle/outcome_inputs
           fi
-          python scripts/check_oracle_archive.py --staged
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "data: hourly market snapshot and oracle evaluation"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main || exit 1
-            if git push origin HEAD:main; then exit 0; fi
-          done
-          echo "Push race unresolved; no force push or binary archive overwrite attempted"
-          exit 1
+          python scripts/promote_data.py collector

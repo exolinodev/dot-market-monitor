@@ -16,6 +16,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  checks: write
 concurrency:
   group: dot-market-data
   cancel-in-progress: false
@@ -28,7 +29,7 @@ jobs:
         github.event.pull_request.head.repo.full_name == github.repository &&
         startsWith(github.event.pull_request.head.ref, 'oracle-submission/')))
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -38,26 +39,26 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-      - run: python -m pip install --disable-pip-version-check --progress-bar off -r requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            tests/requirements.txt
+      - run: python -m pip install --disable-pip-version-check --progress-bar off -r tests/requirements.txt
       - name: Validate and publish create-only
         env:
           SNAPSHOT_COMMIT: ${{ inputs.snapshot_commit }}
           FORECAST_JSON: ${{ inputs.forecast_json }}
         run: python scripts/publish_oracle_dispatch.py
-      - name: Commit forecast and bound snapshot
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "22"
+      - name: Publish tested forecast through a protected data PR
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "dot-market-bot"
           git config user.email "dot-market-bot@users.noreply.github.com"
           git add data/oracle/forecasts data/oracle/inputs data/oracle/forecast_keys data/oracle/submissions data/oracle/receipts
-          python scripts/check_oracle_archive.py --staged
-          git commit -m "oracle: publish immutable consumer forecast"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main || exit 1
-            if git push origin HEAD:main; then exit 0; fi
-          done
-          echo "Push race unresolved; no force push or artifact overwrite attempted"
-          exit 1
+          python scripts/promote_data.py oracle
       - name: Close processed draft (the branch is never merged)
         if: success() && github.event_name == 'pull_request_target'
         env:
