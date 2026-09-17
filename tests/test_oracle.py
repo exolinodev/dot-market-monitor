@@ -147,7 +147,7 @@ def test_archive_replay_replacement_and_fingerprints(tmp_path,actual,cfg):
 
 
 def test_forecast_schema_and_immutable_publication(tmp_path,actual):
-    actual['markets']['DOTUSD']['oracle_context']=build_context(actual,ROOT/'data')
+    actual['markets']['DOTUSD']['oracle_context']=build_context(actual,tmp_path/'market-inputs')
     s=compact_snapshot(actual);f=fixture_forecast(s)
     assert validate_forecast(f,s)
     path=persist_forecast(f,s,tmp_path,f['created_at_utc']);before=path.read_bytes()
@@ -377,7 +377,7 @@ def test_new_confirmed_structure_is_a_response_family(cfg):
 
 def test_concurrent_publication_has_exactly_one_complete_forecast(tmp_path,actual):
     from concurrent.futures import ThreadPoolExecutor
-    actual['markets']['DOTUSD']['oracle_context']=build_context(actual,ROOT/'data')
+    actual['markets']['DOTUSD']['oracle_context']=build_context(actual,tmp_path/'market-inputs')
     snapshot=compact_snapshot(actual);f=fixture_forecast(snapshot)
     def publish():
         try:return persist_forecast(f,snapshot,tmp_path,f['created_at_utc'])
