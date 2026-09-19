@@ -73,6 +73,11 @@ def test_publication_still_rejects_old_timestamp_and_wrong_snapshot(submission):
     bad['forecast']['measurement_config_sha256'] = '0' * 64
     with pytest.raises(ValueError, match='Measurement config mismatch'):
         publish_submission(bad, bad['forecast']['created_at_utc'], repo)
+    bad = copy.deepcopy(envelope)
+    bad['forecast']['evidence']['opposing_feature_ids'] = ['structure.1h.new_low', 'not_a_feature']
+    # The verdict names every unavailable ID so the consumer can see what it cited.
+    with pytest.raises(ValueError, match='not ok at this snapshot: structure.1h.new_low, not_a_feature'):
+        publish_submission(bad, bad['forecast']['created_at_utc'], repo)
 
 
 @pytest.mark.parametrize('kind', ['modified', 'deleted', 'renamed', 'multiple', 'mismatched_id',

@@ -12,7 +12,7 @@ from oracle_evaluator import verify_outcome
 from oracle_forecasts import snapshot_strategy_key
 from oracle_common import digest
 from observation_common import utc
-from oracle_submission import strict_json
+from oracle_submission import parse_submission
 from oracle_receipts import verify_receipt
 
 PATHS=['data/oracle/'+p for p in ('submissions','forecast_keys','forecasts','inputs','outcomes','outcome_inputs','receipts')]
@@ -33,7 +33,7 @@ def check_additions(paths, repo):
         if path.startswith('data/oracle/submissions/'):
             if not re.fullmatch(r'data/oracle/submissions/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3\.json',path):
                 raise ValueError('Invalid submission path: '+path)
-            envelope=strict_json(target.read_bytes())
+            envelope=parse_submission(target.read_bytes())
             validate(envelope,'oracle_submission.schema.json')
             if target.stem!=envelope['forecast']['forecast_id']:
                 raise ValueError('Submission filename mismatch')

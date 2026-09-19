@@ -1,9 +1,11 @@
 """Create-only GitHub submissions, resolved from the immutable triggering commit."""
+from datetime import timedelta
 import json
 from pathlib import Path
 import re
 import subprocess
 
+from observation_common import utc
 from oracle_common import validate, digest
 from oracle_forecasts import persist_forecast, validate_forecast, create_only
 
@@ -17,6 +19,31 @@ def strict_json(payload):
             value[key] = item
         return value
     return json.loads(payload, object_pairs_hook=unique)
+
+
+def parse_submission(payload):
+    """Reject partial or over-closed envelopes with a diagnosable message; never repair them."""
+    raw = payload.encode() if isinstance(payload, str) else bytes(payload)
+    try:
+        return strict_json(raw)
+    except ValueError as error:
+        depth = raw.count(b'{') - raw.count(b'}')
+        kind = 'truncated' if depth > 0 else 'over-closed' if depth < 0 else 'malformed'
+        tail = raw[-16:].decode('utf-8', 'replace')
+        raise ValueError(f'Submission JSON is {kind} ({len(raw)} bytes, brace depth {depth:+d}, '
+                         f'ends with {tail!r}): {error}') from None
+
+
+def accepted_at(opened, clock, max_queue_seconds=1800):
+    """GitHub stamps when the draft was opened. That independent time anchors the
+    120-second creation check, so runner queueing and setup cannot fail an honest
+    submission while the consumer's own delay before opening the PR still counts."""
+    opened, clock = utc(opened), utc(clock)
+    if opened > clock + timedelta(seconds=5):
+        raise ValueError('Draft opening time is ahead of the writer clock')
+    if clock - opened > timedelta(seconds=max_queue_seconds):
+        raise ValueError(f'Draft was opened {(clock-opened).total_seconds():.0f}s before the writer ran; stale queue')
+    return opened
 
 
 def full_sha(value):
@@ -53,7 +80,7 @@ def read_push_submission(event, event_sha, repo=Path('.')):
     tree = git(repo, 'ls-tree', after, '--', path)
     if not tree.startswith(b'100644 blob '):
         raise ValueError('Submission must be a regular JSON file')
-    envelope = strict_json(git(repo, 'show', after + ':' + path))
+    envelope = parse_submission(git(repo, 'show', after + ':' + path))
     validate(envelope, 'oracle_submission.schema.json')
     if envelope['forecast']['forecast_id'] != match[1]:
         raise ValueError('Submission filename must match forecast ID')
@@ -88,7 +115,7 @@ def read_pr_submission(event, repository, repo=Path('.')):
         raise ValueError('Draft must contain one regular submission JSON file')
     if git(repo, 'log', '-1', '--format=%H', 'origin/main', '--', path).strip():
         raise ValueError('Submission ID already existed in main history')
-    envelope = strict_json(git(repo, 'show', head + ':' + path))
+    envelope = parse_submission(git(repo, 'show', head + ':' + path))
     validate(envelope, 'oracle_submission.schema.json')
     if envelope['forecast']['forecast_id'] != match[1]:
         raise ValueError('Submission filename must match forecast ID')

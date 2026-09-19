@@ -86,11 +86,32 @@ Finaler R=-1 und T1 vor Failure können gleichzeitig korrekt sein: Ein Zieltreff
 beweist keinen realisierten Handelsgewinn. Ohne geeignete Samples keine neue
 kalibrierte Wahrscheinlichkeit und keine automatische Schwellenoptimierung.
 
-Der Writer behält die 120-Sekunden-Publikationsgrenze. Die CI-Warteschlange kann
-sie überschreiten. Dann ist die Veröffentlichung fehlgeschlagen; die Uhrzeit
-eines alten Forecasts darf nicht nachträglich geändert werden. Eine Erweiterung
-dieser Grenze ohne unabhängige zeitgestempelte Annahme würde rückwirkende
-Prognosen erlauben. Ein erneuter Versuch verlangt eine neue aktuelle Analyse.
+Der Writer behält die 120-Sekunden-Publikationsgrenze. Seit dem 19. September
+misst er sie an der von GitHub gestempelten Öffnungszeit des Draft-PR, einer
+unabhängigen, vom Consumer nicht editierbaren Annahmezeit, statt am Start des
+Actions-Runners. Damit scheitert eine ehrliche Einreichung nicht mehr an der
+CI-Warteschlange; die eigene Verzögerung zwischen Erstellungszeit und Create-PR
+zählt weiterhin, und ein Draft, der mehr als 30 Minuten vor dem Writer geöffnet
+wurde, gilt als veraltet. Die Uhrzeit eines alten Forecasts darf nicht
+nachträglich geändert werden. Eine weitere Lockerung ohne unabhängige
+zeitgestempelte Annahme würde rückwirkende Prognosen erlauben. Ein erneuter
+Versuch verlangt eine neue aktuelle Analyse.
+
+## Prompt 3.3.3 und Writer-Stabilisierung vom 19. September
+
+Auslöser waren sieben abgewiesene Drafts (#35, #52, #78, #89, #94, #96, #101):
+zwei zu spät geöffnete PRs, drei unbalancierte JSON-Envelopes (zwei mit fehlender,
+eine mit überzähliger Schlussklammer) und zwei Einreichungen, die ein
+`unavailable`-Feature (`structure.1h.new_low`) als Evidenz zitierten. Der Writer
+nennt jetzt bei jeder Ablehnung den konkreten Grund (Klammerbilanz und Dateiende,
+gemessene Zeitabweichung, nicht verfügbare Feature-IDs), schliesst auch abgewiesene
+Drafts mit diesem Grund als Kommentar und misst die 120-Sekunden-Grenze an der
+PR-Öffnungszeit. Prompt 3.3.3 verlangt vor Create-File die Prüfung der exakt zu
+schreibenden Zeichenkette (Anfang, Ende `}}`, Klammerbilanz, erneutes Parsen) und
+den Abgleich jeder zitierten Feature-ID gegen `status: "ok"` im geladenen
+features-Teil. Der Tests-Workflow läuft für PRs nicht mehr auf reinen
+`data/**`-Änderungen ausser `data/oracle/submissions/**`; die Daten-PRs des
+vertrauenswürdigen Producers tragen ihren eigenen `test`-Check.
 
 ## Reproduzierbarer Live-Test ohne Merge
 

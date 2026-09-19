@@ -26,6 +26,13 @@ on:
       - "CHATGPT_MONITOR_PROMPT.md"
       - ".github/workflows/**"
   pull_request:
+    # Trusted producer data PRs carry their own `test` check-run; a GITHUB_TOKEN
+    # PR cannot start this workflow and only leaves an empty failed run behind.
+    # Oracle drafts stay covered so the archive guard still reviews submissions.
+    paths:
+      - "**"
+      - "!data/**"
+      - "data/oracle/submissions/**"
 
 permissions:
   contents: read
