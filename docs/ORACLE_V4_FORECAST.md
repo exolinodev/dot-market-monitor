@@ -58,7 +58,7 @@ runtime adapter must create it from verified market/ledger evidence and consume
 only published, matching forecast/plan pairs. It must also resolve instructions
 published after their nominal effective minute without backdating fills, and
 respect serialized writer/collector ownership. Prompt 4.0.0, the :05 job change,
-funding-convention verification, paper observation and demo/live gates remain
+funding settlement readback, paper observation and demo/live gates remain
 separate rollout work. Direct `scripts/oracle.py write` without bound ledger
 inputs fails closed for v4; the supported v4 route is the trusted submission
 writer.

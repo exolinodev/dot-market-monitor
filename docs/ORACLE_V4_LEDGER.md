@@ -62,20 +62,31 @@ skipping possible fills or stops. Exact event retries are idempotent; conflicts,
 reordered inputs and changed historical evidence fail verification. The disk
 store requires a single serialized writer (future workflow concurrency gate).
 
-## Funding: evidence and outstanding verification
+## Funding: documented convention and simulation limits
 
 Kraken's official [historical funding API documentation](https://docs.kraken.com/api-reference/historical-funding-rates/historical-funding-rates.md)
 defines `timestamp` as “Start of the period to which the funding rate applies.”
 Frozen fixtures show hourly rates with the six gaps listed in
-`ORACLE_V4_FIXTURES.md`. Their absolute/relative ratio is consistent with DOT
-mark price: `qty * absolute_rate` and `notional * relative_rate` agree when the
-notional uses that same conversion price.
+`ORACLE_V4_FIXTURES.md`.
 
-The proposed linear-contract convention is positive rate paid by longs, with
-absolute rate in USD per 1-DOT contract per hour. The available fixture alone
-does not prove payer sign or continuous accrual for PF_DOTUSD. Consequently
-`funding_convention_verified` remains **false**. Enabling it requires documented
-linear-contract specification/readback evidence, not just a profitable replay.
+The official [linear Multi-M contract specification](https://support.kraken.com/articles/4844359082772-linear-multi-collateral-derivatives-contract-specifications)
+(updated 2026-09-08, read 2026-09-21) explicitly states positive funding is paid
+by longs to shorts; negative funding reverses the flow. Absolute rate is USD per
+contract unit per hour. Accrual is continuous, settled at the hour end or a net
+position change, whichever occurs first. Funding itself has no trading fee.
+Relative rate converts using the **spot index at rate calculation**, not current
+mark or entry price: `absolute = relative * fixed_reference_index`. Thus payment
+to a short is `qty * absolute * elapsed_hours`, equivalently
+`qty * fixed_reference_index * relative * elapsed_hours`. Published hourly rates
+must not be divided by the premium-calculation multiplier of eight again.
+
+`tests/fixtures/funding_convention.json` records manually transcribed source
+metadata and examples, not raw HTTP evidence. `test_ledger_funding_convention.py`
+checks the engine against them and the original frozen DOT rates. Example 3's
+rounded 1.233 USD/minute leads to the page's 36.99 USD half-hour figure; the
+unrounded stated formula gives 37 USD, which is the test expectation.
+`funding_convention_verified` is now **true** for the documentary convention.
+This neither enables the account nor claims demo/account settlement parity.
 
 The core prorates the hourly absolute rate by 1/60 for remaining quantity at the
 end of each modelled exposure minute. This explicitly refines the original
@@ -110,14 +121,15 @@ The archive guard checks every commit and the final candidate tree, or the Git
 index for staged checks. Rewriting/restoring an artifact within a PR is rejected.
 It replays the candidate's exact bytes, independently of unstaged working files.
 The existing required `test` job runs this guard; ledger data paths also trigger
-CI. The producer publication allowlist is intentionally still closed to ledger
-writes until runtime integration is complete.
+CI. The runtime integration opens narrow producer allowlists for derived ledger
+views, journal entries and closed trades; genesis and plan ownership remain separate.
 
 Current metrics include minute-close maximum drawdown and strategy net results;
 30 complete trades is only a minimum sample flag, never proof of profitability.
 The buy-and-hold figure is explicitly a **gross perp-mark proxy**, not the final
 cost-adjusted benchmark. MARK events retain the equity series; a separate compact
 curve export, archive growth benchmark and the full benchmark remain integration
-work. Paper activation awaits those contracts, validated funding convention and
-the v4 writer/runtime integration. Demo execution and live authorization remain
+work. Paper activation awaits benchmark/curve completion, explicit initialization
+and prompt/job rollout. The v4 writer/runtime integration is implemented; the
+funding convention is documented above. Demo execution and live authorization remain
 separate rollout gates.

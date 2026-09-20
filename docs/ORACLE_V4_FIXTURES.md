@@ -50,19 +50,17 @@ five two-hour intervals, one three-hour interval. Do not silently interpolate
 missing funding or book it as zero. Payload supplies both `fundingRate` and
 `relativeFundingRate`; they are numerically different. Do not multiply notional
 by the absolute field merely because its name contains “rate”. This public
-response alone does not prove payer/sign convention, accrual rules or the
-reference mark used for conversion. Confirm those before funding accounting.
+response alone does not prove payer/sign convention or accrual rules.
 For the last 24 records, `fundingRate / relativeFundingRate` ranges from
-1.07578 to 1.16636 USD, consistent with a DOT reference mark. The implied
-relationship is `absolute_rate = relative_rate × reference_mark`. For a
-1-DOT contract, the candidate units are USD per contract and a dimensionless
-fraction of notional, respectively. Equivalent cash-flow bases, before applying the payer convention, are
-`qty_contracts × fundingRate` and `notional_at_reference_mark × relativeFundingRate`,
-where `notional_at_reference_mark = qty_contracts × 1 DOT × reference_mark`.
-Use the funding interval's reference mark, not an arbitrary later mark. The
-fixture test pins the observed ratio range and this dimensional equivalence;
-it does not independently prove the reference mark or who pays whom. The
-future ledger test must additionally establish those conventions.
+1.07578 to 1.16636 USD, consistent with DOT prices. The frozen response does not
+independently identify this reference price. Subsequent official linear-contract
+specification evidence (see `ORACLE_V4_LEDGER.md`) identifies it as the **spot
+index at rate calculation**, not the current mark. Equivalent cash-flow bases
+for one hour are `qty_contracts × fundingRate` and
+`qty_contracts × fixed_reference_index × relativeFundingRate`, with positive
+rates paid by longs to shorts and elapsed-hour proration. The fixture test pins
+the observed ratio range and dimensional equivalence; separate ledger tests pin
+the sourced convention. Original raw response bytes and manifest are unchanged.
 
 Phase 2 rule: a missing expected funding interval means funding is unknown,
 never zero. Mark affected trades `funding_incomplete`, count them separately

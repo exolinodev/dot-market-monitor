@@ -26,8 +26,9 @@ No past candle or archived forecast is rewritten to accommodate publication dela
 ## Activation status
 
 Collector integration is implemented for explicitly initialized accounts. No
-production account has been initialized. Funding convention verification,
-compact equity-curve and cost-adjusted benchmark completion, prompt/job migration
+production account has been initialized. The funding convention is documented
+and fixture-tested (see `ORACLE_V4_LEDGER.md`); exchange settlement readback is
+still pending. Compact equity-curve and cost-adjusted benchmark completion, prompt/job migration
 and paper/demo/live acceptance gates remain open. This change performs no
 exchange execution.
 

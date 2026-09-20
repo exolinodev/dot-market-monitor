@@ -49,17 +49,17 @@ def test_documented_market_facts():
         ('2026-02-04T11:00:00Z', '2026-02-04T13:00:00Z'),
         ('2026-02-13T17:00:00Z', '2026-02-13T19:00:00Z'),
     ]
-    implied_marks = []
+    implied_indexes = []
     for rate in rates[-24:]:
         absolute = Decimal(str(rate['fundingRate']))
         relative = Decimal(str(rate['relativeFundingRate']))
-        implied_mark = absolute / relative
-        implied_marks.append(implied_mark)
-        # Dimensional equivalence only: not independent evidence of mark/sign.
+        implied_index = absolute / relative
+        implied_indexes.append(implied_index)
+        # Dimensional equivalence only: not independent evidence of reference index/sign.
         qty = Decimal('100')
-        assert abs(qty * absolute - qty * implied_mark * relative) < Decimal('1e-25')
-    assert abs(min(implied_marks) - Decimal('1.07578')) < Decimal('1e-8')
-    assert abs(max(implied_marks) - Decimal('1.16636')) < Decimal('1e-8')
+        assert abs(qty * absolute - qty * implied_index * relative) < Decimal('1e-25')
+    assert abs(min(implied_indexes) - Decimal('1.07578')) < Decimal('1e-8')
+    assert abs(max(implied_indexes) - Decimal('1.16636')) < Decimal('1e-8')
 
     for kind in ('trade', 'mark'):
         for resolution, seconds, count in [('1m', 60, 60), ('5m', 300, 12),

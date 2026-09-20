@@ -24,7 +24,7 @@
   "slippage_bps": "0",
   "spread_floor_bps": "2",
   "funding_interval_minutes": 60,
-  "funding_convention_verified": false,
+  "funding_convention_verified": true,
   "funding_positive_payer": "LONG",
   "max_order_age_minutes": 150,
   "max_hold_hours": 72,
