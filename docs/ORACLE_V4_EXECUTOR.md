@@ -1,10 +1,13 @@
 # Oracle v4 executor — implementation status
 
-`src/kraken_execution.py` supplies the first offline-tested transport layer for
-WP7. It is **not an operational executor**. There is no credentials lookup,
-workflow, CLI activation, private API fixture capture or exchange order in this
-change. `scripts/execute_orders.py`, bracket/management orchestration, paginated
-fill reconciliation, rollout gates and live support remain required.
+WP7 now has an offline-tested demo transport, durable attempt records, execution
+history/reconciliation, protective-order/action planning, and an isolated paper
+CLI in `scripts/execute_orders.py`. It is **not yet an operational exchange
+executor**. There is no credentials lookup, deployment workflow, private API
+fixture capture or placed exchange order. Demo/live orchestration, durable
+account/capture binding, operational recovery, rollout gates and live support
+remain required. The sections below describe the implemented layers and their
+remaining integration obligations.
 
 ## Verified API contract
 
@@ -246,3 +249,64 @@ expiry, holding deadlines, persistent MODIFY/CLOSE terms and rejection of
 ambiguous or inconsistent evidence. No actual bracket has been placed. A durable
 runner, short reconciliation cadence, API mutation ordering, account/quote
 freshness and crash recovery remain necessary before demo activation.
+
+## Executor CLI and one-action planning
+
+`scripts/execute_orders.py` now supplies a real isolated paper execution path and
+a read-only demo preview. Full demo/live execution is still unavailable; their
+activation is not implied by accepting a `--mode` argument.
+
+```sh
+python scripts/execute_orders.py --mode paper \
+  --repo . --trusted-head FULL_MAIN_SHA --forecast-id PUBLISHED_V4_FORECAST_ID \
+  --boundary 2026-09-21T00:15:00Z --output-dir /path/to/new/paper-candidate
+
+python scripts/execute_orders.py --mode demo --preview \
+  --repo . --trusted-head FULL_MAIN_SHA --forecast-id PUBLISHED_V4_FORECAST_ID
+```
+
+The caller must fetch and select the trusted immutable main SHA first. It must
+be an ancestor of the local `origin/main` reference; the CLI does not fetch or
+trust an unmerged checkout. It copies only regular committed blobs into an
+isolated tree, verifies ledger replay and original market-source/publication
+evidence, validates the forecast/plan/snapshot binding, and uses first-parent
+main publication time for instruction eligibility. It never reads credentials.
+
+Paper mode advances the existing committed account through the requested UTC
+quarter, using the same runtime as the collector. All eligible persisted v4
+plans are considered, not only the forecast selected for reporting. The output
+is a new tree with `data/ledger`, required source archives and an
+`execution_report.json`. It neither initializes nor resets an account, modifies
+the source checkout, publishes data, nor calls an exchange. Existing output
+directories are refused. Failed/interrupted outputs must be inspected separately;
+the command never overwrites them. Publication of an output remains subject to
+the protected producer/archive workflow.
+
+Demo preview reports the verified entry request, management instructions and
+publication timing. Its eligibility flag is a time check only, not account,
+market, balance or rollout approval. Demo without `--preview` and every live
+invocation fail explicitly until the remaining orchestrator/gates exist.
+
+`src/exchange_actions.py` converts verified requirements plus a fresh bound
+readback into at most **one** API mutation. Entry cancellation precedes unwind;
+a required market close precedes target adjustments; stop protection precedes
+profit-target work. It requires stable owned exchange identities and no pending
+or unknown prior mutation. Missing previously-open orders must be resolved from
+history, not treated as permission to send replacements. Duplicate open roles
+also require reconciliation.
+
+A send gets a deterministic <=100-character client ID derived from the original
+entry, logical role, desired parameters and verified reconciliation capture hash.
+The same input cannot create a second send identity. After a terminal attempt,
+reusing that same capture is refused. The caller must durably persist ownership
+and attempt evidence before sending and obtain new readback before planning the
+next mutation. The capture hash must bind account, positions, fills, open orders,
+reference time and effective terms; this library does not establish that binding
+by accepting a hash string.
+
+Native edits use `filledSize + desired_remaining_size`. Stop-market edits require
+an explicit, independently verified demo capability; the planner does not invent
+a stop-limit price or cancel protection to work around missing evidence. These
+are planned actions, not automatic authority to call the transport. Durable
+orchestration, account/capture binding, private-state persistence, execution
+freshness, recovery and demo/live rollout gates remain to be connected.

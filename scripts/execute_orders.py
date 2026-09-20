@@ -1,0 +1,42 @@
+"""Verify published v4 plans; create isolated paper candidates or demo previews."""
+import argparse
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import sys
+import tempfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from order_executor import materialize, preview, run_paper
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--mode', required=True, choices=('paper', 'demo', 'live'))
+    parser.add_argument('--repo', type=Path, default=Path('.'))
+    parser.add_argument('--trusted-head', required=True)
+    parser.add_argument('--forecast-id', required=True)
+    parser.add_argument('--boundary', help='Closed paper market boundary to execute through')
+    parser.add_argument('--output-dir', type=Path, help='New directory for isolated paper candidate')
+    parser.add_argument('--preview', action='store_true', help='Read-only demo request preview; never sends')
+    args = parser.parse_args(argv)
+    if args.mode == 'live':
+        parser.error('Live execution is unavailable: staged approvals and rollout gates are not implemented')
+    if args.mode == 'demo' and not args.preview:
+        parser.error('Demo sending is unavailable until durable mutation orchestration and demo gates are implemented; use --preview')
+    if args.mode == 'paper':
+        if not args.boundary or not args.output_dir or args.preview:
+            parser.error('Paper requires --boundary and a new --output-dir, without --preview')
+        result = run_paper(args.repo, args.trusted_head, args.forecast_id, args.boundary, args.output_dir)
+    else:
+        if args.boundary or args.output_dir:
+            parser.error('Demo preview does not accept paper output/boundary arguments')
+        with tempfile.TemporaryDirectory(prefix='oracle-demo-preview-') as temp:
+            data = materialize(args.repo, args.trusted_head, temp)
+            result = preview(data, args.repo, args.trusted_head, args.forecast_id, datetime.now(timezone.utc))
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
