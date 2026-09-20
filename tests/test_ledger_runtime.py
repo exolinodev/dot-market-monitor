@@ -92,6 +92,9 @@ def test_execution_context_binds_account_and_expires_quotes(tmp_path):
     assert context['status'] == 'ok'
     assert context['ledger_state_sha256'] == digest(context['ledger_state'])
     assert context['quote']['bid'] == '1'
+    assert context['recent_closed_trades'] == []
+    assert context['risk_policy']['tick_size_usd'] == '0.0001'
+    assert 'equity_curve' not in context['performance']
     assert context['estimated_taker_round_trip_bps'] == '109'
     assert execution_context(tmp_path, rows[1], '2026-09-20T20:15:00Z', '2026-09-20T20:31:00Z')['status'] == 'unavailable'
 
@@ -162,3 +165,21 @@ def test_main_full_exports_verifiable_execution_context_and_consumer(tmp_path, m
     context['ledger_state']['cash_usd'] = '50000'
     with pytest.raises(ValueError, match='ledger state hash mismatch'):
         validate_snapshot(snapshot)
+
+
+def test_execution_context_feedback_matches_replayed_closed_trade(tmp_path):
+    from ledger_runtime import execution_context
+    from ledger_store import append_events, verify
+    from test_ledger_store import setup_account
+    from test_ledger import candle
+    _, _, events, _ = setup_account(tmp_path)
+    append_events(tmp_path, events[2:] + [candle(1), candle(2, high='1.061')])
+    row = {'sources': {'perp_book': {'status': 'ok', 'received_at_utc': '2026-09-20T20:03:08Z'}},
+           'perp_book': {'bid': 1, 'ask': 1.001, 'spread_bps': 10}}
+    context = execution_context(tmp_path, row, '2026-09-20T20:03:00Z', '2026-09-20T20:03:10Z')
+    assert context['status'] == 'ok'
+    assert len(context['recent_closed_trades']) == 1
+    summary = context['recent_closed_trades'][0]
+    trade = verify(tmp_path)['trades'][summary['trade_id']]
+    assert summary == {key: trade[key] for key in summary}
+    assert {'net_r', 'net_pnl_usd', 'status', 'forecast_id', 'strategy_version'} <= summary.keys()

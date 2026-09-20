@@ -90,6 +90,10 @@ def execution_context(directory, quarter, boundary, reference):
         context.prec = 34
         spread = max(decimal(cfg['spread_floor_bps']), decimal(book['spread_bps']))
         costs = 2 * decimal(cfg['fee_taker_pct']) * 100 + spread
+    recent = sorted(result['trades'].values(), key=lambda t: (t['closed_at_utc'], t['trade_id']))[-5:]
+    recent = [{key: trade[key] for key in ('trade_id', 'forecast_id', 'strategy_version',
+               'closed_at_utc', 'status', 'net_pnl_usd', 'net_r', 'exit_reason',
+               'duration_seconds', 'funding_usd', 'fees_usd', 'spread_cost_usd')} for trade in recent]
     return {'status': 'ok', 'instrument': cfg['instrument'], 'ledger_state_sha256': digest(state),
             'ledger_config_sha256': digest(cfg), 'asof_boundary_utc': iso(boundary),
             'quote': {'status': 'ok', 'bid': number(book['bid']), 'ask': number(book['ask']),
@@ -99,7 +103,7 @@ def execution_context(directory, quarter, boundary, reference):
             'funding_rate_prediction': number(quarter['perp']['fundingRatePrediction']) if quarter.get('perp', {}).get('fundingRatePrediction') is not None else None,
             'funding_convention_verified': cfg['funding_convention_verified'],
             'risk_policy': {k: cfg[k] for k in ('risk_fraction_per_trade', 'risk_tiers',
-                'max_notional_multiple_of_equity', 'min_stop_bps', 'max_stop_bps',
+                'max_notional_multiple_of_equity', 'tick_size_usd', 'execution_quote_max_age_seconds', 'min_stop_bps', 'max_stop_bps',
                 'min_net_reward_risk_t1', 'max_hold_hours', 'max_order_age_minutes')},
-            'ledger_state': state, 'performance': {k: v for k, v in result['performance'].items()
+            'recent_closed_trades': recent, 'ledger_state': state, 'performance': {k: v for k, v in result['performance'].items()
                                                      if k != 'equity_curve'}}
