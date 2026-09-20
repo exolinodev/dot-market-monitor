@@ -191,3 +191,58 @@ is still an orchestration responsibility.
 
 Validation remains offline and synthetic. Real demo credentials, raw authenticated
 fixtures and the two-week operational test are still outstanding.
+
+## Protective-order requirements from actual fills
+
+`src/exchange_brackets.py` computes protective order **requirements**, not API
+mutations. Its inputs are the original verified entry plan/config, complete
+trade-lifetime fills from a flat account baseline, durable client-ID-to-role
+ownership, current owned open orders, reconciled signed position, trusted
+publication time and a reference time. Unknown entry outcomes, incomplete
+coverage, foreign orders/fills, wrong directions, non-reduce-only exits or a
+position mismatch stop planning. It creates no exchange identities or fills.
+
+- Stop size is actual entered quantity minus actual exits, never the submitted
+  paper size. All desired exits are reduce-only and opposite the entry side.
+  Stops retain `triggerSignal=mark` and no stop-limit price.
+- T1/T2 allocations floor their shares of cumulative actual entry quantity to
+  the configured quantity step; T3 takes the remainder. Actual fills of each
+  target are subtracted from that target. Zero-size targets are omitted for
+  very small partial entries. Multiple historical exit IDs can share a role.
+- Any exit requires cancellation of the remaining entry, preventing deliberate
+  replenishment during unwind. Fills already in flight must still be captured
+  and reconciled on the next cycle. This is not an atomic exchange OCO bracket.
+- A partial STOP/CLOSE requires a market close for the remaining actual position.
+  Existing stop protection remains desired while the close is unresolved;
+  obsolete profit targets are cancelled. At flat, all owned exit siblings are
+  removed and any still-resting entry is cancelled.
+- Entry expiry is the earlier of its explicit validity and publication plus the
+  configured auto-cancel age. `entry_cancel_required` also blocks a pending,
+  not-yet-sent entry after its deadline; an empty cancellation list is not
+  permission to submit it. Expiry alone does not flatten an existing position.
+- Maximum holding time starts at the first actual entry fill. Expiry, holding
+  period and lot/tick rules come from the plan-bound configuration.
+- A completely filled T1 applies its explicit trailing stop only once the entry
+  is terminal, when further entry fills cannot change the target allocation.
+  Partial T1 fills alone do not imply that the whole target executed.
+- MODIFY cannot loosen protection or change target allocations after an exit.
+  Existing tighter stops are retained. Returned `effective_terms` preserve
+  modified prices and a latched close request/reason through later HOLD cycles.
+  The runner must durably persist and pass these terms (or reproduce them from
+  accepted instruction history); omitting them after a modification is invalid
+  orchestration. They are bound to the original plan hash.
+
+Desired `size` is the **remaining** quantity for that logical role. It must not
+be copied blindly into editorder: the API order's total size can include already
+filled quantity. The future mutation planner must account for filledSize, assign
+stable generation-specific client IDs, resolve all prior attempts, and verify
+readback after each create/edit/cancel. Stop-market edit behavior remains subject
+to the documented demo verification requirement. The desired-role list is not a
+safe send sequence; it must not be submitted as a batch without reconciliation.
+
+Tests cover long/short partial entries, rounding dust, target reductions,
+entry-remainder cancellation, full-T1 trailing, partial stop/close, flat cleanup,
+expiry, holding deadlines, persistent MODIFY/CLOSE terms and rejection of
+ambiguous or inconsistent evidence. No actual bracket has been placed. A durable
+runner, short reconciliation cadence, API mutation ordering, account/quote
+freshness and crash recovery remain necessary before demo activation.
