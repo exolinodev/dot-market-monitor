@@ -83,6 +83,29 @@
         },
         "plan": {
           "$ref": "https://dot-market-monitor.local/schema/ledger_plan.schema.json"
+        },
+        "publication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "at_utc",
+            "plan_sha256"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{40}$"
+            },
+            "at_utc": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "plan_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
         }
       },
       "required": [

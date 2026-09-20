@@ -67,7 +67,14 @@ def check(base=None, head='HEAD', staged=False, root=Path('.')):
             target = directory / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(blob(root, candidate, name))
-        verify(directory / 'data')
+        result = verify(directory / 'data')
+        from ledger_publication import verify_instruction
+        for record in result['records']:
+            event = record['input']
+            if event['type'] == 'instruction' and event['plan']['forecast_id'].endswith('-oracle-v4'):
+                if 'publication' not in event:
+                    raise ValueError('Production instruction requires main publication evidence')
+                verify_instruction(root, git(root, 'rev-parse', 'HEAD' if staged else head).decode().strip(), event)
 
 
 if __name__ == '__main__':

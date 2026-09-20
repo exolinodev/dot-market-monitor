@@ -334,7 +334,13 @@ def _bar(value):
 def _apply_instruction(state, event, config, outputs):
     plan = event['plan']
     at = event['at_utc']
-    if plan['config_sha256'] != digest(config) or iso(at) != plan['effective_at_utc']:
+    expected = plan['effective_at_utc']
+    publication = event.get('publication')
+    if publication is not None:
+        if publication['plan_sha256'] != digest(plan):
+            raise ValueError('Publication plan hash mismatch')
+        expected = effective_at(max(utc(plan['created_at_utc']), utc(publication['at_utc'])))
+    if plan['config_sha256'] != digest(config) or iso(at) != expected:
         raise ValueError('Instruction config/effective-time mismatch')
     for action in plan['management']:
         kind = 'order' if 'client_id' in action else 'position'
@@ -362,6 +368,9 @@ def _apply_instruction(state, event, config, outputs):
     for entry in plan['orders']:
         if state['kill_switch'] or state['order'] or state['position']:
             _emit(outputs, 'ENTRY_REJECTED', at, reason='account_changed_or_kill_switch', client_id=entry['order']['client_id'])
+            continue
+        if utc(entry['order']['valid_until_utc']) <= utc(at):
+            _emit(outputs, 'ENTRY_REJECTED', at, reason='expired_before_publication', client_id=entry['order']['client_id'])
             continue
         obj = deepcopy(entry['order'])
         obj.update(size=deepcopy(entry['size']), submitted_at_utc=iso(at),
