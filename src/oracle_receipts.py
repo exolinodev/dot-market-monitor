@@ -19,6 +19,9 @@ def make_receipt(envelope, directory):
     payload = (root / input_path).read_bytes()
     snapshot = json.loads(gzip.decompress(payload))
     validate_forecast(persisted, snapshot)
+    if f.get('schema_version') == 2:
+        from oracle_v4 import verify_forecast_plan
+        verify_forecast_plan(f, snapshot, directory)
     return {'schema_version': 1, 'verification': 'python-decompressed-canonical-sha256-v1',
         'forecast_id': f['forecast_id'], 'forecast_path': forecast_path,
         'forecast_sha256': digest(f), 'snapshot_commit': envelope['snapshot_commit'],

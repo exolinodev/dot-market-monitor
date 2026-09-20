@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/oracle_forecast_v4.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "snapshot_generated_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "snapshot_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "market": {
+      "const": "DOTUSD"
+    },
+    "measurement_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "oracle_feature_version": {
+      "const": "3.0.0"
+    },
+    "oracle_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "forecast_horizons": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "1h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        },
+        "4h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        },
+        "12h": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "UP",
+                "DOWN",
+                "FLAT",
+                "ABSTAIN"
+              ]
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "direction",
+            "rationale"
+          ]
+        }
+      },
+      "required": [
+        "1h",
+        "4h",
+        "12h"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "supporting_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "opposing_feature_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "decisive_timeframes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "supporting_feature_ids",
+        "opposing_feature_ids",
+        "decisive_timeframes"
+      ]
+    },
+    "calibration_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "uncalibrated"
+        },
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNAVAILABLE"
+          ]
+        },
+        "analog_sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scorecard_sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "status",
+        "confidence",
+        "analog_sample_count",
+        "scorecard_sample_count",
+        "limitations"
+      ]
+    },
+    "text_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "strategy_version": {
+      "const": "oracle-v4.0.0"
+    },
+    "forecast_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v4$"
+    },
+    "primary_market": {
+      "const": "PF_DOTUSD"
+    },
+    "ledger_state_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stance",
+        "regime",
+        "summary"
+      ],
+      "properties": {
+        "stance": {
+          "enum": [
+            "LONG",
+            "SHORT",
+            "FLAT"
+          ]
+        },
+        "regime": {
+          "enum": [
+            "CONTINUATION",
+            "EXHAUSTION_WATCH",
+            "REVERSAL_ARMED",
+            "REVERSAL_TRIGGERED",
+            "BREAKOUT_ARMED",
+            "BREAKOUT_TRIGGERED",
+            "NO_TRADE"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "orders": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "action": {
+            "const": "ENTER"
+          },
+          "side": {
+            "enum": [
+              "LONG",
+              "SHORT"
+            ]
+          },
+          "entry": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": [
+                  "LIMIT",
+                  "MARKET",
+                  "STOP"
+                ]
+              },
+              "price_usd": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "type",
+              "price_usd"
+            ]
+          },
+          "stop_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "enum": [
+                    "T1",
+                    "T2",
+                    "T3"
+                  ]
+                },
+                "price_usd": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "fraction": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "id",
+                "price_usd",
+                "fraction"
+              ]
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "stop_after_t1_usd": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_until_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "risk_tier": {
+            "enum": [
+              "FULL",
+              "HALF",
+              "QUARTER"
+            ]
+          }
+        },
+        "required": [
+          "client_id",
+          "action",
+          "side",
+          "entry",
+          "stop_usd",
+          "targets",
+          "valid_until_utc",
+          "risk_tier"
+        ]
+      }
+    },
+    "management": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "HOLD",
+                  "CANCEL"
+                ]
+              },
+              "client_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              }
+            },
+            "required": [
+              "action",
+              "client_id"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "HOLD"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              }
+            },
+            "required": [
+              "action",
+              "position_id"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "CLOSE"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "type": {
+                "const": "MARKET"
+              }
+            },
+            "required": [
+              "action",
+              "position_id",
+              "type"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "MODIFY"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "stop_usd": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "T1",
+                        "T2",
+                        "T3"
+                      ]
+                    },
+                    "price_usd": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "fraction": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "price_usd",
+                    "fraction"
+                  ]
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "action",
+              "position_id"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "stop_usd"
+                ]
+              },
+              {
+                "required": [
+                  "targets"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "maxItems": 1
+    }
+  },
+  "required": [
+    "created_at_utc",
+    "snapshot_generated_at_utc",
+    "snapshot_sha256",
+    "market",
+    "measurement_config_sha256",
+    "oracle_feature_version",
+    "oracle_config_sha256",
+    "forecast_horizons",
+    "evidence",
+    "calibration_context",
+    "text_summary",
+    "schema_version",
+    "strategy_version",
+    "forecast_id",
+    "primary_market",
+    "ledger_state_sha256",
+    "decision",
+    "orders",
+    "management"
+  ]
+}

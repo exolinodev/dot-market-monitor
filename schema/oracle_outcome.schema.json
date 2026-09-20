@@ -8,7 +8,7 @@
       "const": 1
     },
     "evaluator_version": {
-      "const": "1.0.0"
+      "enum": ["1.0.0", "2.0.0"]
     },
     "forecast_id": {
       "type": "string",
@@ -69,6 +69,7 @@
                 "unavailable",
                 "abstained",
                 "no_trigger",
+                "direction_only",
                 "triggered_unresolved",
                 "targets_complete",
                 "failure",
@@ -372,6 +373,7 @@
                 "unavailable",
                 "abstained",
                 "no_trigger",
+                "direction_only",
                 "triggered_unresolved",
                 "targets_complete",
                 "failure",
@@ -675,6 +677,7 @@
                 "unavailable",
                 "abstained",
                 "no_trigger",
+                "direction_only",
                 "triggered_unresolved",
                 "targets_complete",
                 "failure",

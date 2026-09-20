@@ -31,7 +31,7 @@ def check_additions(paths, repo):
         if target.is_symlink() or not target.is_file():
             raise ValueError('Archive artifacts must be regular files: '+path)
         if path.startswith('data/oracle/submissions/'):
-            if not re.fullmatch(r'data/oracle/submissions/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3\.json',path):
+            if not re.fullmatch(r'data/oracle/submissions/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v[34]\.json',path):
                 raise ValueError('Invalid submission path: '+path)
             envelope=parse_submission(target.read_bytes())
             validate(envelope,'oracle_submission.schema.json')
@@ -40,6 +40,11 @@ def check_additions(paths, repo):
             from oracle_forecasts import validate_forecast
             snapshot=json.loads(subprocess.check_output(['git','show',envelope['snapshot_commit']+':data/llm_snapshot.json'],cwd=repo))
             validate_forecast(envelope['forecast'],snapshot)
+            if envelope['forecast'].get('schema_version') == 2:
+                from oracle_v4 import prepare_plan
+                state=json.loads(subprocess.check_output(['git','show',envelope['snapshot_commit']+':data/ledger/state.json'],cwd=repo))
+                genesis=json.loads(subprocess.check_output(['git','show',envelope['snapshot_commit']+':data/ledger/genesis.json'],cwd=repo))
+                prepare_plan(envelope['forecast'],snapshot,state,genesis['config'])
 
 
 def check(base=None,head='HEAD',repo=Path('.'),staged=False):
@@ -62,6 +67,9 @@ def check(base=None,head='HEAD',repo=Path('.'),staged=False):
     check_additions([line.split('\t',1)[1] for line in changes.splitlines()],repo)
     # Validate all forecast bindings as well as the proposed additions.
     forecasts={f['forecast_id']:f for f in load_forecasts(repo/'data','2260-01-01T00:00:00Z')}
+    for path in (repo/'data/ledger/plans').glob('*.json'):
+        if path.stem not in forecasts or forecasts[path.stem].get('schema_version') != 2:
+            raise ValueError('Executable ledger plan has no published v4 forecast')
     for path in (repo/'data/oracle/forecast_keys').glob('*.json'):
         key=json.loads(path.read_text())
         f=forecasts.get(key['forecast_id'])

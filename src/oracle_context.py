@@ -6,8 +6,8 @@ from common import read_json, write_json
 from oracle_common import configuration, FEATURE_VERSION, STRATEGY_VERSION, EVALUATOR_VERSION, canonical, validate, digest
 from oracle_features import feature_inputs, build_features
 from oracle_history import FeatureArchive
-from oracle_forecasts import validate_forecast, create_only, ensure_unique_snapshots
-from oracle_evaluator import evaluate_forecast, verify_outcome
+from oracle_forecasts import validate_forecast, create_only, ensure_unique_snapshots, regime_direction
+from oracle_evaluator import evaluate_forecast, verify_outcome, evaluator_version
 from oracle_scorecard import scorecard
 from oracle_analogs import market_analogs
 from oracle_market_history import market_outcome_history
@@ -44,6 +44,9 @@ def load_forecasts(directory, reference):
         evidence=Path(directory)/'oracle/inputs'/(f['snapshot_sha256']+'.json.gz')
         snapshot=json.loads(gzip.decompress(evidence.read_bytes()))
         validate_forecast(f,snapshot)
+        if f.get('schema_version') == 2:
+            from oracle_v4 import verify_forecast_plan
+            verify_forecast_plan(f, snapshot, directory)
         fs.append(f)
     if len({f['forecast_id'] for f in fs})!=len(fs): raise ValueError('Duplicate forecast ID')
     ensure_unique_snapshots(fs)
@@ -68,7 +71,7 @@ def build_context(data, directory, persist=False, cfg=None):
     for f in fs:
         evaluated=None
         for h in ('1h','4h','12h'):
-            path=root/'oracle/outcomes'/f['forecast_id']/(EVALUATOR_VERSION+'-'+h+'.json')
+            path=root/'oracle/outcomes'/f['forecast_id']/(evaluator_version(f)+'-'+h+'.json')
             if path.exists():
                 out=json.loads(path.read_text())
                 verify_outcome(out,f,root)
@@ -115,7 +118,7 @@ def build_context(data, directory, persist=False, cfg=None):
         'current_features':current,'market_analogs':market_analogs(current,past,frames,cfg,labels),
         'model_scorecard':{**scores,'groups':relevant, 'pending_or_unavailable_count':len(pending), 'omitted_compatible_groups':omitted_groups},
         'recent_forecasts':[{'forecast_id':f['forecast_id'],'created_at_utc':f['created_at_utc'],
-            'strategy_version':f['strategy_version'],'regime':f['regime'],'direction':f['trade_setup']['direction']} for f in recent],
+            'strategy_version':f['strategy_version'],'regime':regime_direction(f)[0],'direction':regime_direction(f)[1]} for f in recent],
         'recent_matured_outcomes':[{'forecast_id':o['forecast_id'],'strategy_version':o['strategy_version'],
             'evaluated_at_utc':o['evaluated_at_utc'], 'horizons':{h:{k:r[k] for k in
                 ('status','target_before_failure','forward_return_pct','r_multiple')} for h,r in o['horizons'].items()}} for o in matured]}

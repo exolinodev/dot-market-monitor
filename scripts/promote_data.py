@@ -45,6 +45,8 @@ def api(repo, path, method='GET', payload=None):
 
 
 def allowed(kind, path):
+    if path.startswith('data/ledger/'):
+        return kind == 'oracle' and bool(re.fullmatch(r'data/ledger/(plans/[A-Za-z0-9_-]+|states/[a-f0-9]{64})\.json', path))
     if path.startswith('data/intraday/'):
         return kind in ('collector', 'light') and bool(re.fullmatch(r'data/intraday/(latest\.json|[0-9]{4}/[0-9]{2}/[0-9]{2}\.jsonl)', path))
     if path.startswith('data/funding/'):

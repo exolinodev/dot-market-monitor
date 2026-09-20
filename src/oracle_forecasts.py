@@ -13,6 +13,9 @@ def forecast_id(created, snapshot_hash):
 
 
 def validate_forecast(f, snapshot=None):
+    if f.get('schema_version') == 2:
+        from oracle_v4 import validate_contract
+        return validate_contract(f, snapshot)
     validate(f, 'oracle_forecast.schema.json')
     created, ref = utc(f['created_at_utc']), utc(f['snapshot_generated_at_utc'])
     if not ref <= created <= ref+pd.Timedelta(minutes=90):
@@ -98,8 +101,14 @@ def ensure_unique_snapshots(forecasts):
         seen.add(key)
 
 
-def persist_forecast(f, snapshot, directory, now):
+def persist_forecast(f, snapshot, directory, now, *, ledger_state=None, ledger_config=None):
     validate_forecast(f, snapshot)
+    if f.get('schema_version') == 2:
+        if ledger_state is None or ledger_config is None:
+            raise ValueError('v4 publication requires verified bound ledger inputs')
+        from oracle_v4 import prepare_plan
+        from ledger_store import persist_plan
+        plan = prepare_plan(f, snapshot, ledger_state, ledger_config)
     delta = (utc(now)-utc(f['created_at_utc'])).total_seconds()
     if abs(delta) > 120:
         raise ValueError('Publication timestamp differs from actual creation by '
@@ -116,6 +125,8 @@ def persist_forecast(f, snapshot, directory, now):
         prior = json.loads(existing.read_text())
         if snapshot_strategy_key(prior) == key:
             raise FileExistsError('Snapshot/strategy already published: '+prior['forecast_id'])
+    if f.get('schema_version') == 2:
+        persist_plan(root.parent, plan, ledger_state)
     # Bound input snapshot is also create-only; repeated same snapshot is verified.
     evidence = root/'inputs'/(f['snapshot_sha256']+'.json.gz')
     import gzip
@@ -133,3 +144,10 @@ def persist_forecast(f, snapshot, directory, now):
         'strategy_version':f['strategy_version'],'forecast_id':f['forecast_id'],
         'forecast_sha256':digest(f),'forecast_path':path.relative_to(root).as_posix()})
     return create_only(path, f)
+
+
+def regime_direction(f):
+    if f.get('schema_version') == 2:
+        decision = f['decision']
+        return decision['regime'], 'NONE' if decision['stance'] == 'FLAT' else decision['stance']
+    return f['regime'], f['trade_setup']['direction']

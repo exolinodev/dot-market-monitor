@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 from oracle_common import EVALUATOR_VERSION, digest, number
 from observation_common import utc, iso
+from oracle_forecasts import regime_direction
 
 
 def distribution(values):
@@ -25,7 +26,7 @@ def scorecard(forecasts, outcomes, reference, minimum=30):
             if identity in seen: raise ValueError('Duplicate forecast outcome horizon')
             seen.add(identity)
             key=(f['strategy_version'],f['schema_version'],f['oracle_feature_version'],f['oracle_config_sha256'],
-                 f['measurement_config_sha256'],out['evaluator_version'],h,f['trade_setup']['direction'],f['regime'])
+                 f['measurement_config_sha256'],out['evaluator_version'],h,regime_direction(f)[1],regime_direction(f)[0])
             groups[key].append((f,r))
     rows=[]
     names=('strategy_version','forecast_schema_version','oracle_feature_version','oracle_config_sha256',
