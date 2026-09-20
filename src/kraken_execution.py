@@ -40,7 +40,7 @@ def encoded_params(params):
 
 
 def authent(secret, encoded, endpoint_path):
-    if not endpoint_path.startswith('/api/v3/'):
+    if not endpoint_path.startswith(('/api/v3/', '/api/history/v3/')):
         raise ExecutionError('Invalid signing path')
     try:
         key = base64.b64decode(secret, validate=True)
@@ -65,12 +65,21 @@ class DemoClient:
     def request(self, endpoint, params=None):
         if endpoint not in READS and endpoint not in MUTATIONS:
             raise ExecutionError('Unsupported private endpoint')
-        encoded = encoded_params(params or {})
-        path = '/api/v3/' + endpoint
+        status, raw, _ = self._request('/api/v3/' + endpoint, params or {},
+                                      'GET' if endpoint in READS else 'POST', DEMO_URL)
+        return status, raw
+
+    def history(self, endpoint, params):
+        if endpoint not in ('executions', 'orders', 'triggers', 'account-log'):
+            raise ExecutionError('Unsupported history endpoint')
+        return self._request('/api/history/v3/' + endpoint, params, 'GET',
+                             'https://demo-futures.kraken.com')
+
+    def _request(self, path, params, method, base):
+        encoded = encoded_params(params)
         headers = {'APIKey': self._key, 'Authent': authent(self._secret, encoded, path),
                    'Content-Type': 'application/x-www-form-urlencoded'}
-        method = 'GET' if endpoint in READS else 'POST'
-        url = DEMO_URL + path
+        url = base + path
         if method == 'GET' and encoded:
             url += '?' + encoded
         try:
@@ -82,7 +91,9 @@ class DemoClient:
                     raw.extend(block)
                     if len(raw) > MAX_RESPONSE_BYTES:
                         raise ExecutionError('Private response exceeded byte limit')
-                return response.status_code, bytes(raw)
+                selected = {k: v for k in ('Next-Continuation-Token', 'Date')
+                            if (v := getattr(response, 'headers', {}).get(k)) is not None}
+                return response.status_code, bytes(raw), selected
         except requests.RequestException:
             # Request exceptions may include headers/URLs; never surface them.
             raise OutcomeUnknown('Demo request failed; reconcile any mutation attempt') from None

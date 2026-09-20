@@ -140,3 +140,54 @@ its deterministic replay are not modified by these helpers.
 Tests use synthetic API-shaped pages. No authenticated fixture or successful
 real-account pagination is claimed, and this does not start the two-week demo
 acceptance window.
+
+## Account-bound execution history
+
+`src/exchange_history.py` supplies the stronger history source for cases where
+`/fills` timestamp pagination is ambiguous. It uses the documented
+[execution events endpoint](https://docs.kraken.com/api-reference/account-history/get-execution-events)
+at `/api/history/v3/executions`. The demo transport now supports read-only
+history calls to executions/orders/triggers/account-log on the same fixed demo
+host. Only executions have a capture/parser in this change.
+
+The signing path includes `/api/history/v3/...`; it is not a trading
+`/api/v3/...` endpoint and has no `/derivatives` URL prefix. This follows the
+[official SDK's Sign implementation](https://github.com/krakenfx/api-go/blob/main/pkg/derivatives/rest.go),
+which removes only a leading `/derivatives` from the URL path (read 2026-09-21).
+
+The caller provides an independently trusted account UID and a fixed millisecond
+window. Every page and nested execution order must match that account. Queries
+use ascending order, count 1000, and the opaque continuation token from the
+`Next-Continuation-Token` header or `continuationToken` body field. If both are
+present they must agree. Request parameters, selected response headers, raw bytes,
+status, SHA-256 and byte count are retained for every page.
+
+The API reference does not state whether since/before are inclusive. Capture
+requests one extra millisecond at both edges, then filters normalized fills to
+the exact inclusive requested window. It rejects finer-than-millisecond window
+boundaries, out-of-window data, stale response Date, changing account identity,
+incorrect lengths, descending new events, repeated tokens and contradictory
+event duplicates. Shared timestamps across pages are valid and do not cause the
+ambiguity of timestamp-only cursors. Exhausting the page budget leaves coverage
+incomplete. Exhausting the API token chain establishes coverage only according
+to the authenticated API's pagination contract, not a claim about undocumented
+exchange ingestion delays.
+
+The history response nests execution data under
+`event.execution.execution`; its execution UID becomes fill_id and its order
+UID becomes order_id. Decimal price/quantity strings are retained without float
+conversion. History account binding is retained in the manifest. Per-fill
+optional orderData/fee fields stay in raw evidence; this adapter does not yet
+assert their accounting semantics or calculate verified net PnL.
+
+`verify_capture` rebuilds the report from the raw page files using a separately
+supplied account/window. It rejects hashes, request bindings, derived reports,
+extra files and symlinks that differ from that replay. This is local integrity
+checking, not independent exchange authentication: the eventual runner must bind
+the capture hash to its trusted authenticated acquisition and durable storage.
+The capture's normalized fills can feed the quantity reconciler; linking that
+report to contemporaneous positions/accounts and protected performance artifacts
+is still an orchestration responsibility.
+
+Validation remains offline and synthetic. Real demo credentials, raw authenticated
+fixtures and the two-week operational test are still outstanding.
