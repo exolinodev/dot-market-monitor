@@ -19,6 +19,13 @@ def main(data_dir=None, run_kind=None, boundary=None):
     timer = time.monotonic()
     target=Path(data_dir) if data_dir is not None else DATA_DIR
     target.mkdir(parents=True,exist_ok=True)
+    ledger_active = (target / 'ledger/genesis.json').exists()
+    trusted_head = None
+    if ledger_active:
+        if run_kind is None:
+            raise ValueError('Active ledger collection requires an explicit cycle')
+        import subprocess
+        trusted_head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     if run_kind is not None:
         from cycles import resolve, metadata
         from common import utcnow
@@ -27,18 +34,28 @@ def main(data_dir=None, run_kind=None, boundary=None):
         started = utcnow()
         quarter_error = None
         try:
-            quarter = collect_intraday(target, run_kind, point)
+            quarter = collect_intraday(target, run_kind, point, persist_result=False) if ledger_active else collect_intraday(target, run_kind, point)
         except Exception as exc:
-            if run_kind == 'light': raise
+            if run_kind == 'light' or ledger_active: raise
             quarter_error = str(exc)
         if run_kind == 'light':
+            if ledger_active:
+                from ledger_runtime import finish_quarter
+                finish_quarter(target, quarter, point, ROOT, trusted_head)
             print(f"Light quarter {quarter['meta']['cycle_boundary_utc']}: {quarter['meta']['status']}")
             return quarter
     data=Collector(target).collect()
     if run_kind is not None:
         from perp_data import enrich_hourly
         data.update(metadata(run_kind, point, started))
-        enrich_hourly(data, target, point)
+        if ledger_active:
+            enrich_hourly(data, target, point, pending_quarter=quarter)
+            from ledger_runtime import finish_quarter, execution_context
+            finish_quarter(target, quarter, point, ROOT, trusted_head)
+            data['markets']['DOTUSD']['intraday']['quarters'][-1]['ledger'] = quarter['ledger']
+            data['markets']['DOTUSD']['execution_context'] = execution_context(target, quarter, point, data['generated_at_utc'])
+        else:
+            enrich_hourly(data, target, point)
         if quarter_error:
             data['errors'].append({'source_id': 'intraday', 'error': quarter_error})
             data['status'] = 'partial'

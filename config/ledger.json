@@ -29,5 +29,6 @@
   "max_order_age_minutes": 150,
   "max_hold_hours": 72,
   "equity_floor_fraction": "0.80",
-  "risk_budget_includes_costs": true
+  "risk_budget_includes_costs": true,
+  "execution_quote_max_age_seconds": 900
 }

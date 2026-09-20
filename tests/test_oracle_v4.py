@@ -193,3 +193,11 @@ def test_oracle_producer_may_only_add_plans_and_bound_states():
         assert not allowed('oracle', 'data/ledger/' + name)
     assert not allowed('collector', 'data/ledger/plans/a.json')
     assert not allowed('light', 'data/ledger/plans/a.json')
+
+
+def test_writer_rechecks_quote_age_at_forecast_creation():
+    f, snapshot, state, cfg = fixture()
+    f['created_at_utc'] = '2026-09-20T20:16:00Z'
+    rebind(f, snapshot)
+    with pytest.raises(ValueError, match='configured age'):
+        prepare_plan(f, snapshot, state, cfg)

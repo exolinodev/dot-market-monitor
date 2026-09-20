@@ -108,7 +108,7 @@ def history(directory, boundary):
                                    for n, row in zip((3, 2, 1, 0), rows) if row is None]}
 
 
-def collect(directory, kind, boundary, fetcher=fetch, clock=utcnow):
+def collect(directory, kind, boundary, fetcher=fetch, clock=utcnow, persist_result=True):
     boundary = utc(boundary)
     old = read_cycle(directory, boundary)
     if old is not None:
@@ -230,5 +230,6 @@ def collect(directory, kind, boundary, fetcher=fetch, clock=utcnow):
     if not result['meta']['fresh'] or not result['perp_book'] or any(
             len(result['candles'].get(k) or []) != 15 or sources[k]['status'] != 'ok' for k in ('trade', 'mark')):
         raise ValueError('Required perp quote or closed candle coverage missing; quarter not committed')
-    persist(directory, result)
+    if persist_result:
+        persist(directory, result)
     return result

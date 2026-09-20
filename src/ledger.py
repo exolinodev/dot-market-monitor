@@ -62,7 +62,7 @@ def validate_config(config):
     positive = ('equity_start_usd', 'quantity_step', 'tick_size_usd', 'risk_fraction_per_trade',
                 'max_notional_multiple_of_equity', 'min_stop_bps', 'max_stop_bps',
                 'min_net_reward_risk_t1', 'max_order_age_minutes', 'max_hold_hours',
-                'funding_interval_minutes', 'equity_floor_fraction')
+                'funding_interval_minutes', 'equity_floor_fraction', 'execution_quote_max_age_seconds')
     if any(decimal(config[k]) <= 0 for k in positive):
         raise ValueError('Positive ledger limits required')
     if config['funding_interval_minutes'] != 60:

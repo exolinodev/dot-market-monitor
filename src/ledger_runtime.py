@@ -57,3 +57,48 @@ def advance(directory, repo, trusted_head, boundary, pending_rows=()):
     return {'status': 'ok', 'asof_boundary_utc': iso(boundary), 'ledger_state_sha256': digest(state),
             'equity_usd': state['equity_usd'], 'unrealized_pnl_usd': state['unrealized_pnl_usd'],
             'open_order': state['order'], 'position': state['position'], 'kill_switch': state['kill_switch']}
+
+
+def finish_quarter(directory, quarter, boundary, repo, trusted_head):
+    """Prepare account and quarter together for one protected producer commit."""
+    from intraday import read_cycle, persist
+    previous = read_cycle(directory, boundary)
+    name = 'intraday/' + utc(boundary).strftime('%Y/%m/%d.jsonl')
+    summary = advance(directory, repo, trusted_head, boundary, [(name, quarter)])
+    if previous is None:
+        quarter['ledger'] = summary
+        persist(directory, quarter)
+    # A committed quarter is immutable even if a later writer added a plan.
+    return summary
+
+
+def execution_context(directory, quarter, boundary, reference):
+    """Facts for order selection; the model never sets the executable quantity."""
+    from decimal import localcontext
+    from ledger import decimal, number
+    result = verify(directory)
+    state, cfg = result['state'], result['genesis']['config']
+    expected = utc(boundary) - timedelta(minutes=1)
+    if not state['last_candle_utc'] or utc(state['last_candle_utc']) != expected:
+        return {'status': 'unavailable', 'reason': 'Account has no complete boundary mark', 'instrument': cfg['instrument']}
+    source, book = quarter['sources']['perp_book'], quarter['perp_book']
+    if source['status'] != 'ok' or not utc(boundary) <= utc(source['received_at_utc']) <= utc(reference):
+        return {'status': 'unavailable', 'reason': 'Current boundary quote unavailable', 'instrument': cfg['instrument']}
+    if (utc(reference) - utc(source['received_at_utc'])).total_seconds() > cfg['execution_quote_max_age_seconds']:
+        return {'status': 'unavailable', 'reason': 'Execution quote exceeds configured age', 'instrument': cfg['instrument']}
+    with localcontext() as context:
+        context.prec = 34
+        spread = max(decimal(cfg['spread_floor_bps']), decimal(book['spread_bps']))
+        costs = 2 * decimal(cfg['fee_taker_pct']) * 100 + spread
+    return {'status': 'ok', 'instrument': cfg['instrument'], 'ledger_state_sha256': digest(state),
+            'ledger_config_sha256': digest(cfg), 'asof_boundary_utc': iso(boundary),
+            'quote': {'status': 'ok', 'bid': number(book['bid']), 'ask': number(book['ask']),
+                      'asof_utc': iso(source['received_at_utc'])},
+            'spread_bps': number(spread), 'estimated_taker_round_trip_bps': number(costs),
+            'cost_estimate_excludes_funding': True, 'slippage_bps': cfg['slippage_bps'],
+            'funding_rate_prediction': number(quarter['perp']['fundingRatePrediction']) if quarter.get('perp', {}).get('fundingRatePrediction') is not None else None,
+            'funding_convention_verified': cfg['funding_convention_verified'],
+            'risk_policy': {k: cfg[k] for k in ('risk_fraction_per_trade', 'risk_tiers',
+                'max_notional_multiple_of_equity', 'min_stop_bps', 'max_stop_bps',
+                'min_net_reward_risk_t1', 'max_hold_hours', 'max_order_age_minutes')},
+            'ledger_state': state, 'performance': result['performance']}

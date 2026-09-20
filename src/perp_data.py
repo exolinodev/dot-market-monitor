@@ -104,7 +104,7 @@ def append_funding(directory, payload):
             'new_records': sum(len(rows) for _, rows in additions)}
 
 
-def enrich_hourly(data, directory, boundary):
+def enrich_hourly(data, directory, boundary, pending_quarter=None):
     """Full-run additions: bounded closed candle cache and incremental funding archive."""
     from concurrent.futures import ThreadPoolExecutor
     from datetime import timedelta
@@ -148,6 +148,12 @@ def enrich_hourly(data, directory, boundary):
                 summaries[name] = {'status': 'unavailable', 'error': str(exc)[:200]}
                 data['errors'].append({'source_id': 'DOTPERP.' + name, 'error': str(exc)[:200]})
     quarters = history(directory, boundary)
+    if pending_quarter is not None:
+        if utc(pending_quarter['meta']['cycle_boundary_utc']) != boundary:
+            raise ValueError('Pending quarter differs from full boundary')
+        quarters['quarters'][-1] = pending_quarter
+        quarters['missing_boundaries'] = [b for b in quarters['missing_boundaries'] if utc(b) != boundary]
+        quarters['status'] = 'partial' if quarters['missing_boundaries'] else 'ok'
     for row in quarters['quarters']:
         if row:
             for kind in ('trade', 'mark'):

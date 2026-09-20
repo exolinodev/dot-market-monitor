@@ -1,4 +1,4 @@
-# Oracle v4 runtime integration (in progress)
+# Oracle v4 runtime integration (disabled pending activation)
 
 ## Publication chronology
 
@@ -23,15 +23,13 @@ If validity ended before eligibility, the engine emits
 Management of an already-closed object retains the explicit stale-action no-op.
 No past candle or archived forecast is rewritten to accommodate publication delay.
 
-## Remaining adapter work
+## Activation status
 
-This component is not yet called by the collector. Runtime ingestion still must
-merge published forecast/plan instructions with evidence-bound candle, spread
-and funding inputs, ensure continuous market coverage, produce execution context
-and bounded equity curves, and publish replay-verified state under serialized
-collector/writer ownership. Public-market evidence and the funding convention
-must be verified before enabling an account. No account was initialized by this
-change and no exchange execution is enabled.
+Collector integration is implemented for explicitly initialized accounts. No
+production account has been initialized. Funding convention verification,
+compact equity-curve and cost-adjusted benchmark completion, prompt/job migration
+and paper/demo/live acceptance gates remain open. This change performs no
+exchange execution.
 
 ## Market evidence adapter
 
@@ -56,4 +54,33 @@ the replay-verifying store. Exact reruns are no-ops. Changed already-used eviden
 backdated newly discovered inputs and a missing final closed minute fail before
 normal publication. An optional pending quarter can receive the derived account
 summary before its first immutable append; market hashes remain stable. The
-collector still needs to call this adapter and publish both artifacts together.
+collector calls this adapter before the quarter's first append and stages both
+artifacts for the same protected producer commit.
+
+
+## Collector and consumer integration
+
+An existing `data/ledger/genesis.json` activates account processing; collectors
+never create an account implicitly. An active account requires an explicit
+cycle. Light runs finish the account before archiving the enriched quarter. Full
+runs fetch incremental funding and perpetual history first, then finish the
+quarter, attach the account summary and emit `execution_context` in the snapshot
+and bounded consumer projection. Repeated quarters remain immutable.
+
+Execution context includes canonical account/configuration hashes, full bounded
+state, bid/ask with reception timestamp, risk parameters, funding prediction and
+performance. Financial state uses decimal strings, preserving its hash through
+snapshot rounding. Snapshot validation checks the full account hash and internal
+state/configuration hashes. Taker round-trip cost estimate is two taker fees plus
+the recorded/floor spread; funding is explicitly excluded from this estimate.
+`execution_quote_max_age_seconds` is configurable (initially 900 seconds, one
+collection interval), checked both when building context and when accepting a
+forecast. A missing boundary mark or expired quote makes context unavailable.
+
+Collector/light producers may change only ledger state/performance, append-only
+journal files and new closed trades. They cannot create genesis or plans. The
+writer owns plans and decision-state snapshots. Both workflows retain the shared
+`dot-market-data` concurrency group. Light publication runs the market archive
+guard, exact-candidate ledger replay/source verification and focused runtime
+tests before attaching its successful check. Producer commits still fail if
+main advances during production; no stale account is rebased over newer state.

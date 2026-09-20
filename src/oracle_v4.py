@@ -95,6 +95,8 @@ def prepare_plan(f, snapshot, bound_state, config):
     # Prices must originate at or before this snapshot, never from writer time.
     if quote.get('status') != 'ok' or not max(utc(bound_state['epoch_utc']), utc(snapshot['meta']['cycle_boundary_utc'])) <= utc(quote['asof_utc']) <= utc(snapshot['meta']['generated_at_utc']):
         raise ValueError('Execution quote time outside bound evidence')
+    if (utc(f['created_at_utc']) - utc(quote['asof_utc'])).total_seconds() > config['execution_quote_max_age_seconds']:
+        raise ValueError('Execution quote exceeds configured age')
     return plan_instruction(f['forecast_id'], f['created_at_utc'],
         _decimal_instructions(f['orders']), _decimal_instructions(f['management']),
         bound_state, config, {'bid': number(quote['bid']), 'ask': number(quote['ask'])}, f['strategy_version'])
