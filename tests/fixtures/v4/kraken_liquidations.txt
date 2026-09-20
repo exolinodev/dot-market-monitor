@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kraken Futures</title>
+    <base href="/trade/" />
+
+    <meta
+      name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <link id="appFavicon" rel="icon" type="image/x-icon" href="favicon-kraken.ico" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#1D2931" />
+
+    <!-- RUNTIME CONFIG GOES HERE -->
+<script type="text/javascript">
+  (function (window) {
+    window.__env = window.__env || {};
+
+    function setEnvVar(key, val) {
+      if (val === undefined) {
+        console.warn(`Environment variable "${key}" is not set. Using default.`)
+        return
+      }
+
+      window.__env[key] = val;
+    }
+
+    function setTitleFavicon(platform) {
+      var favicon = document.getElementById('appFavicon');
+
+      if (!favicon) return;
+
+      if (platform === 'kraken') {
+        document.title = 'Kraken Futures';
+        favicon.setAttribute('href', `favicon-kraken.ico`);
+      } else if (platform === 'cf') {
+        document.title = 'Crypto Facilities';
+        favicon.setAttribute('href', `favicon-cf.ico`);
+      }
+    }
+
+    // API urls
+    setEnvVar('platform', 'kraken');
+    setEnvVar('appVersion', 'ec772647');
+    setEnvVar('demo', false);
+    setEnvVar('locales', ["en","ja","ru","es","zh","fr","tr","pt"]);
+    setEnvVar('featuresEnabled', ["captcha", "ghost", "depthChart", "wsHealth", "flex", "mfaConfirm", "transferDestination", "fusionBanners"]);
+    setEnvVar('hiddenMarkets', ["PF_PEPEUSD", "PF_SHIBUSD", "PF_BONKUSD", "PF_SATSUSD", "PF_FLOKIUSD", "PF_TLMUSD", "PF_TURBOUSD", "PF_WENUSD", "PF_TUSD", "PF_ETHBTCUSD", "PF_RATSUSD", "PF_MOGUSD", "PF_PEIPEIUSD", "PF_CATUSD", "PF_XUSD", "PF_NEIROETHUSD", "PF_COSUSD", "PF_ZILUSD", "PF_BLASTUSD", "PF_DENTUSD", "PF_FIOUSD", "PF_LOOKSUSD", "PF_FLMUSD", "PF_SLPUSD", "PF_HIPPOUSD", "PF_XVGUSD", "PF_MEMEFIUSD", "PF_IOSTUSD", "PF_VRAUSD", "PF_XEMUSD", "PF_IOTXUSD", "PF_RIFSOLUSD", "PF_CROUSD", "PF_AIXBTUSD", "PF_VELODROMEUSD", "PF_TOSHIUSD", "PF_PENGUUSD", "PF_CHEEMSUSD", "PF_XCNUSD", "PF_SUSD", "PF_1MBABYDOGEUSD", "PF_PUMPUSD", "PF_GUSD", "PF_OLUSD", "PF_DOGUSD"]);
+    setEnvVar('urls', {
+      rest: 'https://futures.kraken.com/derivatives/api/v4',
+      websocket: 'wss://futures.kraken.com/ws/v1',
+      auth: 'https://futures.kraken.com/api/auth/v1',
+      history: 'https://futures.kraken.com/api/history/v2',
+      health: '',
+      healthWs: 'wss://futures.kraken.com/ws/health',
+      base: 'https://futures.kraken.com/trade',
+      support: 'https://support.kraken.com',
+      externalSignIn: 'https://www.kraken.com/login-futures',
+      externalSignUp: 'https://www.kraken.com/sign-up',
+      fusion: 'https://pro.kraken.com/app/trade/futures-btc-usd-perp#dialog/sign-in?utm_source=KF{{{{fusion}}}}utm_medium=banner{{{{fusion}}}}utm_campaign=pro_futures_launch{{{{fusion}}}}utm_content=banner',
+    });
+
+    setTitleFavicon('kraken');
+  } (this));
+</script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65779144-1"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-45972273-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'UA-65779144-1');
+      gtag('config', 'UA-45972273-1');
+    </script>
+  <link rel="stylesheet" href="public/styles.947ba5ce7ed265521fee.css"></head>
+
+  <body>
+    <app-root></app-root>
+
+    <noscript>Please enable JavaScript to use this application.</noscript>
+  <script src="public/runtime-es2015.aec5970611b10f97d564.js" type="module"></script><script src="public/runtime-es5.aec5970611b10f97d564.js" nomodule defer></script><script src="public/polyfills-es5.06f2234b3ac7f24aed32.js" nomodule defer></script><script src="public/polyfills-es2015.3a2b3665a139d6170afb.js" type="module"></script><script src="public/scripts.9b9151f02d2cc705805c.js" defer></script><script src="public/main-es2015.23f0ed5171f568e57767.js" type="module"></script><script src="public/main-es5.23f0ed5171f568e57767.js" nomodule defer></script></body>
+</html>

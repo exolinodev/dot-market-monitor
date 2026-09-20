@@ -20,6 +20,11 @@ def endpoints(now):
         'okx_funding': ('https://www.okx.com/api/v5/public/funding-rate-history', {'instId': 'DOT-USDT-SWAP', 'limit': 10}),
         'okx_oi': ('https://www.okx.com/api/v5/public/open-interest', {'instType': 'SWAP', 'instId': 'DOT-USDT-SWAP'}),
     }
+    # Documented at https://docs.kraken.com/api-reference/analytics/market-analytics
+    for kind in ('open-interest', 'liquidation-volume'):
+        result['kraken_analytics_' + kind] = (
+            futures + '/api/charts/v1/analytics/PF_DOTUSD/' + kind,
+            {'since': start, 'to': int(now.timestamp()), 'interval': 60})
     for kind in ('trade', 'mark'):
         for resolution in ('1m', '5m', '15m', '1h'):
             result[f'kraken_{kind}_{resolution}'] = (futures + f'/api/charts/v1/{kind}/PF_DOTUSD/{resolution}', {'from': start, 'to': int(now.timestamp())})

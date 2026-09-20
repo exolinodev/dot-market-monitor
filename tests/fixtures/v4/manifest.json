@@ -1,0 +1,216 @@
+{
+  "captured_at_utc": "2026-09-20T20:35:32.621856+00:00",
+  "github_run_id": "35536030863",
+  "runner_os": "Linux",
+  "note": "Public unauthenticated responses. HTTP success does not establish semantic suitability or funding units.",
+  "endpoints": {
+    "kraken_funding": {
+      "url": "https://futures.kraken.com/derivatives/api/v4/historicalfundingrates?symbol=PF_DOTUSD",
+      "params": {
+        "symbol": "PF_DOTUSD"
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_funding.json",
+      "bytes": 1025573,
+      "sha256": "d364cb0c28b0e7609c876ffbe9932e6dedf372d4782f3e4e721e5dd52385d260"
+    },
+    "kraken_oi": {
+      "url": "https://futures.kraken.com/trade",
+      "params": {
+        "symbol": "PF_DOTUSD",
+        "interval": "1h"
+      },
+      "http_status": 200,
+      "json": false,
+      "file": "kraken_oi.txt",
+      "bytes": 4369,
+      "sha256": "fb28596034d369f59f619989dd75681bbc89d9aedb6246ac55c38a75ccf4ec0d"
+    },
+    "kraken_liquidations": {
+      "url": "https://futures.kraken.com/trade",
+      "params": {
+        "symbol": "PF_DOTUSD",
+        "interval": "1h"
+      },
+      "http_status": 200,
+      "json": false,
+      "file": "kraken_liquidations.txt",
+      "bytes": 4369,
+      "sha256": "fb28596034d369f59f619989dd75681bbc89d9aedb6246ac55c38a75ccf4ec0d"
+    },
+    "bybit_funding": {
+      "url": "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=DOTUSDT&limit=10",
+      "params": {
+        "category": "linear",
+        "symbol": "DOTUSDT",
+        "limit": 10
+      },
+      "http_status": 403,
+      "json": false,
+      "file": "bybit_funding.txt",
+      "bytes": 96,
+      "sha256": "7ef856c945703d5772f1b1f2a8c65913247c9b0769302b10facfe14fa1e2083c"
+    },
+    "bybit_oi": {
+      "url": "https://api.bybit.com/v5/market/open-interest?category=linear&symbol=DOTUSDT&intervalTime=1h&limit=10",
+      "params": {
+        "category": "linear",
+        "symbol": "DOTUSDT",
+        "intervalTime": "1h",
+        "limit": 10
+      },
+      "http_status": 403,
+      "json": false,
+      "file": "bybit_oi.txt",
+      "bytes": 96,
+      "sha256": "7ef856c945703d5772f1b1f2a8c65913247c9b0769302b10facfe14fa1e2083c"
+    },
+    "okx_funding": {
+      "url": "https://www.okx.com/api/v5/public/funding-rate-history?instId=DOT-USDT-SWAP&limit=10",
+      "params": {
+        "instId": "DOT-USDT-SWAP",
+        "limit": 10
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "okx_funding.json",
+      "bytes": 1808,
+      "sha256": "c76b1db4e3627d9fd29de0f740e08d966ee2d74beddcbcc8df42fbacfe4d3572"
+    },
+    "okx_oi": {
+      "url": "https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=DOT-USDT-SWAP",
+      "params": {
+        "instType": "SWAP",
+        "instId": "DOT-USDT-SWAP"
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "okx_oi.json",
+      "bytes": 152,
+      "sha256": "154e181756bbae94ad0b848042edfc0011d3e7ea3d7dff71e9210c287bc2c527"
+    },
+    "kraken_analytics_open-interest": {
+      "url": "https://futures.kraken.com/api/charts/v1/analytics/PF_DOTUSD/open-interest?since=1789932932&to=1789936532&interval=60",
+      "params": {
+        "since": 1789932932,
+        "to": 1789936532,
+        "interval": 60
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_analytics_open-interest.json",
+      "bytes": 3696,
+      "sha256": "5deacab9ab7ec794c5f9c4e4e76c5785b2619b69e2ad45917368604f12f07297"
+    },
+    "kraken_analytics_liquidation-volume": {
+      "url": "https://futures.kraken.com/api/charts/v1/analytics/PF_DOTUSD/liquidation-volume?since=1789932932&to=1789936532&interval=60",
+      "params": {
+        "since": 1789932932,
+        "to": 1789936532,
+        "interval": 60
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_analytics_liquidation-volume.json",
+      "bytes": 960,
+      "sha256": "a4e5f6e086f76221669e1c6af2a8bd548c4f59abc9be5a0d770f1fd9c1bdc140"
+    },
+    "kraken_trade_1m": {
+      "url": "https://futures.kraken.com/api/charts/v1/trade/PF_DOTUSD/1m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_trade_1m.json",
+      "bytes": 6368,
+      "sha256": "de70c53348480220ca7df4e8a7046cc7c319dcf27086b91513e8270c1c57fbca"
+    },
+    "kraken_trade_5m": {
+      "url": "https://futures.kraken.com/api/charts/v1/trade/PF_DOTUSD/5m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_trade_5m.json",
+      "bytes": 1356,
+      "sha256": "549688d09422c52d78686da980936db4b3d379912b6fbeadc56332c1f535d53f"
+    },
+    "kraken_trade_15m": {
+      "url": "https://futures.kraken.com/api/charts/v1/trade/PF_DOTUSD/15m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_trade_15m.json",
+      "bytes": 479,
+      "sha256": "91cf51c20d06fb0a30305388a0c8543ef8b3cdda37af29c0a930026fbdb35b77"
+    },
+    "kraken_trade_1h": {
+      "url": "https://futures.kraken.com/api/charts/v1/trade/PF_DOTUSD/1h?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_trade_1h.json",
+      "bytes": 147,
+      "sha256": "855e4096ea0f64658035f455eefe78fc263b82466b2be3489480a5a576816336"
+    },
+    "kraken_mark_1m": {
+      "url": "https://futures.kraken.com/api/charts/v1/mark/PF_DOTUSD/1m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_mark_1m.json",
+      "bytes": 7714,
+      "sha256": "d7b0d1d3e1f712620d1bd42f042ec12eee7a6fae122b7eb5155bc9da2d82aae8"
+    },
+    "kraken_mark_5m": {
+      "url": "https://futures.kraken.com/api/charts/v1/mark/PF_DOTUSD/5m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_mark_5m.json",
+      "bytes": 1570,
+      "sha256": "cdd5eb05fba4c0f49392701704297972c73aed1d40383eb36e9434c4460f338b"
+    },
+    "kraken_mark_15m": {
+      "url": "https://futures.kraken.com/api/charts/v1/mark/PF_DOTUSD/15m?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_mark_15m.json",
+      "bytes": 546,
+      "sha256": "671e53be06c2f54bba32a691cf534ddaa93777f58d28a0b87eb51a5ba65ccf70"
+    },
+    "kraken_mark_1h": {
+      "url": "https://futures.kraken.com/api/charts/v1/mark/PF_DOTUSD/1h?from=1789932932&to=1789936532",
+      "params": {
+        "from": 1789932932,
+        "to": 1789936532
+      },
+      "http_status": 200,
+      "json": true,
+      "file": "kraken_mark_1h.json",
+      "bytes": 162,
+      "sha256": "0ff2771be69d4f601e01dfbd9c9becf5878a6f96ed2939f459eadfd2a0742876"
+    }
+  }
+}
