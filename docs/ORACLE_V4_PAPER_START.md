@@ -63,3 +63,18 @@ through 20:44. Account creation itself places no order, fabricates no fill, and
 changes no private account. Real model plans still require main-publication
 chronology before execution. The passive benchmark starts at the first modelled
 minute; report that start time rather than implying earlier performance.
+
+## Integrated execution evidence
+
+`tests/test_ledger_runtime_e2e.py` publishes synthetic v4 submissions through the
+real writer against a committed snapshot/account, merges them into a temporary
+main branch, and advances the runtime from source-bound quarter/funding rows.
+A four-minute publication delay prevents earlier fills despite executable prices.
+The scenarios cover a limit entry with three partial targets and a market entry
+with an adverse mark gap touching both stop and targets. Independent arithmetic
+checks spread, fees, one minute of funding, net PnL and account equity.
+
+The test also verifies closed-trade feedback in execution_context, byte-identical
+reruns, protected Git candidate replay and rejection of altered source candles.
+These are synthetic integration scenarios; they provide no production fill,
+profitability, exchange API or rollout-acceptance evidence.
