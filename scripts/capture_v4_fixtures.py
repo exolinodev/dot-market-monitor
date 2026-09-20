@@ -37,10 +37,11 @@ def capture(dest):
                 'github_run_id': os.getenv('GITHUB_RUN_ID'), 'runner_os': os.getenv('RUNNER_OS'),
                 'note': 'Public unauthenticated responses. HTTP success does not establish semantic suitability or funding units.', 'endpoints': {}}
     for name, (url, params) in endpoints(datetime.now(timezone.utc)).items():
-        record = {'url': url, 'params': params}
+        record = {'requested_url': requests.Request('GET', url, params=params).prepare().url,
+                  'params': params}
         try:
             with requests.get(url, params=params, timeout=(10, 25), stream=True) as response:
-                record.update(url=response.url, http_status=response.status_code)
+                record.update(final_url=response.url, http_status=response.status_code)
                 raw = b''
                 for chunk in response.iter_content(65536):
                     raw += chunk
