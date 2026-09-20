@@ -101,4 +101,5 @@ def execution_context(directory, quarter, boundary, reference):
             'risk_policy': {k: cfg[k] for k in ('risk_fraction_per_trade', 'risk_tiers',
                 'max_notional_multiple_of_equity', 'min_stop_bps', 'max_stop_bps',
                 'min_net_reward_risk_t1', 'max_hold_hours', 'max_order_age_minutes')},
-            'ledger_state': state, 'performance': result['performance']}
+            'ledger_state': state, 'performance': {k: v for k, v in result['performance'].items()
+                                                     if k != 'equity_curve'}}

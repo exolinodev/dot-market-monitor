@@ -1,8 +1,8 @@
 """Replay-verified, create-only ledger plans/trades plus an append-only journal.
 
-There is no exchange access. Initialization is explicit; no collector imports this
-module yet. A crash may leave derived views behind the journal; verification then
-fails closed and the explicit rebuild operation restores views without changing
+There is no exchange access. Initialization is explicit; collectors only advance
+an existing account. A crash may leave derived views behind the journal;
+verification then fails closed and the explicit rebuild operation restores views without changing
 inputs, effects, plans or trades.
 """
 from collections import defaultdict
@@ -12,9 +12,10 @@ import re
 
 from common import write_json
 from cycles import utc
-from ledger import canonical, digest, initial_state, performance, plan_instruction, replay, state_hash
+from ledger import canonical, digest, initial_state, plan_instruction, replay, state_hash
 from oracle_forecasts import create_only
 from ledger_contracts import validate
+from ledger_performance import report
 
 
 def _create_or_verify(path, value):
@@ -37,7 +38,7 @@ def initialize(directory, config, epoch):
     create_only(root / 'genesis.json', genesis)
     _create_or_verify(root / 'states' / (digest(state) + '.json'), state)
     write_json(root / 'state.json', state)
-    write_json(root / 'performance.json', performance(state, config))
+    write_json(root / 'performance.json', report(state, config, []))
     return state
 
 
@@ -116,7 +117,7 @@ def derive(directory):
     if records != saved_records:
         raise ValueError('Journal effects, input hash or state chain differ from replay')
     trades = {e['trade_id']: e['trade'] for r in records for e in r['effects'] if e['type'] == 'TRADE_CLOSED'}
-    return {'state': state, 'performance': performance(state, config), 'trades': trades,
+    return {'state': state, 'performance': report(state, config, records), 'trades': trades,
             'inputs': inputs, 'records': records, 'genesis': genesis}
 
 
@@ -186,6 +187,6 @@ def append_events(directory, new_inputs):
             if effect['type'] == 'TRADE_CLOSED':
                 _create_or_verify(root / 'trades' / (effect['trade_id'] + '.json'), effect['trade'])
     write_json(root / 'state.json', state)
-    write_json(root / 'performance.json', performance(state, config))
+    write_json(root / 'performance.json', report(state, config, records))
     verify(directory)
     return state

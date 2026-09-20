@@ -126,10 +126,36 @@ views, journal entries and closed trades; genesis and plan ownership remain sepa
 
 Current metrics include minute-close maximum drawdown and strategy net results;
 30 complete trades is only a minimum sample flag, never proof of profitability.
-The buy-and-hold figure is explicitly a **gross perp-mark proxy**, not the final
-cost-adjusted benchmark. MARK events retain the equity series; a separate compact
-curve export, archive growth benchmark and the full benchmark remain integration
-work. Paper activation awaits benchmark/curve completion, explicit initialization
-and prompt/job rollout. The v4 writer/runtime integration is implemented; the
-funding convention is documented above. Demo execution and live authorization remain
-separate rollout gates.
+
+`ledger_performance.report` derives the passive benchmark and compact curve from
+replayed inputs and MARK effects without changing account state or journal hashes.
+The benchmark buys a fixed quantity of PF_DOTUSD at the first observed trade
+candle open plus half the recorded spread, rounds down to the configured quantity
+step, and includes the taker fee in its one-times-initial-capital budget. It holds
+that quantity without rebalancing, adds each observed minute's absolute funding,
+and values at the same minute-close mark as strategy equity. Both marked equity
+figures exclude hypothetical exit fees/spread on still-open exposure. Entry fees
+and spread, funding, net PnL, drawdown and strategy excess net PnL are explicit.
+This is a **passive perpetual benchmark**, not spot DOT or a separately executable
+account: margin liquidation is not simulated. Missing funding or candle coverage
+makes the comparison provisional; missing funding is never silently zeroed.
+The old `buy_hold_gross_pnl_usd` remains a labelled gross mark-price proxy only;
+use `buy_hold.net_pnl_usd` for the cost-adjusted comparison.
+
+`performance.json.equity_curve` retains at most 192 quarter buckets (48 hours
+with complete coverage), each containing the latest minute-close time, strategy
+equity and passive equity. The latest bucket can be partial. It exposes truncation
+and the count of full-resolution MARK points. Every minute remains reconstructible
+from the journal; drawdown uses every minute, not the downsampled curve. CI verifies
+this view by recomputing it, and `--rebuild-views` can repair view-only corruption.
+The execution context supplies summary performance without the curve to keep
+model input bounded.
+
+A synthetic 2,941-minute replay (49 hours plus one minute, constant prices and
+hourly funding) produced 192 curve points, a 18,587-byte pretty-printed complete
+performance view (10,470 bytes compact), and a 1,007-byte compact account state.
+This measures view bounds only; production journal/Git storage growth remains
+a rollout acceptance measurement.
+
+Paper activation still requires explicit initialization and prompt/job rollout.
+Demo execution and live authorization remain separate rollout gates.
