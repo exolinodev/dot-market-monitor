@@ -41,16 +41,12 @@ def capture(dest):
                     raw += chunk
                     if len(raw) > 2_000_000:
                         raise ValueError('Response exceeds capture budget')
+                # Preserve response body bytes exactly, including JSON whitespace/order.
+                # requests decodes HTTP content encoding, but no JSON rewriting occurs.
                 try:
-                    payload = json.loads(raw)
-                    # Keep the newest public funding records; retain source count explicitly.
-                    if name == 'kraken_funding' and isinstance(payload.get('rates'), list):
-                        record['source_records'] = len(payload['rates'])
-                        payload['rates'] = sorted(payload['rates'], key=lambda x: x.get('timestamp', ''))[-48:]
-                        record['reduction'] = 'latest 48 rates by timestamp'
-                    raw = (json.dumps(payload, separators=(',', ':')) + '\n').encode()
+                    json.loads(raw)
                     record['json'] = True
-                except (ValueError, AttributeError):
+                except ValueError:
                     record['json'] = False
                 filename = name + ('.json' if record['json'] else '.txt')
                 (dest / filename).write_bytes(raw)
