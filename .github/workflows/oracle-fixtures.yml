@@ -1,0 +1,22 @@
+name: Oracle v4 public fixtures
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5
+      - run: python scripts/capture_v4_fixtures.py --dest "$RUNNER_TEMP/v4-fixtures"
+      - uses: actions/upload-artifact@v7.0.1
+        if: always()
+        with:
+          name: oracle-v4-public-fixtures
+          path: ${{ runner.temp }}/v4-fixtures/
+          retention-days: 14
