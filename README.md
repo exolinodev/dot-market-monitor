@@ -89,7 +89,7 @@ flowchart LR
 | `src/pipeline.py`, `output.py`, `main.py` | isolierte Sammlung, Ausgabe, Schema-Prüfung |
 | `data/llm_snapshot.json` | kompakter Consumer-Snapshot; keine Raw-Candle-Arrays |
 | `data/latest.json`, `data/latest.md` | detaillierte Messwerte und Übersicht |
-| `data/history.json` | maximal 720 echte Stundenbeobachtungen / 30 Tage |
+| `data/history.json` | maximal 720 echte Stundenbeobachtungen / 30 Tage; verlustfrei `hourly-columnar-v1`, lesbar mit `history.decode_history` |
 | `data/raw/latest.json.gz` | letzte öffentliche HTTP-Responses, Quellen und Berechnungskontext |
 | `data/raw/ohlc_cache.json.gz` | maximal 4096 native Kerzen pro Instrument/Intervall |
 | `data/raw/observation_history.json.gz` | maximal 365 Tage tatsächlicher Stundenbeobachtungen plus verwendete Konfigurationen; beginnt mit dem neuen Collector |
