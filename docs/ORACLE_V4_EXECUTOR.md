@@ -96,3 +96,47 @@ allowlists are implemented. It must never overwrite an earlier capture.
 - Demo fixtures and the two-week demo acceptance window remain outstanding.
 - Live requires explicit approval per 500/2000/5000 USD stage and all rollout
   gates. This module does not satisfy those gates or enable live trading.
+
+## Fill-history and quantity reconciliation
+
+`src/exchange_reconciliation.py` adds read-only helpers, still without a runner:
+
+- `capture_fills` retains each raw page plus request cursor, HTTP status, SHA-256
+  and length. The manifest selects an inclusive `[since, through]` window and
+  requires response server time at or after its end. All futures fills count
+  toward the API's 100-row page budget, including other instruments.
+- Pages before `lastFillTime` must advance strictly. A short page or a page
+  reaching strictly before `since` ends collection. A full page requiring a
+  cursor inside the requested window makes coverage ambiguous: more fills could
+  share the oldest timestamp and be skipped by the exclusive next cursor.
+  Continuing to older pages does not erase that ambiguity. Reaching the page
+  budget is also incomplete, never success. Resolving these cases requires a
+  stronger exchange history source or continuously retained fill evidence.
+- Deduplication uses `fill_id`, preserving all economic identity fields and
+  rejecting conflicts. Optional historical `realized_pnl` is not part of fill
+  identity: Kraken documents it as null for `lastFillTime` queries. Missing
+  client IDs can be recovered only through known exchange order IDs.
+- `reconcile` computes per-order filled size and volume-weighted fill price,
+  signed adverse basis-point difference versus the paper fill price, and net
+  position quantity from a caller-supplied starting baseline. It reports unknown
+  fills, orphan resting orders, identity/side/quantity/reduce-only mismatches,
+  duplicate exchange mappings, overfills and incomplete history.
+
+The caller must prove that the capture window starts at the trusted baseline,
+that all snapshots belong to the same account and observation interval, and that
+known-order facts come from verified persisted intents. Readbacks across several
+HTTP calls are not atomic. A concurrent fill may require a later capture before
+quantities reconcile. This helper neither proves those bindings nor repairs
+state, cancels orders, authorizes execution or settles unknown send attempts.
+`quantity_reconciled` is deliberately narrower than full account reconciliation.
+
+The fills schema does not provide actual fees or settled funding. A matching
+quantity or a `realized_pnl` value is not a verified net return. Reports keep
+`actual_costs_verified=false`, `exchange_net_pnl_usd=null` and
+`authorizes_execution=false`. Exchange account-log evidence and the eventual
+paper-performance integration remain necessary. Existing paper performance and
+its deterministic replay are not modified by these helpers.
+
+Tests use synthetic API-shaped pages. No authenticated fixture or successful
+real-account pagination is claimed, and this does not start the two-week demo
+acceptance window.
