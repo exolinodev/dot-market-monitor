@@ -43,6 +43,9 @@ def check_additions(paths, repo):
 
 
 def check(base=None,head='HEAD',repo=Path('.'),staged=False):
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from validate_intraday import check as check_intraday
+    check_intraday(base, staged, repo)
     if staged:
         args=['git','diff','--cached','--no-renames','--name-status','--',*PATHS]
     else:

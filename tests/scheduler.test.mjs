@@ -2,20 +2,20 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import worker, { cycleStart, decide, reconcile, readState, scheduleWindow } from "../src/scheduler/worker.mjs";
 
-const start = Date.parse("2026-09-12T20:50:00Z");
+const start = Date.parse("2026-09-12T20:59:00Z");
 const now = start + 5 * 60_000;
 const at = (offset) => new Date(start + offset * 60_000).toISOString();
 const run = (status, offset = 0, id = 1) => ({ id, status, created_at: at(offset) });
-const snapshot = (offset, status = "ok") => ({ generated_at_utc: at(offset), status, fresh: true });
+const snapshot = (offset, status = "ok") => ({ generated_at_utc: at(offset), status, fresh: true, run_kind: "full", cycle_boundary_utc: at(1) });
 const choice = (values = {}) => decide({ start, now, phase: "verify", runs: [], snapshot: snapshot(-60), ...values });
 const env = { ENABLED: "true", GITHUB_TOKEN: "test-only-token", CONTROL_TOKEN: "test-control" };
 const sha = "a".repeat(40);
 
-test("UTC :50 cycle includes previous hour and date rollover", () => {
+test("UTC quarter cycle includes previous hour and date rollover", () => {
   assert.equal(cycleStart(start), start);
   assert.equal(cycleStart(now), start);
-  assert.equal(cycleStart(start - 1), start - 3600000);
-  assert.equal(new Date(cycleStart(Date.parse("2026-09-13T00:00:00Z"))).toISOString(), "2026-09-12T23:50:00.000Z");
+  assert.equal(cycleStart(start - 1), start - 900000);
+  assert.equal(new Date(cycleStart(Date.parse("2026-09-13T00:00:00Z"))).toISOString(), "2026-09-12T23:59:00.000Z");
 });
 test("fresh successful and partial snapshots suppress duplicate collection", () => {
   for (const status of ["ok", "partial"]) assert.equal(choice({ snapshot: snapshot(1, status) }).action, "fresh");
@@ -59,7 +59,7 @@ function mockGitHub({ runs = [], meta = snapshot(-60), dispatchStatus = 204 } = 
     }
     assert.ok(url.endsWith("/dispatches"));
     assert.equal(options.method, "POST");
-    assert.deepEqual(JSON.parse(options.body), { ref: "main" });
+    assert.deepEqual(JSON.parse(options.body), { ref: "main", inputs: {run_kind: "full", boundary_utc: at(1)} });
     return new Response(null, { status: dispatchStatus });
   };
   return { fetcher, calls };
@@ -115,19 +115,37 @@ test("retired triggers are ignored while Cloudflare propagates changes", async (
   assert.equal(result.action, "ignored_retired_cron");
 });
 test("late cron delivery recovers the current round instead of discarding it", () => {
-  const late = start + 20 * 60_000;
+  const late = start + 10 * 60_000;
   assert.deepEqual(scheduleWindow({ cron: "*/5 * * * *", scheduledTime: start }, late),
     { start, now: late, phase: "verify" });
   assert.equal(choice({ now: late }).action, "dispatch");
-  assert.equal(choice({ now: late, snapshot: snapshot(19) }).action, "fresh");
+  assert.equal(choice({ now: late, snapshot: snapshot(9) }).action, "fresh");
   assert.equal(choice({ now: late, runs: [run("completed"), run("completed", 10)] }).action, "attempt_limit");
 });
-test("a many-hours-old delivery checks the newest round and keeps the hourly budget", () => {
+test("a many-hours-old delivery checks the newest round and keeps the quarter-hour budget", () => {
   const current = start + 4 * 3600000;
-  assert.deepEqual(scheduleWindow({ cron: "50 * * * *", scheduledTime: start }, current),
+  assert.deepEqual(scheduleWindow({ cron: "59,14,29,44 * * * *", scheduledTime: start }, current),
     { start: current, now: current, phase: "initial" });
   assert.equal(scheduleWindow({ cron: "* * * * *", scheduledTime: start }, current), null);
 });
 test("missing GitHub secret fails before any upstream request", async () => {
   await assert.rejects(readState({}, () => assert.fail("unexpected HTTP")), /missing_github_token/);
+});
+
+test("light quarters dispatch explicit cycle inputs and read their own immutable ref", async () => {
+  const quarter = Date.parse("2026-09-20T21:14:00Z");
+  const requests = [];
+  const fetcher = async (url, options) => {
+    requests.push(url);
+    if (url.includes('/runs?')) return Response.json({workflow_runs: []});
+    if (url.endsWith('/git/ref/heads/main')) return Response.json({object: {sha}});
+    if (url.includes('/contents/')) {
+      assert.ok(url.includes('/data/intraday/latest.json?ref='));
+      return new Response(null, {status: 404});
+    }
+    assert.deepEqual(JSON.parse(options.body), {ref: 'main', inputs: {run_kind: 'light', boundary_utc: '2026-09-20T21:15:00.000Z'}});
+    return new Response(null, {status: 204});
+  };
+  assert.equal((await reconcile(env, {start: quarter, now: quarter, phase: 'initial'}, fetcher)).action, 'dispatched');
+  assert.equal(requests.length, 4);
 });

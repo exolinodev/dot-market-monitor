@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/exolinodev/dot-market-monitor/schema/intraday.schema.json",
+  "type": "object",
+  "required": ["schema_version", "meta", "quarter_start_utc", "sources", "candles", "tape", "cursors", "ledger"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "quarter_start_utc": {"type": "string", "format": "date-time"},
+    "meta": {
+      "type": "object",
+      "required": ["run_kind", "cycle_boundary_utc", "boundary_lag_seconds", "late", "generated_at_utc", "fresh", "status", "request_count", "run_duration_seconds"],
+      "properties": {
+        "run_kind": {"enum": ["full", "light"]},
+        "cycle_boundary_utc": {"type": "string", "format": "date-time"},
+        "generated_at_utc": {"type": "string", "format": "date-time"},
+        "boundary_lag_seconds": {"type": "number", "minimum": 0},
+        "run_duration_seconds": {"type": "number", "minimum": 0},
+        "late": {"type": "boolean"},
+        "fresh": {"type": "boolean"},
+        "status": {"enum": ["ok", "partial"]},
+        "request_count": {"type": "integer", "maximum": 12, "minimum": 0}
+      }
+    },
+    "sources": {"type": "object", "additionalProperties": {"type": "object", "required": ["status", "received_at_utc"], "properties": {"status": {"enum": ["ok", "partial", "unavailable"]}, "received_at_utc": {"type": "string", "format": "date-time"}}}},
+    "candles": {"type": "object", "required": ["dot_1", "dot_5", "dot_15", "btc_15", "trade", "mark"], "additionalProperties": {"type": ["array", "null"], "items": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"type": "number"}}}},
+    "tape": {"type": "object", "required": ["spot", "perp"]},
+    "cursors": {"type": "object"},
+    "ledger": {"type": "object"}
+  }
+}

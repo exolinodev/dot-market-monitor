@@ -165,7 +165,7 @@ def test_real_validation_command_failure_stops_following_checks(monkeypatch):
     monkeypatch.setattr(promotion.subprocess, 'run', fail)
     with pytest.raises(subprocess.CalledProcessError):
         promotion.verify('trusted-base')
-    assert calls == [[sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base']]
+    assert calls == [[sys.executable, 'scripts/validate_intraday.py', '--base', 'trusted-base']]
 
 
 def test_main_advance_after_attestation_revokes_check_and_closes_pr(producer):
@@ -261,3 +261,11 @@ def test_leased_cleanup_refuses_new_work_and_deletes_only_the_expected_ref(tmp_p
     promotion.delete_branch(branch, changed)
     assert not git('ls-remote', 'origin', 'refs/heads/' + branch)
     assert git('ls-remote', 'origin', 'refs/heads/main').startswith(base)
+
+
+def test_light_allowlist_excludes_gzip_snapshot_and_funding():
+    assert promotion.allowed('light', 'data/intraday/2026/09/20.jsonl')
+    assert promotion.allowed('light', 'data/intraday/latest.json')
+    for path in ('data/raw/latest.json.gz', 'data/llm_snapshot.json', 'data/funding/2026/09.jsonl',
+                 'data/intraday/../../src/main.py', 'data/intraday/script.py'):
+        assert not promotion.allowed('light', path)

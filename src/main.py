@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse
 import json
+import time
 from common import json_safe, write_json
 from pipeline import Collector
 from output import compact_snapshot, validate_snapshot, markdown_summary
@@ -14,10 +15,34 @@ ROOT=Path(__file__).resolve().parents[1]
 DATA_DIR=ROOT/'data'
 
 
-def main(data_dir=None):
+def main(data_dir=None, run_kind=None, boundary=None):
+    timer = time.monotonic()
     target=Path(data_dir) if data_dir is not None else DATA_DIR
     target.mkdir(parents=True,exist_ok=True)
+    if run_kind is not None:
+        from cycles import resolve, metadata
+        from common import utcnow
+        from intraday import collect as collect_intraday
+        run_kind, point = resolve(utcnow(), run_kind, boundary, 'workflow_dispatch')
+        started = utcnow()
+        quarter_error = None
+        try:
+            quarter = collect_intraday(target, run_kind, point)
+        except Exception as exc:
+            if run_kind == 'light': raise
+            quarter_error = str(exc)
+        if run_kind == 'light':
+            print(f"Light quarter {quarter['meta']['cycle_boundary_utc']}: {quarter['meta']['status']}")
+            return quarter
     data=Collector(target).collect()
+    if run_kind is not None:
+        from perp_data import enrich_hourly
+        data.update(metadata(run_kind, point, started))
+        enrich_hourly(data, target, point)
+        if quarter_error:
+            data['errors'].append({'source_id': 'intraday', 'error': quarter_error})
+            data['status'] = 'partial'
+        data['run_duration_seconds'] = round(time.monotonic() - timer, 3)
     compact=compact_snapshot(data)
     validate_snapshot(compact)
     write_json(target/'latest.json',data)
@@ -65,5 +90,7 @@ if __name__=='__main__':
     parser.add_argument('--data-dir',type=Path,default=DATA_DIR,
         help='Output/history directory; use an isolated directory for live smoke tests')
     parser.add_argument('--from-latest',action='store_true',help='Rebuild from latest.json without fetching data or advancing its timestamp/history')
+    parser.add_argument('--run-kind', choices=['full', 'light'], default='full')
+    parser.add_argument('--boundary')
     args=parser.parse_args()
-    regenerate_snapshot(args.data_dir) if args.from_latest else main(args.data_dir)
+    regenerate_snapshot(args.data_dir) if args.from_latest else main(args.data_dir, args.run_kind, args.boundary)
