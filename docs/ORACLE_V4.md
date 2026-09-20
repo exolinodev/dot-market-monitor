@@ -3,7 +3,7 @@
 Phase 0 started on 2026-09-20. The implementation plan is the user-supplied
 `oracle-v4-plan.md` in the parent workspace.
 
-Proposed defaults (pending explicit parameter approval): paper equity USD 5000, Kraken base-tier fees enabled
+Configurable paper baseline selected under user delegation on 2026-09-20: paper equity USD 5000, Kraken base-tier fees enabled
 (maker 0.02%, taker 0.05%, configurable), risk 1% per trade scaled by risk tier,
 notional capped at 2x equity, maximum holding time 72 hours, pending entry
 expiry 150 minutes. Live notional stages USD 500 / 2000 / 5000 require separate
@@ -33,5 +33,7 @@ feeds instead of inventing fixtures. One successful run does not prove stable
 availability. Runtime ingestion and funding accounting remain disabled until
 this inspection and the corresponding parser tests are complete.
 
-Phase 1 timing/collector changes, the paper ledger, v4 forecast contract,
-ChatGPT schedule change, demo and live execution are not yet implemented.
+Phase 1 timing/collector changes are in PR #228, pending merge and rollout
+evidence. The isolated, disabled paper ledger core is described in
+[ORACLE_V4_LEDGER.md](ORACLE_V4_LEDGER.md). Runtime ledger integration, the v4
+forecast contract, ChatGPT schedule change, demo and live execution remain open.

@@ -1,0 +1,123 @@
+# Oracle v4 paper ledger core
+
+Status: isolated core; disabled in `config/ledger.json`, no production account
+initialized and no exchange calls. This change depends on the Phase 1 cycle
+helpers. Collector ingestion, v4 writer binding and execution are subsequent
+integration work. Existing v3 forecasts and evaluation remain active.
+
+## Parameters and profitability
+
+On 2026-09-20 the user delegated paper parameter choices, prioritizing net
+profitability and configurable values. The initial baseline is USD 5000,
+1% equity risk scaled by FULL/HALF/QUARTER, notional at most 2x equity,
+72-hour hold and 150-minute pending-entry expiry. These are versioned settings,
+not claims of optimality. Fees are maker 0.02% and taker 0.05%; setting both to
+zero supports sensitivity analysis. Slippage is explicitly zero. Live stages
+USD 500/2000/5000 still need separate user approval.
+
+Sizing includes estimated entry and stop fees/spreads in the risk budget by
+default (`risk_budget_includes_costs`). This refines the plan's price-only
+formula to avoid spending the nominal risk budget before paying costs. The
+notional calculation reserves entry-cost headroom. Quantity is fixed when the
+plan is accepted: gaps can exceed either planned constraint and generate
+`EXECUTION_RISK_VARIANCE`; the simulator never retrospectively resizes a fill.
+One position, no pyramiding, three reduce-only targets, tick/quantity rounding,
+net T1 reward/risk and the equity-floor kill switch are enforced in Python.
+A latched kill switch blocks entries, while existing protection stays active.
+
+Genesis freezes the configuration for one account epoch. Changing parameters
+requires a distinct, explicitly initialized epoch/directory; rewriting historic
+assumptions would invalidate replay. Compare strategy versions on complete net
+results, without treating more frequent trading as a success metric.
+
+## Event and fill contract
+
+Money, prices and quantities persist as decimal strings. Calculations use a
+local 34-digit Decimal context. Input timestamps are UTC. Equal-time ordering is
+funding rate, spread, instruction, closed candle. Instructions become effective
+at the next strictly later minute, including publication exactly on a minute.
+Trade/mark candles carry their minute-open timestamps and their OHLC values in
+the journal; input and before/after state hashes bind every derived effect.
+The journal therefore contains the complete replay input, not external mutable
+references. Runtime ingestion still must bind these inputs to collected evidence.
+
+Limit fills require trading through by a tick and use the limit price. A limit
+already crossing the bound quote is rejected as incompatible with maker pricing.
+Market fills use the first eligible trade open plus/minus half the last recorded
+spread; stop entries and protective stops use mark triggers with adverse gaps.
+The configured spread floor also applies. Spread freshness and coverage must be
+checked by the future runtime adapter; the core only rejects a missing/future
+spread. No liquidity, queue position or partial entry fill is simulated.
+
+Stop precedes target if both occur in one candle. If entry occurs inside the
+candle, targets are deferred until a later candle: the profitable excursion
+might have preceded entry. Protective stops remain active in that entry candle.
+A close already requested before the candle, or maximum hold, executes at open
+before subsequent intrabar excursions. T1 stop tightening is conservative if
+its new stop and a further target can both have traded. These explicit OHLC
+approximations must be compared with demo fills before any live rollout.
+
+Missing candles while an order/position is open fail replay instead of silently
+skipping possible fills or stops. Exact event retries are idempotent; conflicts,
+reordered inputs and changed historical evidence fail verification. The disk
+store requires a single serialized writer (future workflow concurrency gate).
+
+## Funding: evidence and outstanding verification
+
+Kraken's official [historical funding API documentation](https://docs.kraken.com/api-reference/historical-funding-rates/historical-funding-rates.md)
+defines `timestamp` as “Start of the period to which the funding rate applies.”
+Frozen fixtures show hourly rates with the six gaps listed in
+`ORACLE_V4_FIXTURES.md`. Their absolute/relative ratio is consistent with DOT
+mark price: `qty * absolute_rate` and `notional * relative_rate` agree when the
+notional uses that same conversion price.
+
+The proposed linear-contract convention is positive rate paid by longs, with
+absolute rate in USD per 1-DOT contract per hour. The available fixture alone
+does not prove payer sign or continuous accrual for PF_DOTUSD. Consequently
+`funding_convention_verified` remains **false**. Enabling it requires documented
+linear-contract specification/readback evidence, not just a profitable replay.
+
+The core prorates the hourly absolute rate by 1/60 for remaining quantity at the
+end of each modelled exposure minute. This explicitly refines the original
+whole-interval wording. Intraminute entry/exit times are unknown: entry minutes
+can count a full minute and exited quantity counts zero for its exit minute.
+It is an approximation, not exchange settlement parity. Missing hour or
+unverified convention marks any exposed trade `funding_incomplete`, including
+same-minute closure. Cash keeps known funding; unknown funding is never described
+as confirmed zero. Such trades are counted separately and excluded from complete
+strategy net totals, profit factor, hit rate and expectancy. Overall account
+returns are marked provisional. Historical rates must be made available to the
+replay in chronological order before processing exposure; late historical-rate
+backfill cannot silently rewrite an already published journal.
+
+## Storage, replay and CI
+
+- `ledger/genesis.json`: create-only configuration, epoch and initial state hash.
+- `ledger/plans/*.json`: create-only instruction and Python sizing, bound to the
+  canonical full state document hash. No model-provided quantity is trusted.
+- `ledger/states/*.json`: create-only decision snapshots whose hashes must be
+  reachable from genesis and prior journal records.
+- `ledger/events/YYYY/MM/DD.jsonl`: append-only inputs, effects and state chain.
+- `ledger/trades/*.json`: create-only closed trades, costs and funding status.
+- `ledger/state.json`, `ledger/performance.json`: bounded, replaceable views.
+
+`python scripts/ledger_replay.py --data-dir <directory>` verifies all plans,
+reachable state bindings, journal effects, trades and rolling views. Explicit
+`--rebuild-views` repairs derived views after an interrupted write; it cannot
+change the journal or overwrite conflicting closed-trade evidence.
+
+The archive guard checks every commit and the final candidate tree, or the Git
+index for staged checks. Rewriting/restoring an artifact within a PR is rejected.
+It replays the candidate's exact bytes, independently of unstaged working files.
+The existing required `test` job runs this guard; ledger data paths also trigger
+CI. The producer publication allowlist is intentionally still closed to ledger
+writes until runtime integration is complete.
+
+Current metrics include minute-close maximum drawdown and strategy net results;
+30 complete trades is only a minimum sample flag, never proof of profitability.
+The buy-and-hold figure is explicitly a **gross perp-mark proxy**, not the final
+cost-adjusted benchmark. MARK events retain the equity series; a separate compact
+curve export, archive growth benchmark and the full benchmark remain integration
+work. Paper activation awaits those contracts, validated funding convention and
+the v4 writer/runtime integration. Demo execution and live authorization remain
+separate rollout gates.

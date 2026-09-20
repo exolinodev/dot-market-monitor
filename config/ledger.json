@@ -1,0 +1,33 @@
+{
+  "ledger_version": "1.0.0",
+  "enabled": false,
+  "parameters_status": "paper_baseline_authorized",
+  "equity_start_usd": "5000",
+  "ledger_epoch_utc": null,
+  "instrument": "PF_DOTUSD",
+  "contract_size_dot": "1",
+  "quantity_step": "1",
+  "tick_size_usd": "0.0001",
+  "risk_fraction_per_trade": "0.01",
+  "risk_tiers": {
+    "FULL": "1",
+    "HALF": "0.5",
+    "QUARTER": "0.25"
+  },
+  "max_notional_multiple_of_equity": "2",
+  "max_open_positions": 1,
+  "min_stop_bps": "25",
+  "max_stop_bps": "500",
+  "min_net_reward_risk_t1": "1",
+  "fee_maker_pct": "0.02",
+  "fee_taker_pct": "0.05",
+  "slippage_bps": "0",
+  "spread_floor_bps": "2",
+  "funding_interval_minutes": 60,
+  "funding_convention_verified": false,
+  "funding_positive_payer": "LONG",
+  "max_order_age_minutes": 150,
+  "max_hold_hours": 72,
+  "equity_floor_fraction": "0.80",
+  "risk_budget_includes_costs": true
+}
