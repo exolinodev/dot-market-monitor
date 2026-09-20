@@ -69,8 +69,22 @@ def check(base=None, head='HEAD', staged=False, root=Path('.')):
             target.write_bytes(blob(root, candidate, name))
         result = verify(directory / 'data')
         from ledger_publication import verify_instruction
+        from ledger_market import SOURCE_PATH, verify_market_input
+        source_cache, copied_sources = {}, set()
+        production = any(r['input']['type'] == 'instruction' and r['input']['plan']['forecast_id'].endswith('-oracle-v4') for r in result['records'])
         for record in result['records']:
             event = record['input']
+            if event['type'] != 'instruction' and (production or 'source' in event):
+                source = (event.get('source') or {}).get('path', '')
+                if not re.fullmatch(SOURCE_PATH, source):
+                    raise ValueError('Production market input requires source evidence')
+                if source not in copied_sources:
+                    name = 'data/' + source
+                    target = directory / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(blob(root, candidate, name))
+                    copied_sources.add(source)
+                verify_market_input(directory / 'data', result['genesis']['epoch_utc'], event, source_cache)
             if event['type'] == 'instruction' and event['plan']['forecast_id'].endswith('-oracle-v4'):
                 if 'publication' not in event:
                     raise ValueError('Production instruction requires main publication evidence')

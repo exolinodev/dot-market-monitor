@@ -546,14 +546,15 @@ def step(state, event, config):
                 raise ValueError('Negative spread')
             result['spread'] = {'at_utc': at, 'bps': number(bps)}
         elif kind == 'funding_rate':
-            if utc(at).minute or utc(at).second or utc(at).microsecond:
+            interval = utc(event['interval_start_utc'])
+            if interval.minute or interval.second or interval.microsecond:
                 raise ValueError('Funding interval must align to UTC hour')
             absolute, relative = decimal(event['absolute_rate']), decimal(event['relative_rate'])
             if absolute * relative < 0 or (absolute == 0) != (relative == 0):
                 raise ValueError('Absolute/relative funding signs disagree')
-            if utc(event['interval_start_utc']) != utc(at):
-                raise ValueError('Funding timestamp labels interval start')
-            result['funding_rate'] = {'interval_start_utc': at, 'absolute_rate': number(event['absolute_rate']),
+            if not interval <= utc(at) < interval + timedelta(hours=1):
+                raise ValueError('Funding timestamp must fall inside its labelled interval')
+            result['funding_rate'] = {'interval_start_utc': iso(interval), 'absolute_rate': number(event['absolute_rate']),
                                      'relative_rate': number(event['relative_rate']), 'input_sha256': event_hash}
         elif kind == 'instruction':
             _apply_instruction(result, event, config, outputs)

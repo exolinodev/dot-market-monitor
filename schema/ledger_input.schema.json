@@ -20,6 +20,24 @@
         "spread_bps": {
           "type": "string",
           "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
         }
       },
       "required": [
@@ -55,6 +73,24 @@
         "relative_rate": {
           "type": "string",
           "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
         }
       },
       "required": [
@@ -185,6 +221,24 @@
             "low",
             "close"
           ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
         }
       },
       "required": [

@@ -32,3 +32,28 @@ and bounded equity curves, and publish replay-verified state under serialized
 collector/writer ownership. Public-market evidence and the funding convention
 must be verified before enabling an account. No account was initialized by this
 change and no exchange execution is enabled.
+
+## Market evidence adapter
+
+`ledger_market` converts the immutable quarter candle arrays, received-time
+perpetual spread and monthly funding rows into ordered ledger inputs. Each input
+binds its relative source path and a canonical row hash. The quarter's derived
+`ledger` summary is excluded from the market hash to avoid self-reference; all
+market/source/candle fields remain bound. CI extracts the source files from the
+same Git candidate tree and rederives inputs, catching invented prices even if
+the internal journal replay itself is consistent.
+
+A batch ending at 20:15 includes closed candles through the 20:14 open. A quote
+received at 20:15:08 remains archived but cannot affect any of those candles; it
+enters a later batch between the appropriate minute opens. Funding initialization
+mid-hour retains the true hour-start label while applying the rate event no
+earlier than the account epoch. No elapsed pre-account funding is charged.
+
+`ledger_runtime.advance` operates only on an explicitly initialized account. It
+loads matching published forecast/plan pairs, uses first-main-publication
+eligibility, merges all eligible market inputs in time order, and writes through
+the replay-verifying store. Exact reruns are no-ops. Changed already-used evidence,
+backdated newly discovered inputs and a missing final closed minute fail before
+normal publication. An optional pending quarter can receive the derived account
+summary before its first immutable append; market hashes remain stable. The
+collector still needs to call this adapter and publish both artifacts together.
