@@ -90,3 +90,26 @@ previous production files (+26,163 bytes, approximately 0.43%); funding bootstra
 added 990,971 bytes once. This is not a same-input v3/v4 benchmark and does not
 establish the strict “no more replaced bytes” target. Storage acceptance remains
 open; track it during rollout before claiming Phase 1 complete.
+
+
+### Lossless storage correction
+
+The hourly `history.json` now uses `hourly-columnar-v1`: repeated field paths are
+stored once, followed by observation value rows and explicit missing-field
+indices. Null, missing fields, nested objects/lists, numeric precision and all
+720 retained hourly observations remain distinguishable. `HistoryStore` reads
+both the legacy array and the new envelope; migration occurs only on the next
+successful hourly update. Snapshots, forecast hashes and feature inputs retain
+the same decoded values. Raw-history consumers must call `decode_history`.
+
+`python scripts/benchmark_history_storage.py <history.json>` compares both
+encodings using exactly the same observations and asserts canonical decoded
+identity. On the retained full-smoke history (193 observations), legacy storage
+was 2,245,110 bytes and columnar storage 1,618,400 bytes, saving 626,710 bytes.
+Applying only this lossless serialization change to that full-smoke output
+reduces its replaced-file total from 6,046,917 to 5,420,207 bytes, below the
+previous production total of 6,020,754. This closes the measured storage overrun;
+the total comparison still involves different collection times, while the
+encoding comparison uses identical observations. Growth and timing must still
+be measured after deployment. No existing repository data was rewritten by this
+implementation change.
