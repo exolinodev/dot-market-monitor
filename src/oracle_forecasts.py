@@ -53,9 +53,10 @@ def validate_forecast(f, snapshot=None):
             raise ValueError('Measurement config mismatch')
         if context.get('oracle_config_sha256') != f['oracle_config_sha256'] or context.get('feature_version') != f['oracle_feature_version']:
             raise ValueError('Oracle method/config mismatch')
-        for key in f['evidence']['supporting_feature_ids']+f['evidence']['opposing_feature_ids']:
-            if key not in features or features[key]['status'] != 'ok':
-                raise ValueError('Evidence must reference available actual features')
+        cited = f['evidence']['supporting_feature_ids']+f['evidence']['opposing_feature_ids']
+        rejected = [key for key in cited if key not in features or features[key]['status'] != 'ok']
+        if rejected:
+            raise ValueError('Evidence must reference available actual features; not ok at this snapshot: '+', '.join(rejected))
         if f['regime'] in ('REVERSAL_ARMED','REVERSAL_TRIGGERED'):
             direction = 'downside' if setup['direction']=='LONG' else 'upside'
             gates = context['current_features']['evidence']['reversal_gates'][direction]
@@ -99,8 +100,10 @@ def ensure_unique_snapshots(forecasts):
 
 def persist_forecast(f, snapshot, directory, now):
     validate_forecast(f, snapshot)
-    if abs((utc(now)-utc(f['created_at_utc'])).total_seconds()) > 120:
-        raise ValueError('Publication timestamp differs from actual creation; historical write-back forbidden')
+    delta = (utc(now)-utc(f['created_at_utc'])).total_seconds()
+    if abs(delta) > 120:
+        raise ValueError('Publication timestamp differs from actual creation by '
+                         f'{delta:+.0f}s (limit 120s); historical write-back forbidden')
     day = utc(f['created_at_utc']).strftime('%Y/%m/%d')
     root = Path(directory)
     path = root/'forecasts'/day/(f['forecast_id']+'.json')
