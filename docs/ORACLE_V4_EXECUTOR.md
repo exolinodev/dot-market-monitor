@@ -732,3 +732,44 @@ Tests are synthetic, including the wallet/position field examples. Authenticated
 account-log fixtures, currency/booking reconciliation, actual fee/funding totals
 and verified exchange net performance remain outstanding while the public demo
 host is unavailable from the current environment.
+
+## Evidence-backed recovery command
+
+`recover_demo_journal.py` now exposes the existing journal validators for a
+previously dispatched mutation. It still makes no exchange request. Select
+exactly one action:
+
+| Argument | Required positive proof |
+|---|---|
+| `--resolve-present OPERATION_ID` | Exact open-order identity, quantity and policy after the send |
+| `--resolve-filled CLIENT_ID` | Complete execution history totaling the dispatched quantity, with no open order |
+| `--resolve-cancelled CLIENT_ID` | Explicit ordinary-order cancellation plus consistent fills |
+| `--resolve-rejected CLIENT_ID` | Explicit ordinary-order rejection plus consistent fills |
+| `--resolve-trigger-cancelled CLIENT_ID` | Explicit cancellation of a stop that never activated |
+
+All five require `--capture-sha256` equal to the latest journal observation and
+`--exchange-order-id`. The three terminal-history actions additionally require
+`--event-id`; that option is rejected for presence/full-fill recovery. The
+history hash is obtained from the observation itself, never supplied separately.
+The observation must have an acquired bundle whose raw files replay and bind to
+the expected account/key. A standalone normalized JSON capture is insufficient.
+
+```sh
+python scripts/recover_demo_journal.py --journal-dir /private/demo-journal \
+  --account-uid <demo-account-uuid> --key-fingerprint <sha256-of-api-key> \
+  --resolve-present <operation-id> --capture-sha256 <latest-observation-sha256> \
+  --exchange-order-id <exchange-order-id>
+```
+
+Each successful command appends one validated event under the journal lock and
+invalidates any cached reconciliation. A repeated successful resolution is
+refused without another event. Empty readbacks, partial fills, changed identity,
+stale observations and incomplete histories leave the unknown operation
+unresolved. Edited-size full fills and activated-stop child-order recovery
+remain unsupported by their underlying validators. Run fresh reconciliation
+before later dispatch; the output always says `authorizes_execution: false`.
+
+Integration tests exercise acquisition of synthetic raw API responses, import,
+CLI resolution and restart replay for all five paths, plus refusal cases. These
+are offline integration evidence, not proof of a working demo account or actual
+exchange executions. This command does not enable the demo/live sender.
