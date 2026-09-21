@@ -648,7 +648,7 @@ The official [instruments reference](https://docs.kraken.com/api-reference/instr
 distinguishes platform `marginSchedules`, professional `marginLevels` and
 `retailMarginLevels`. The authenticated
 [leverage preferences](https://docs.kraken.com/api-reference/multi-collateral/get-leverage-settings)
-are not yet captured. The corresponding setter documents that specifying
+are now retained in version-4 acquisition bundles. The corresponding setter documents that specifying
 `maxLeverage` selects isolated margin. Neither the public tier list nor positive
 `availableMargin` establishes the applicable account requirement. The documented
 [portfolio-margin simulator](https://docs.kraken.com/api-reference/account-information/calculate-portfolio-margin-pnl-and-greeks)
@@ -806,3 +806,36 @@ position reconciliation and a later complete fill, successive edits, replay,
 stale/repeated resolution, conflicting history and wrong readback. This closes
 ordinary open-limit edit recovery; it does not establish stop-market edit
 semantics, activated-stop child mapping, margin sufficiency or real demo results.
+
+
+## Acquired leverage preferences (bundle version 4)
+
+The private capture now performs the documented read-only
+[`GET /leveragepreferences`](https://docs.kraken.com/api-reference/multi-collateral/get-leverage-settings)
+on the fixed demo host. It retains the exact response bytes, status, length and
+SHA-256 beside the other authenticated readbacks. No settings setter is exposed
+or called. The fifth response's server time participates in history coverage,
+readback age/span, and the quiet-interval checks before journal import.
+
+Version-4 bundles use readback manifest version 2. Versions 1–3 still verify with
+their original four-read contract. Journal observations expose the PF_DOTUSD
+preference's timestamp, whether a row exists, whether maxLeverage was present,
+and its numeric value (or null). Missing rows, missing fields and explicit null
+remain distinguishable; no default leverage or margin mode is manufactured.
+Duplicates, malformed identities, booleans and nonpositive/nonfinite numeric
+values are refused. Raw settings for other instruments remain in the bundle.
+
+Entry preflight exposes this acquired preference and rejects legacy observations
+without settings evidence. `leverage_preferences_verified` means the settings
+came from the verified acquisition; it does not mean margin sufficiency. The
+[setter documentation](https://docs.kraken.com/api-reference/multi-collateral/set-leverage-settings)
+states that specifying maxLeverage selects isolated margin, but a missing row in
+the getter is not independently proven cross-margin classification. Applicable
+account class, margin tiers, collateral treatment and required margin remain to
+be established with real demo evidence. `exchange_margin_requirement_verified`
+remains false and execution remains disabled.
+
+Synthetic tests cover raw-byte retention and replay, old bundle compatibility,
+missing/null settings, duplicate/invalid values, settings timestamps outside the
+history window, fixed-host signed GET behavior, and legacy preflight refusal.
+No authenticated real demo account settings were acquired during implementation.

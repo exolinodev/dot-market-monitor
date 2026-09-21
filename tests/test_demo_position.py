@@ -4,7 +4,7 @@ import pytest
 from demo_evidence import capture_bundle
 from demo_journal import initialize, locked
 from demo_observation import import_observation
-from kraken_execution import READS, ExecutionError
+from kraken_execution import READS_WITH_PREFERENCES, ExecutionError
 from test_demo_evidence import KEY, market_response
 from test_demo_journal import action, row
 from test_exchange_history import ACCOUNT, START, END, DATE, body, event
@@ -18,8 +18,8 @@ class Client:
     def market(self, endpoint):
         return market_response(endpoint, self.at)
     def request(self, endpoint, params=None):
-        values = {'openorders': self.orders, 'openpositions': self.positions, 'fills': [], 'accounts': {}}
-        return 200, json.dumps({'result': 'success', 'serverTime': self.at, READS[endpoint]: values[endpoint]}).encode()
+        values = {'openorders': self.orders, 'openpositions': self.positions, 'fills': [], 'accounts': {}, 'leveragepreferences': []}
+        return 200, json.dumps({'result': 'success', 'serverTime': self.at, READS_WITH_PREFERENCES[endpoint]: values[endpoint]}).encode()
     def history(self, endpoint, params):
         if endpoint == 'account-log':
             return 200, json.dumps({'accountUid': ACCOUNT, 'logs': []}).encode(), {'Date': DATE}

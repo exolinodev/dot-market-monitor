@@ -5,9 +5,9 @@ from pathlib import Path
 import shutil
 
 from cycles import iso, utc
-from demo_evidence import HISTORIES, histories_for, verify_bundle
+from demo_evidence import HISTORIES, histories_for, readbacks_for, verify_bundle
 from exchange_reconciliation import exchange_time
-from kraken_execution import READS, ExecutionError, _sync_directory
+from kraken_execution import ExecutionError, _sync_directory
 
 
 def observation(directory, expected_account, key_fingerprint, bundle_sha256):
@@ -17,7 +17,7 @@ def observation(directory, expected_account, key_fingerprint, bundle_sha256):
     if not manifest['history_coverage_complete']:
         raise ExecutionError('Incomplete history cannot become a journal observation')
     responses = {name: json.loads((root/'readback'/f'{name}.raw').read_bytes(), parse_float=str)
-                 for name in READS}
+                 for name in readbacks_for(manifest['version'])}
     times = [exchange_time(value['serverTime']) for value in responses.values()]
     earliest, latest = min(times), max(times)
     start, end = utc(manifest['since_utc']), utc(manifest['through_utc'])
@@ -42,6 +42,9 @@ def observation(directory, expected_account, key_fingerprint, bundle_sha256):
     if manifest['version'] >= 2:
         from demo_market import verify_market
         value['market'] = verify_market(root/'market')['market']
+    if manifest['version'] >= 4:
+        from demo_leverage import preference
+        value['leverage_preference'] = preference(responses['leveragepreferences'])
     return value, histories
 
 
