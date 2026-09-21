@@ -157,27 +157,45 @@ def test_untrusted_branch_never_executes_producer(producer):
     assert calls == []
 
 
-def test_real_validation_command_failure_stops_following_checks(monkeypatch):
+def completed(args, returncode=0, stdout=''):
+    return subprocess.CompletedProcess(args, returncode, stdout=stdout)
+
+
+def test_one_failing_check_fails_verification_after_every_check_reported(monkeypatch, capsys):
     calls = []
-    def fail(args, **kwargs):
+    def run(args, **kwargs):
         calls.append(args)
-        raise subprocess.CalledProcessError(1, args)
-    monkeypatch.setattr(promotion.subprocess, 'run', fail)
-    with pytest.raises(subprocess.CalledProcessError):
+        if 'scripts/validate_snapshot.py' in args:
+            return completed(args, 1, 'Snapshot schema violated\n')
+        return completed(args, 0, 'fine\n')
+    monkeypatch.setattr(promotion.subprocess, 'run', run)
+    with pytest.raises(subprocess.CalledProcessError) as error:
         promotion.verify('trusted-base')
-    assert calls == [[sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base']]
+    assert error.value.cmd == [sys.executable, 'scripts/validate_snapshot.py']
+    assert len(calls) == 4  # Concurrent checks all complete; none is skipped after a failure.
+    out = capsys.readouterr().out
+    assert 'Snapshot schema violated' in out and '(exit 1)' in out
+    # Evidence is printed in command order regardless of completion order.
+    assert out.index('check_oracle_archive.py') < out.index('validate_snapshot.py') < out.index('pytest') < out.index('node --test')
 
 
 def test_full_verification_runs_every_guard_once_with_focused_tests(monkeypatch):
     calls = []
-    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: calls.append(args))
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: (calls.append(args), completed(args))[1])
     promotion.verify('trusted-base')
-    assert calls[0] == [sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base']
-    assert [sys.executable, 'scripts/validate_snapshot.py'] in calls
-    pytest_calls = [c for c in calls if c[:3] == [sys.executable, '-m', 'pytest']]
-    assert pytest_calls == [[sys.executable, '-m', 'pytest', '-q', *promotion.FOCUSED_TESTS]]
-    assert ['node', '--test', 'tests/scheduler.test.mjs'] in calls
+    assert sorted(map(str, calls)) == sorted(map(str, [
+        [sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base'],
+        [sys.executable, 'scripts/validate_snapshot.py'],
+        [sys.executable, '-m', 'pytest', '-q', *promotion.FOCUSED_TESTS],
+        ['node', '--test', 'tests/scheduler.test.mjs']]))
     assert not any('--staged' in c for c in calls)
+
+
+def test_checks_capture_output_instead_of_inheriting_the_terminal(monkeypatch):
+    seen = []
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: (seen.append(kwargs), completed(args))[1])
+    promotion.verify_light('trusted-base')
+    assert all(k['stdout'] is subprocess.PIPE and k['stderr'] is subprocess.STDOUT for k in seen)
 
 
 def test_producer_verifies_the_committed_candidate_once_before_pushing(producer, monkeypatch):
@@ -297,7 +315,7 @@ def test_light_allowlist_excludes_gzip_snapshot_and_funding():
 
 def test_light_requires_real_ledger_replay_and_market_evidence_checks(monkeypatch):
     calls = []
-    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: calls.append(args))
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: (calls.append(args), completed(args))[1])
     promotion.verify_light('trusted-base')
     assert [sys.executable, 'scripts/validate_ledger.py', '--base', 'trusted-base'] in calls
     assert any('tests/test_ledger_runtime.py' in args for args in calls)

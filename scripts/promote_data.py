@@ -6,10 +6,12 @@ data guards itself on the exact data commit and records their real result as the
 PR's `test` check. The guards prove archive immutability, ledger replay and the
 snapshot schema; code regressions are covered by the tests workflow on main, so
 a data commit runs only the focused runtime tests instead of the whole suite.
-Every check runs once, on the committed candidate, to keep publication short.
+Every check runs once, on the committed candidate, concurrently with the others,
+to keep publication short; their logs are replayed in a fixed order as evidence.
 It never publishes a successful check before validation, or pushes main directly.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -81,24 +83,45 @@ VALIDATION = {
 }
 
 
+def run_checks(commands):
+    """Run independent read-only checks concurrently; the run log stays the evidence.
+
+    Each check's output is captured and printed in command order once all have
+    finished, so concurrent execution never interleaves the evidence. Every
+    check runs to completion so one producer run shows every verdict; any
+    failure still fails the publication.
+    """
+    def execute(command):
+        return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    with ThreadPoolExecutor(max_workers=len(commands)) as pool:
+        results = list(pool.map(execute, commands))
+    failed = None
+    for command, result in zip(commands, results):
+        output = result.stdout or ''
+        print('$ ' + ' '.join(command) + f'  (exit {result.returncode})', flush=True)
+        print(output, end='' if output.endswith('\n') else '\n', flush=True)
+        if result.returncode and failed is None:
+            failed = result
+    if failed is not None:
+        raise subprocess.CalledProcessError(failed.returncode, failed.args)
+
+
 def verify(base):
     # check_oracle_archive already includes the intraday and ledger guards.
-    commands = [
+    run_checks([
         [sys.executable, 'scripts/check_oracle_archive.py', '--base', base],
         [sys.executable, 'scripts/validate_snapshot.py'],
         [sys.executable, '-m', 'pytest', '-q', *FOCUSED_TESTS],
         ['node', '--test', 'tests/scheduler.test.mjs'],
-    ]
-    for command in commands:
-        # Inherit output so the producer run is the actual test evidence.
-        subprocess.run(command, check=True)
+    ])
 
 
 def verify_light(base):
-    for command in ([sys.executable, 'scripts/validate_intraday.py', '--base', base],
-                    [sys.executable, 'scripts/validate_ledger.py', '--base', base],
-                    [sys.executable, '-m', 'pytest', '-q', *FOCUSED_TESTS]):
-        subprocess.run(command, check=True)
+    run_checks([
+        [sys.executable, 'scripts/validate_intraday.py', '--base', base],
+        [sys.executable, 'scripts/validate_ledger.py', '--base', base],
+        [sys.executable, '-m', 'pytest', '-q', *FOCUSED_TESTS],
+    ])
 
 
 def delete_branch(branch, head):
