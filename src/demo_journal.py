@@ -131,6 +131,20 @@ def transition(state, event):
         owner = result['ownership'][client_id]
         owner.update(status='open', exchange_order_id=payload['exchange_order_id'])
         operation.update(status='resolved', resolution_sha256=payload['capture_sha256'])
+    elif kind == 'order_filled':
+        client_id = payload['client_id']
+        owner = result['ownership'][client_id]
+        if owner['status'] == 'terminal':
+            raise ExecutionError('Order is already terminal')
+        if payload['capture_sha256'] != result['latest_capture']:
+            raise ExecutionError('Filled-order resolution requires the latest capture')
+        owner.update(status='terminal', exchange_order_id=payload['exchange_order_id'],
+                     terminal_reason='filled', resolution_sha256=payload['capture_sha256'])
+        for operation in result['operations'].values():
+            action = operation['action']
+            if action['params']['cliOrdId'] == client_id and operation['status'] != 'resolved':
+                operation.update(status='resolved', resolution_sha256=payload['capture_sha256'],
+                                 outcome='filled' if action['endpoint'] == 'sendorder' else 'order_already_filled')
     else:
         raise ExecutionError('Unknown demo journal event')
     return result
@@ -206,6 +220,8 @@ class Journal:
                         raise ExecutionError('Capture predates previous observation')
         if event['type'] == 'resolve_send':
             self._validate_presence(payload)
+        if event['type'] == 'order_filled':
+            self._validate_full_fill(payload)
 
     def _validate_presence(self, payload):
         capture = self._read_artifact(payload['capture_sha256'])
@@ -267,3 +283,62 @@ class Journal:
     def resolve_present_send(self, operation_id, capture_sha256, exchange_order_id):
         return self.append('resolve_send', {'operation_id': operation_id, 'capture_sha256': capture_sha256,
                                             'exchange_order_id': exchange_order_id})
+
+
+    def _validate_full_fill(self, payload):
+        from decimal import Decimal, localcontext
+        from exchange_reconciliation import deduplicate_fills, numeric
+        client_id = payload['client_id']
+        owner = self._state['ownership'][client_id]
+        origin = self._state['operations'][owner['origin_operation_id']]
+        if origin['status'] == 'prepared':
+            raise ExecutionError('Never-dispatched intent cannot have exchange fills')
+        action = origin['action']
+        params = action['params']
+        # An edit can change the order's total quantity. Until that effective
+        # contract is independently reconstructed, original send size is not
+        # sufficient evidence of completion (including an in-flight edit).
+        if any(o['action']['params']['cliOrdId'] == client_id and o['action']['endpoint'] == 'editorder'
+               for o in self._state['operations'].values()):
+            raise ExecutionError('Edited order needs effective-size recovery evidence')
+        capture = self._read_artifact(payload['capture_sha256'])
+        history = self._read_artifact(payload['history_sha256'])
+        prior = self._read_artifact(action['capture_sha256'])
+        if capture.get('execution_history_sha256') != payload['history_sha256']:
+            raise ExecutionError('History is not bound to the observation')
+        if (history.get('source') != 'execution_history' or history.get('environment') != 'demo'
+                or history.get('account_uid') != self.identity['account_uid']
+                or history.get('coverage_complete') is not True):
+            raise ExecutionError('Complete account-bound execution history required')
+        start, end = utc(prior['reference_utc']), utc(capture['reference_utc'])
+        if end <= start or utc(history['since_utc']) > start or utc(history['through_utc']) < end:
+            raise ExecutionError('Execution history does not cover the send lifetime')
+        exchange_id = payload['exchange_order_id']
+        if not isinstance(exchange_id, str) or not exchange_id:
+            raise ExecutionError('Exchange order identity required')
+        if owner.get('exchange_order_id') and owner['exchange_order_id'] != exchange_id:
+            raise ExecutionError('Filled order differs from known exchange identity')
+        if any(row.get('cliOrdId') == client_id or row['order_id'] == exchange_id for row in capture['open_orders']):
+            raise ExecutionError('Claimed filled order is still open')
+        with localcontext() as context:
+            context.prec = 34
+            total = Decimal(0)
+            identity_linked = owner.get('exchange_order_id') == exchange_id
+            for fill in deduplicate_fills(history['fills']):
+                if fill['cliOrdId'] != client_id and fill['order_id'] != exchange_id:
+                    continue
+                if (fill['order_id'] != exchange_id or fill['cliOrdId'] not in (None, client_id)
+                        or fill['symbol'] != params['symbol'] or fill['side'] != params['side']):
+                    raise ExecutionError('Fill identity or economics differ from intent')
+                if not start <= utc(fill['fillTime']) <= end:
+                    raise ExecutionError('Matching fill outside observed send lifetime')
+                identity_linked = identity_linked or fill['cliOrdId'] == client_id
+                total += numeric(fill['size'], positive=True)
+            if not identity_linked and total:
+                raise ExecutionError('No proven link between client and exchange order IDs')
+            if total != numeric(params['size'], positive=True):
+                raise ExecutionError('Actual fills do not equal dispatched total quantity')
+
+    def resolve_filled_order(self, client_id, capture_sha256, history_sha256, exchange_order_id):
+        return self.append('order_filled', {'client_id': client_id, 'capture_sha256': capture_sha256,
+                           'history_sha256': history_sha256, 'exchange_order_id': exchange_order_id})

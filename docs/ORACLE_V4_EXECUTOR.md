@@ -362,3 +362,32 @@ no generic manual `resolved=true` switch. The existing `DemoAttempts` transport
 journal remains responsible for retaining exact request/response evidence; the
 runner must connect both under the same lock. No demo journal has been initialized
 outside isolated tests, and demo/live CLI sending remains disabled.
+
+## Recovery after complete fills
+
+The demo journal now supports `resolve_filled_order` in addition to positive
+open-order presence. It can resolve a timed-out/acknowledged send that fully
+executed, or update an already known open order to terminal after execution.
+The latest observation must bind the exact execution-history artifact; history
+must be complete, demo/account-bound, and cover the entire interval from the
+send's original observation through the resolving observation.
+
+Every matching fill is deduplicated and checked for order/client identity,
+instrument, direction and lifetime. Their exact Decimal quantities must sum to
+the dispatched total, and the latest open-order readback must not still contain
+the order. If fills omit cliOrdId, a prior proven mapping to the exchange order
+ID is required; merely supplying an arbitrary exchange ID is insufficient.
+Empty, partial, overfilled, conflicting or incomplete histories do not resolve
+an attempt. A never-dispatched intent cannot acquire exchange fills.
+
+When full execution races a pending cancellation, the journal may resolve that
+cancel as `order_already_filled`. This means its desired terminal condition is
+proven, not that the exchange executed the cancellation. A completed send remains
+non-dispatchable, and every decision is reproduced by journal replay.
+
+Any edit in that order's control history blocks this original-size shortcut.
+An edit may alter total quantity, including while its result is unknown; the
+runner needs separately verified effective-order terms before concluding full
+execution. Rejected/cancelled orders without full execution, edit outcomes and
+never-sent crash recovery remain outstanding. No generic absence-based or manual
+resolution override is added, and CLI demo/live sending remains disabled.
