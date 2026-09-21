@@ -151,7 +151,7 @@ acceptance window.
 [execution events endpoint](https://docs.kraken.com/api-reference/account-history/get-execution-events)
 at `/api/history/v3/executions`. The demo transport now supports read-only
 history calls to executions/orders/triggers/account-log on the same fixed demo
-host. Executions and orders have account-bound capture/parsers; triggers and account logs are not yet parsed.
+host. Executions, orders and triggers have account-bound capture/parsers; account logs are not yet parsed.
 
 The signing path includes `/api/history/v3/...`; it is not a trading
 `/api/v3/...` endpoint and has no `/derivatives` URL prefix. This follows the
@@ -389,7 +389,7 @@ Any edit in that order's control history blocks this original-size shortcut.
 An edit may alter total quantity, including while its result is unknown; the
 runner needs separately verified effective-order terms before concluding full
 execution. Cancellation/rejection evidence is handled by the order-history layer below;
-edit/trigger outcomes and never-sent crash recovery remain outstanding. No generic absence-based or manual
+open-edit/activated-trigger outcomes and never-sent crash recovery remain outstanding. No generic absence-based or manual
 resolution override is added, and CLI demo/live sending remains disabled.
 
 
@@ -423,3 +423,28 @@ Both history paths remain offline-tested against API-shaped fixtures, not real
 authenticated demo captures. The orchestrator must verify raw artifacts before
 putting their reports into the control journal; no execution authorization or
 CLI sending is enabled by this addition.
+
+
+## Trigger-history recovery
+
+`capture_triggers` retains account-bound raw pages from `/api/history/v3/triggers`
+with `opened=true`, `closed=true`, using the shared token pagination and replay
+checks. It normalizes OrderTriggerPlaced, OrderTriggerCancelled,
+OrderTriggerUpdated, OrderTriggerActivated and OrderTriggerEditRejected from the
+[trigger events reference](https://docs.kraken.com/api-reference/account-history/get-trigger-events).
+`verify_capture(..., source="trigger_history")` verifies this source explicitly.
+Updates retain old/new terms; rejected edits retain original/attempted terms.
+
+`resolve_cancelled_trigger` accepts an explicit cancellation of a dispatched stop
+only when complete trigger and execution histories cover its lifetime and are
+bound to the later journal observation. Identity, instrument, direction,
+reduce-only, MarkPrice trigger policy and dispatched size/price authorizations
+must agree. An open readback, execution, contradictory later event or any matching
+activation prevents this recovery. Journal replay repeats these checks.
+
+Activation is not a fill or a terminal trade. The documented activation response
+does not supply a child-order ID; this implementation does not invent one.
+Activated triggers require independently evidenced child-order/fill reconciliation
+before management can continue. Open edits and rejected edit recovery remain
+unimplemented. These tests use synthetic responses; authenticated demo fixtures,
+operational orchestration and acceptance remain outstanding.

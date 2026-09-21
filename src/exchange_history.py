@@ -95,6 +95,52 @@ def order_event(element, expected_account):
     return result
 
 
+def normalized_trigger(order, expected_account):
+    from exchange_reconciliation import numeric, number
+    if account_id(order['accountUid']) != expected_account:
+        raise ExecutionError('Historical trigger belongs to a different account')
+    if not isinstance(order['uid'], str) or not order['uid'] or type(order['reduceOnly']) is not bool:
+        raise ExecutionError('Invalid historical trigger identity/policy')
+    options = order['triggerOptions']
+    return {'order_id': order['uid'], 'account_uid': expected_account,
+            'client_id': order['clientId'] or None, 'symbol': order['tradeable'],
+            'direction': order['direction'], 'order_type': order['orderType'],
+            'quantity': number(numeric(order['quantity'])), 'limit_price': order['limitPrice'],
+            'reduce_only': order['reduceOnly'], 'created_at_utc': stamp(order['timestamp']),
+            'updated_at_utc': stamp(order['lastUpdateTimestamp']),
+            'trigger_price': number(numeric(options['triggerPrice'])),
+            'trigger_signal': options['triggerSignal'], 'trigger_side': options['triggerSide'],
+            'trailing_stop_options': options['trailingStopOptions'], 'limit_price_offset': options['limitPriceOffset']}
+
+
+def trigger_event(element, expected_account):
+    event = element['event']
+    kinds = ('OrderTriggerPlaced', 'OrderTriggerCancelled', 'OrderTriggerUpdated',
+             'OrderTriggerActivated', 'OrderTriggerEditRejected')
+    if not isinstance(event, dict) or len(event) != 1 or next(iter(event)) not in kinds:
+        raise ExecutionError('Unknown or ambiguous historical trigger event')
+    kind = next(iter(event)); detail = event[kind]
+    result = {'event_id': element['uid'], 'at_utc': stamp(element['timestamp']), 'kind': kind,
+              'account_uid': expected_account}
+    if kind == 'OrderTriggerUpdated':
+        result['old_order'] = normalized_trigger(detail['oldOrderTrigger'], expected_account)
+        result['order'] = normalized_trigger(detail['newOrderTrigger'], expected_account)
+        if result['old_order']['order_id'] != result['order']['order_id']:
+            raise ExecutionError('Trigger update changed exchange identity')
+    elif kind == 'OrderTriggerEditRejected':
+        result['order'] = normalized_trigger(detail['oldOrderTrigger'], expected_account)
+        result['attempted_order'] = normalized_trigger(detail['attemptedOrderTrigger'], expected_account)
+    else:
+        result['order'] = normalized_trigger(detail['order'], expected_account)
+    for field in ('reason', 'orderError'):
+        if field in detail: result[field] = detail[field]
+    return result
+
+
+def capture_triggers(directory, client, expected_account, since, through, *, max_pages=100):
+    return _capture_history(directory, client, expected_account, since, through, max_pages=max_pages, endpoint='triggers')
+
+
 def capture_executions(directory, client, expected_account, since, through, *, max_pages=100):
     return _capture_history(directory, client, expected_account, since, through, max_pages=max_pages, endpoint='executions')
 
@@ -119,7 +165,7 @@ def _capture_history(directory, client, expected_account, since, through, *, max
     root.mkdir(parents=True, exist_ok=False)
     _sync_directory(root.parent)
     params = {'since': str(start - 1), 'before': str(end + 1), 'sort': 'asc', 'count': '1000'}
-    if endpoint == 'orders':
+    if endpoint in ('orders', 'triggers'):
         params.update(opened=True, closed=True)
     pages, fills, seen_tokens, seen_events = [], [], set(), {}
     complete, last_stamp = False, None
@@ -156,7 +202,7 @@ def _capture_history(directory, client, expected_account, since, through, *, max
             event_stamp = milliseconds(stamp(element['timestamp']))
             if not start - 1 <= event_stamp <= end + 1:
                 raise ExecutionError('Execution event outside requested window')
-            normalized = execution_fill(element, expected_account) if endpoint == 'executions' else order_event(element, expected_account)
+            normalized = {'executions': execution_fill, 'orders': order_event, 'triggers': trigger_event}[endpoint](element, expected_account)
             fill_stamp = milliseconds(normalized['fillTime'] if endpoint == 'executions' else normalized['at_utc'])
             if not start - 1 <= fill_stamp <= end + 1:
                 raise ExecutionError('Execution fill outside requested window')
@@ -187,7 +233,7 @@ def _capture_history(directory, client, expected_account, since, through, *, max
             raise ExecutionError('Repeated continuation token')
         seen_tokens.add(token)
         params = {**params, 'continuation_token': token}
-    report = {'version': 1, 'environment': 'demo', 'source': 'execution_history' if endpoint == 'executions' else 'order_history',
+    report = {'version': 1, 'environment': 'demo', 'source': {'executions': 'execution_history', 'orders': 'order_history', 'triggers': 'trigger_history'}[endpoint],
               'account_uid': expected_account, 'since_utc': iso(exchange_time(since)),
               'through_utc': iso(exchange_time(through)), 'coverage_complete': complete,
               'coverage_reasons': [] if complete else ['page_budget_exhausted'],
@@ -197,7 +243,7 @@ def _capture_history(directory, client, expected_account, since, through, *, max
         report['fills'] = deduplicate_fills(fills)
         report['fill_count'] = len(report['fills'])
     else:
-        report['order_events'] = fills
+        report['order_events' if endpoint == 'orders' else 'trigger_events'] = fills
         report['event_count'] = len(fills)
     _create(root / 'manifest.json', _json_bytes(report))
     return report
@@ -217,9 +263,9 @@ def verify_capture(directory, expected_account, since, through, *, source='execu
     if any(p.is_symlink() or not p.is_file() for p in paths):
         raise ExecutionError('History artifacts must be regular files')
     manifest = json.loads((root / 'manifest.json').read_bytes())
-    if source not in ('execution_history', 'order_history') or manifest.get('source') != source:
+    if source not in ('execution_history', 'order_history', 'trigger_history') or manifest.get('source') != source:
         raise ExecutionError('History source differs from requested verification')
-    expected_endpoint = 'executions' if source == 'execution_history' else 'orders'
+    expected_endpoint = {'execution_history': 'executions', 'order_history': 'orders', 'trigger_history': 'triggers'}[source]
     page_count = len(manifest['pages'])
     if not page_count:
         raise ExecutionError('History capture has no pages')

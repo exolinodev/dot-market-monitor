@@ -145,7 +145,7 @@ def transition(state, event):
             if action['params']['cliOrdId'] == client_id and operation['status'] != 'resolved':
                 operation.update(status='resolved', resolution_sha256=payload['capture_sha256'],
                                  outcome='filled' if action['endpoint'] == 'sendorder' else 'order_already_filled')
-    elif kind == 'order_terminal':
+    elif kind in ('order_terminal', 'trigger_cancelled'):
         owner = result['ownership'][payload['client_id']]
         if owner['status'] == 'terminal':
             raise ExecutionError('Order is already terminal')
@@ -235,6 +235,8 @@ class Journal:
             self._validate_full_fill(payload)
         if event['type'] == 'order_terminal':
             self._validate_terminal(payload)
+        if event['type'] == 'trigger_cancelled':
+            self._validate_trigger_cancelled(payload)
 
     def _validate_presence(self, payload):
         capture = self._read_artifact(payload['capture_sha256'])
@@ -435,3 +437,68 @@ class Journal:
         return self.append('order_terminal', {'client_id': client_id, 'capture_sha256': capture_sha256,
                            'history_sha256': history_sha256, 'event_id': event_id,
                            'exchange_order_id': exchange_order_id, 'reason': reason})
+
+
+    def _validate_trigger_cancelled(self, payload):
+        from exchange_reconciliation import numeric, deduplicate_fills
+        client_id = payload['client_id']
+        owner = self._state['ownership'][client_id]
+        origin = self._state['operations'][owner['origin_operation_id']]
+        params = origin['action']['params']
+        if origin['status'] == 'prepared' or params['orderType'] != 'stp' or payload['reason'] != 'cancelled':
+            raise ExecutionError('Only dispatched stop triggers can use cancellation recovery')
+        capture = self._read_artifact(payload['capture_sha256'])
+        history = self._read_artifact(payload['history_sha256'])
+        prior = self._read_artifact(origin['action']['capture_sha256'])
+        start, end = utc(prior['reference_utc']), utc(capture['reference_utc'])
+        if capture.get('trigger_history_sha256') != payload['history_sha256'] or end <= start:
+            raise ExecutionError('Trigger history is not bound to a later observation')
+        if (history.get('source') != 'trigger_history' or history.get('environment') != 'demo'
+                or history.get('account_uid') != self.identity['account_uid'] or history.get('coverage_complete') is not True
+                or utc(history['since_utc']) > start or utc(history['through_utc']) < end):
+            raise ExecutionError('Complete account-bound trigger lifetime required')
+        candidates = [e for e in history['trigger_events'] if e['event_id'] == payload['event_id']]
+        if len(candidates) != 1 or candidates[0]['kind'] != 'OrderTriggerCancelled':
+            raise ExecutionError('Explicit trigger cancellation event required')
+        event = candidates[0]; order = event['order']; exchange_id = payload['exchange_order_id']
+        if (not exchange_id or order['order_id'] != exchange_id or order['account_uid'] != self.identity['account_uid']
+                or (owner.get('exchange_order_id') and owner['exchange_order_id'] != exchange_id)
+                or (order['client_id'] != client_id and not (order['client_id'] is None and owner.get('exchange_order_id') == exchange_id))):
+            raise ExecutionError('Cancelled trigger identity differs from dispatched intent')
+        side = 'Buy' if params['side'] == 'buy' else 'Sell'
+        if (order['symbol'] != params['symbol'] or order['direction'] != side or order['reduce_only'] != params['reduceOnly']
+                or order['trigger_signal'] != 'MarkPrice' or order['trigger_side'] != ('Above' if side == 'Buy' else 'Below')):
+            raise ExecutionError('Cancelled trigger policy differs from intent')
+        maximum = numeric(params['size'], positive=True)
+        prices = {numeric(params['stopPrice'], positive=True)}
+        for operation in self._state['operations'].values():
+            action = operation['action']
+            if action['params']['cliOrdId'] == client_id and action['endpoint'] == 'editorder' and operation['status'] != 'prepared':
+                if 'size' in action['params']: maximum = max(maximum, numeric(action['params']['size'], positive=True))
+                if 'stopPrice' in action['params']: prices.add(numeric(action['params']['stopPrice'], positive=True))
+        if not 0 <= numeric(order['quantity']) <= maximum or numeric(order['trigger_price']) not in prices:
+            raise ExecutionError('Cancelled trigger differs from authorized size/stop price')
+        at = utc(event['at_utc'])
+        if not start <= at <= end:
+            raise ExecutionError('Trigger cancellation outside send lifetime')
+        for other in history['trigger_events']:
+            item = other.get('order', {})
+            if item.get('order_id') != exchange_id and item.get('client_id') != client_id: continue
+            if other['kind'] == 'OrderTriggerActivated':
+                raise ExecutionError('Activated trigger requires child-order and fill reconciliation')
+            if other['event_id'] != event['event_id'] and utc(other['at_utc']) >= at:
+                raise ExecutionError('Trigger cancellation is superseded or ambiguous')
+        if any(r.get('cliOrdId') == client_id or r['order_id'] == exchange_id for r in capture['open_orders']):
+            raise ExecutionError('Cancelled trigger remains open')
+        execution = self._read_artifact(capture['execution_history_sha256'])
+        if (execution.get('source') != 'execution_history' or execution.get('environment') != 'demo'
+                or execution.get('account_uid') != self.identity['account_uid'] or execution.get('coverage_complete') is not True
+                or utc(execution['since_utc']) > start or utc(execution['through_utc']) < end):
+            raise ExecutionError('Trigger cancellation requires complete execution evidence')
+        if any(f['order_id'] == exchange_id or f['cliOrdId'] == client_id for f in deduplicate_fills(execution['fills'])):
+            raise ExecutionError('Trigger has executions; reconcile activated order instead')
+
+    def resolve_cancelled_trigger(self, client_id, capture_sha256, history_sha256, event_id, exchange_order_id):
+        return self.append('trigger_cancelled', {'client_id': client_id, 'capture_sha256': capture_sha256,
+                           'history_sha256': history_sha256, 'event_id': event_id,
+                           'exchange_order_id': exchange_order_id, 'reason': 'cancelled'})
