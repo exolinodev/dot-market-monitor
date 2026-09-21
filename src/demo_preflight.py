@@ -7,6 +7,7 @@ from pathlib import Path
 
 from cycles import utc, iso
 from demo_position import acquired, control_hash, position_report
+from demo_risk import account_risk
 from exchange_reconciliation import numeric, number
 from kraken_execution import ExecutionError, entry_request
 from ledger import digest, size_order
@@ -124,11 +125,11 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
         quote = {'bid': market['bid'], 'ask': market['ask']}
         market_verified = fresh and compatible and tradable
     capital, available = flex_equity(capture)
-    initial_capital, _ = flex_equity(baseline)
+    risk = account_risk(store, config)
+    if risk['kill_switch']:
+        reasons.append('demo_equity_floor_breached')
     with localcontext() as context:
         context.prec = 34
-        if capital < initial_capital * numeric(config['equity_floor_fraction']):
-            reasons.append('demo_equity_floor_breached')
         budget_equity = min(capital, numeric(bound['state']['equity_usd']))
     # A flat numerical sizing state evaluates the immutable quantity against
     # current paper equity and actual usable demo capital. It never resizes it.
@@ -147,7 +148,7 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
             'control_sha256': control_hash(current), 'checked_at_utc': iso(at), 'entry_deadline_utc': iso(deadline),
             'entry_checks_passed': not reasons, 'reasons': reasons, 'demo_enabled': settings['enabled'],
             'entry_request': entry_request(plan, config), 'budget_equity_usd': number(budget_equity),
-            'available_margin_usd': number(available), 'quantity_ceiling': None if ceiling is None else ceiling['quantity'],
+            'available_margin_usd': number(available), 'account_risk': risk, 'quantity_ceiling': None if ceiling is None else ceiling['quantity'],
             'demo_leverage_preference': leverage, 'leverage_preferences_verified': leverage is not None,
             'account_flows_verified': flow_check['verified_no_external_flows'], 'account_flow_issues': flow_check['issues'], 'live_quote_verified': market_verified, 'exchange_margin_requirement_verified': False,
             'authorizes_execution': False}

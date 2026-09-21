@@ -7,6 +7,7 @@ from cycles import iso, utc
 from demo_edits import effective_params
 from demo_position import acquired, position_report, control_hash
 from demo_preflight import policy
+from demo_risk import account_risk
 from exchange_actions import next_action
 from exchange_brackets import requirements
 from exchange_reconciliation import numeric
@@ -105,6 +106,8 @@ def protection_preview(directory, repo, head, forecast_id, store, reference):
         if any(a.get('client_id', a.get('position_id')) == ident for a in candidate['management']):
             instructions.append(load_published(directory, repo, head, candidate['forecast_id'])['instruction'])
     terms, cancel, used = management_terms(plan, config, instructions, fills, owners, at)
+    risk = account_risk(store, config)
+    cancel = cancel or risk['kill_switch']
     status = owner['terminal_reason'] if owner['status'] == 'terminal' else owner['status']
     desired = requirements(plan, config, fills, owners, orders, report['exchange_signed_quantity'], at,
                            publication['publication']['at_utc'], status, coverage_complete=True,
@@ -116,5 +119,5 @@ def protection_preview(directory, repo, head, forecast_id, store, reference):
             'trusted_head': head, 'forecast_id': forecast_id, 'plan_sha256': plan_hash,
             'capture_sha256': state['latest_capture'], 'reconciliation_sha256': state['latest_reconciliation'],
             'control_sha256': control_hash(state), 'checked_at_utc': iso(at),
-            'management_publications': used, 'requirements': desired, 'next_action': action,
+            'management_publications': used, 'account_risk': risk, 'requirements': desired, 'next_action': action,
             'demo_enabled': settings['enabled'], 'stop_market_edit_verified': False}

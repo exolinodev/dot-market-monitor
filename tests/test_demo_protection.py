@@ -25,9 +25,9 @@ from test_exchange_brackets import setup as bracket_setup, fill
 AT = '2026-09-20T20:05:10Z'
 
 
-def acquire(store, path, plan, *, at=AT, extra=(), quantity_delta=0):
+def acquire(store, path, plan, *, at=AT, extra=(), quantity_delta=0, capital='5000', available='5000'):
     ident = plan['orders'][0]['order']['client_id']
-    client = Funded(at)
+    client = Funded(at, capital, available)
     total = Decimal(plan['orders'][0]['size']['quantity']) + quantity_delta
     client.orders = [{'cliOrdId': ident, 'order_id': 'entry-exchange', 'symbol': 'PF_DOTUSD',
                       'side': 'buy', 'filledSize': '10', 'unfilledSize': str(total-10),

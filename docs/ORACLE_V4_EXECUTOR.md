@@ -883,3 +883,27 @@ not successful scheduled-model or exchange executions.
 Remaining runner work includes durable dispatch orchestration, account risk and
 kill-switch integration, verified margin requirements, actual costs, stop/child
 lifecycle recovery and real demo acceptance. This preview does not enable sends.
+
+## Latched demo account equity floor
+
+Entry and protection previews now replay every acquired account observation from
+this journal's fixed flat baseline. The configurable equity floor uses the same
+conservative capital bound as entry sizing (portfolio value plus unrealized
+funding, capped by margin equity). A strictly lower observation latches the
+entry kill switch: later recovery, additional deposits or a process restart do
+not clear the recorded breach. The report identifies the first raw-bound
+observation, minimum/current capital and baseline/configuration hashes. It does
+not reset the baseline or infer performance from wallet changes.
+
+An active latch refuses new entries and asks the protective planner to cancel
+any remaining entry quantity. It retains reduce-only protection for actual
+filled quantity, as the paper kill-switch contract does; it does not invent an
+immediate liquidation rule. Zero/negative current capital or zero available
+margin must not prevent planning that cancellation. Malformed/missing evidence
+still fails, and a fresh acquired position reconciliation remains mandatory.
+
+This is deterministic read-only risk integration, not dispatch authorization.
+Tests use acquired synthetic raw responses and real published plans to cover
+breach/recovery/restart, equality at the floor, distressed accounts, entry refusal
+and cancellation while keeping the existing position's stop. There is still no
+operational demo sender, real demo acceptance or live activation.
