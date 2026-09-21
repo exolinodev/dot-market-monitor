@@ -1,6 +1,6 @@
 """One real orchestration path over synthetic demo HTTP; never network."""
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -27,8 +27,8 @@ def enable(args, tmp_path):
 
 class Exchange(Funded):
     key_fingerprint = KEY
-    def __init__(self, store, *, timeout=False, changed=False):
-        super().__init__('2026-09-20T20:05:15Z')
+    def __init__(self, store, *, timeout=False, changed=False, at='2026-09-20T20:05:15Z'):
+        super().__init__(at)
         self.calls, self.timeout, self.changed = [], timeout, changed
         capture = store._read_artifact(store.state['latest_capture'])
         self.orders, self.positions = capture['open_orders'], capture['positions']
@@ -58,13 +58,13 @@ class Exchange(Funded):
             if self.timeout: raise OutcomeUnknown('synthetic lost reply')
             if endpoint == 'cancelorder':
                 self.orders = [o for o in self.orders if o['cliOrdId'] != params['cliOrdId']]
-                self.at = '2026-09-20T20:05:17Z'
+                self.at = (datetime.fromisoformat(self.at.replace('Z','+00:00')) + timedelta(seconds=2)).isoformat().replace('+00:00','Z')
                 return 200, json.dumps({'result':'success','cancelStatus':{'status':'cancelled'}}).encode()
             assert endpoint == 'sendorder' and params['reduceOnly'] is True
-            self.orders = [*self.orders, {**params, 'orderType':'stop', 'order_id':'new-stop',
+            self.orders = [*self.orders, {**params, 'orderType':'stop' if params['orderType']=='stp' else params['orderType'], 'order_id':'new-'+params['orderType'],
                                           'filledSize':'0', 'unfilledSize':params['size']}]
-            self.at = '2026-09-20T20:05:17Z'
-            return 200, json.dumps({'result':'success','sendStatus':{'status':'placed','order_id':'new-stop'}}).encode()
+            self.at = (datetime.fromisoformat(self.at.replace('Z','+00:00')) + timedelta(seconds=2)).isoformat().replace('+00:00','Z')
+            return 200, json.dumps({'result':'success','sendStatus':{'status':'placed','order_id':'new-'+params['orderType']}}).encode()
         return super().request(endpoint, params)
 
 
@@ -78,19 +78,20 @@ def test_durable_stop_attempt_then_raw_readback_and_no_restart_resend(tmp_path):
     with locked(args[-1], ACCOUNT, KEY) as store:
         client = Exchange(store)
         result = run(args, store, client)
-        assert result['mutation_attempted'] and result['operation_status'] == 'acknowledged'
+        assert result['mutation_attempted'] and result['operation_status'] == 'resolved'
         assert result['post_capture_sha256'] and not result['fill_verified']
+        assert not result['recovery_required']
         assert client.calls.count('sendorder') == 1
         operation = result['operation_id']
         assert (store.root/'attempts'/operation/'response.raw').exists()
-        assert store.state['latest_reconciliation'] is None
+        assert store.state['latest_reconciliation'] is not None
     with locked(args[-1], ACCOUNT, KEY) as store:
-        client = Exchange(store)
-        with pytest.raises(ExecutionError, match='unresolved'):
-            run(args, store, client)
-        assert client.calls == []
-        store.resolve_present_send(operation, result['post_capture_sha256'], 'new-stop')
-        store.reconcile_position()
+        client = Exchange(store, at='2026-09-20T20:05:20Z')
+        result = run(args, store, client, lambda: datetime.fromisoformat('2026-09-20T20:05:21+00:00'))
+        assert result['operation_status'] == 'resolved'
+        assert result['operation_id'] != operation
+        assert store.state['operations'][result['operation_id']]['action']['role'] == 'T1'
+        assert client.calls.count('sendorder') == 1
         assert store.state['ownership'][operation]['status'] == 'open'
 
 
@@ -105,9 +106,14 @@ def test_failure_consumes_intent_without_retry(tmp_path, failure):
         assert result['operation_status'] == ('unknown' if failure=='timeout' else 'prepared')
         assert client.calls.count('sendorder') == (1 if failure=='timeout' else 0)
         before = list(client.calls)
-        with pytest.raises(ExecutionError, match='unresolved'):
-            run(args, store, client)
-        assert client.calls == before
+        if failure == 'timeout':
+            again = run(args, store, client)
+            assert again['result'] == 'recovery_required' and not again['mutation_attempted']
+            assert client.calls.count('sendorder') == 1
+        else:
+            with pytest.raises(ExecutionError, match='unresolved'):
+                run(args, store, client)
+            assert client.calls == before
 
 
 def test_disabled_policy_and_wrong_key_do_not_acquire_or_send(tmp_path):
@@ -160,7 +166,7 @@ def test_failed_post_readback_does_not_erase_or_repeat_acknowledged_send(tmp_pat
         assert result['operation_status'] == 'acknowledged'
         assert result['post_capture_sha256'] is None
         assert client.calls.count('sendorder') == 1
-        with pytest.raises(ExecutionError, match='unresolved'):
+        with pytest.raises(ExecutionError, match='unavailable readback'):
             run(args, store, client)
         assert client.calls.count('sendorder') == 1
 
@@ -185,3 +191,21 @@ def test_cli_dispatch_failure_redacts_credentials(tmp_path, monkeypatch, capsys)
     assert 'must-not-leak' not in output.out + output.err
     assert 'No automatic retry' in output.err
     with locked(journal, ACCOUNT, KEY) as store: assert not store.state['operations']
+
+
+def test_lost_send_reply_is_recovered_from_actual_presence_without_resending(tmp_path):
+    args, _ = started(tmp_path); args = enable(args, tmp_path)
+    with locked(args[-1], ACCOUNT, KEY) as store:
+        client = Exchange(store)
+        original = client.request
+        def request(endpoint, params=None):
+            result = original(endpoint, params)
+            if endpoint == 'sendorder': raise OutcomeUnknown('reply lost after actual acceptance')
+            return result
+        client.request = request
+        result = run(args, store, client)
+        assert result['operation_status'] == 'resolved' and not result['recovery_required']
+        assert client.calls.count('sendorder') == 1
+        assert store.state['ownership'][result['operation_id']]['status'] == 'open'
+        assert not (store.root/'attempts'/result['operation_id']/'response.raw').exists()
+        assert result['recovery']['resolved'][0]['event_type'] == 'resolve_send'

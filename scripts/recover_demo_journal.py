@@ -15,6 +15,7 @@ def main(argv=None):
     parser.add_argument('--account-uid', required=True)
     parser.add_argument('--key-fingerprint', required=True, help='SHA-256 fingerprint, never an API key')
     actions = parser.add_mutually_exclusive_group()
+    actions.add_argument('--recover-available', action='store_true', help='Apply unique positive proofs in the latest acquired observation; no HTTP')
     actions.add_argument('--abandon-prepared', metavar='OPERATION_ID',
                         help='Append an abandonment event only if dispatch never began')
     actions.add_argument('--resolve-present', metavar='OPERATION_ID', help='Prove a dispatched send is open')
@@ -39,6 +40,10 @@ def main(argv=None):
         parser.error('Evidence selectors require a resolution action')
     try:
         with locked(args.journal_dir, args.account_uid, args.key_fingerprint) as store:
+            automatic = None
+            if args.recover_available:
+                from demo_recovery import recover_available
+                automatic = recover_available(store)
             if args.abandon_prepared:
                 store.abandon_prepared(args.abandon_prepared)
             if resolution:
@@ -73,7 +78,7 @@ def main(argv=None):
             result = {'journal_head_sha256': store.tip, 'unresolved_operations': pending,
                       'latest_capture_sha256': store.state['latest_capture'],
                       'resolution': None if resolution is None else {'kind': resolution[0], 'id': resolution[1]},
-                      'abandoned_operation_id': args.abandon_prepared, 'authorizes_execution': False}
+                      'automatic_recovery': automatic, 'abandoned_operation_id': args.abandon_prepared, 'authorizes_execution': False}
     except (ValueError, KeyError, OSError):
         print('Recovery refused; verify journal integrity, account identity and operation state. '
               'No exchange request was made.', file=sys.stderr)
