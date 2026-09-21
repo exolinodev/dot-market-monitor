@@ -224,6 +224,10 @@ class Journal:
                 if (artifact['account_uid'] != self.identity['account_uid'] or
                         artifact['api_key_fingerprint'] != self.identity['api_key_fingerprint']):
                     raise ExecutionError('Capture account/key differs from journal')
+                if 'bundle_sha256' in artifact:
+                    checked_hash(artifact['bundle_sha256'])
+                    from demo_observation import verify_journal_observation
+                    verify_journal_observation(self, artifact)
                 reference = utc(artifact['reference_utc'])
                 if self._state['latest_capture']:
                     previous = self._read_artifact(self._state['latest_capture'])

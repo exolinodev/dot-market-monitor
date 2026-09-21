@@ -477,7 +477,7 @@ Failures leave private evidence in place and do not retry or overwrite it.
 account/key identity, verifies every file and replays each history. A locally
 recomputed hash is integrity evidence, not proof of remote authenticity. The
 trusted acquisition process must retain the returned hash before later importing
-any report into the journal. The CLI does not yet perform that import.
+any report into the journal. Optional `--journal-dir` now imports under the existing journal lock as described below.
 
 The readbacks are sequential, not atomic, and may be newer than the requested
 history window. Even complete history does not establish contemporaneous position
@@ -485,3 +485,35 @@ reconciliation or authorize trading. Pagination-budget exhaustion is reported as
 incomplete evidence. These bundles stay outside the public replay archive; do not
 upload them as public CI artifacts. Real capture, account reconciliation, actual
 fee/funding accounting and demo trading acceptance remain outstanding.
+
+
+## Acquisition-to-journal integration
+
+Omitting `--through` derives the history endpoint from the latest readback
+`serverTime`, rounded upward to a millisecond. Explicit historical windows remain
+supported for evidence-only captures. Add `--journal-dir /private/existing-journal`
+to hold its account/key-bound lock across acquisition and import. The journal must
+already exist outside Git; this command never initializes or resets an account.
+
+`import_observation` requires complete execution/order/trigger histories covering
+all four readback server timestamps. Any history event between the earliest
+readback and the history endpoint rejects import: sequential snapshots spanning
+account activity cannot safely settle an unknown order. Obtain a later capture;
+no exchange mutation is retried. Empty history establishes only the documented
+pagination contract, not an undocumented exchange ingestion-lag guarantee.
+
+The journal retains a full raw bundle under `evidence/<bundle_sha256>`, plus the
+exact parsed history reports and readback observation as hash-addressed artifacts.
+It revalidates the copied bundle before appending a capture event. Every journal
+replay verifies the raw source again and requires the derived observation and
+history hashes to match. Tampered/missing evidence and symlinks stop replay.
+Numbers in readbacks retain their JSON decimal spelling instead of float rounding.
+An interrupted copy remains incomplete evidence and is not automatically repaired.
+
+This closes the authenticated acquisition/import path when called by the CLI
+with its single credential-bound client. The library caller remains responsible
+for trusted acquisition provenance. The resulting observation explicitly keeps
+`quantity_reconciled=false` and `authorizes_execution=false`: trusted initial
+position baselines, account/quantity reconciliation, freshness limits and mutation
+orchestration remain required. No real journal has been initialized or populated
+outside isolated tests.

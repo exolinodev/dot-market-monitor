@@ -32,7 +32,7 @@ def inventory(root):
     return result
 
 
-def capture_bundle(directory, client, expected_account, key_fingerprint, since, through, *, max_pages=100):
+def capture_bundle(directory, client, expected_account, key_fingerprint, since, through=None, *, max_pages=100):
     """Caller supplies one authenticated client for every read in this bundle.
 
     Fingerprint provenance is established by the CLI constructing that client,
@@ -41,7 +41,8 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
     expected_account = account_id(expected_account)
     if not isinstance(key_fingerprint, str) or not re.fullmatch('[a-f0-9]{64}', key_fingerprint):
         raise ExecutionError('API key fingerprint required')
-    start, end = milliseconds(since), milliseconds(through)
+    start = milliseconds(since)
+    end = milliseconds(through) if through is not None else start
     if start < 1 or start > end or type(max_pages) is not int or not 1 <= max_pages <= 100:
         raise ExecutionError('Invalid demo capture window/page budget (1–100)')
     root = Path(directory)
@@ -50,6 +51,16 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
         _sync_directory(root.parent)
         capture_readback(root / 'readback', client)
+        if through is None:
+            from datetime import timedelta
+            from cycles import iso
+            from exchange_reconciliation import exchange_time
+            latest = max(exchange_time(json.loads((root/'readback'/f'{name}.raw').read_bytes())['serverTime']) for name in READS)
+            if latest.microsecond % 1000:
+                latest += timedelta(microseconds=1000 - latest.microsecond % 1000)
+            through = iso(latest)
+            if milliseconds(through) < start:
+                raise ExecutionError('Readback predates requested history start')
         complete = True
         for name, (capture, _) in HISTORIES.items():
             report = capture(root / name, client, expected_account, since, through, max_pages=max_pages)
