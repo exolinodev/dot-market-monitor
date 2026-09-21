@@ -22,10 +22,13 @@ def main(argv=None):
     parser.add_argument('--account-uid', help='Expected demo account UUID')
     parser.add_argument('--key-fingerprint', help='Expected SHA-256 of demo API key; not the key itself')
     parser.add_argument('--preview', action='store_true', help='Read-only demo request preview; never sends')
+    parser.add_argument('--protection', action='store_true', help='Preview protection for the original entry using acquired journal evidence')
     args = parser.parse_args(argv)
     journal_options = (args.journal_dir, args.account_uid, args.key_fingerprint)
     if any(journal_options) and (args.mode != 'demo' or not args.preview or not all(journal_options)):
         parser.error('Journal preflight requires demo --preview plus journal, account UID and key fingerprint')
+    if args.protection and (args.mode != 'demo' or not args.preview or not all(journal_options)):
+        parser.error('Protection requires demo --preview and a complete journal identity')
     if args.mode == 'live':
         parser.error('Live execution is unavailable: staged approvals and rollout gates are not implemented')
     if args.mode == 'demo' and not args.preview:
@@ -43,7 +46,11 @@ def main(argv=None):
                 from demo_journal import locked
                 from demo_preflight import entry_preflight
                 with locked(args.journal_dir, args.account_uid, args.key_fingerprint) as store:
-                    result = entry_preflight(data, args.repo, args.trusted_head, args.forecast_id, store, datetime.now(timezone.utc))
+                    if args.protection:
+                        from demo_protection import protection_preview
+                        result = protection_preview(data, args.repo, args.trusted_head, args.forecast_id, store, datetime.now(timezone.utc))
+                    else:
+                        result = entry_preflight(data, args.repo, args.trusted_head, args.forecast_id, store, datetime.now(timezone.utc))
             else:
                 result = preview(data, args.repo, args.trusted_head, args.forecast_id, datetime.now(timezone.utc))
     print(json.dumps(result, indent=2))
