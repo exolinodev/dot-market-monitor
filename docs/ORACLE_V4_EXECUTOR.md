@@ -907,3 +907,54 @@ Tests use acquired synthetic raw responses and real published plans to cover
 breach/recovery/restart, equality at the floor, distressed accounts, entry refusal
 and cancellation while keeping the existing position's stop. There is still no
 operational demo sender, real demo acceptance or live activation.
+
+## Gated single-attempt demo dispatch
+
+`execute_orders.py --mode demo --dispatch-once` now connects immutable published
+plans, the account/key-bound journal lock, fresh acquisition and reconciliation,
+preflight/protection selection, durable transport and post-attempt acquisition.
+It is an explicit one-shot operation, not a retry loop or deployed service.
+The committed `config/demo_executor.json` remains **disabled**. No exchange
+request was made in implementing or testing this path.
+
+The CLI requires the existing journal outside Git, its account UID and key
+fingerprint, and matching `KRAKEN_DEMO_API_KEY` / `KRAKEN_DEMO_API_SECRET` in the
+private runner environment. It constructs only the fixed-host demo client.
+Disabled policy, a wrong fingerprint, a stale fetched main or any unresolved
+prior operation stop before acquisition. It never initializes a journal or
+uses the production exchange host. Raw captures and attempts live in private
+create-only directories below that journal, retained across restarts.
+
+A fresh acquired observation must reconcile before action selection. Entry
+sending additionally requires `exchange_margin_requirement_verified=true`;
+current preflight still returns false, so **new demo entries remain unavailable**.
+`--protection` selects at most one action for the original published entry from
+actual acquired fills, including the account kill switch. Stop edits continue
+to require verified semantics. The default preview remains read-only.
+
+Before the POST the transport retains another raw open-order read. The sender
+checks its server time, exact order set, account-evidence age, fetched head and
+entry deadline, then commits the journal dispatch barrier. Changed orders or
+expired evidence leave a prepared, unsent operation that requires explicit
+abandonment; its consumed transport ID is never reused. A crash/timeout after
+the barrier remains unknown even if no request ultimately reached the exchange.
+There is at most one attempted mutation per invocation and ID.
+
+A reply is retained byte-for-byte and journaled as an assessment, never a fill
+or terminal resolution. The sender then attempts full raw readback and history
+acquisition. An unavailable or nonquiet readback leaves the operation unresolved;
+the partial evidence is retained. Subsequent invocation refuses to send until
+positive evidence resolves the operation with the existing recovery validators.
+An acknowledgement, a cancel reply or an empty open-order read is insufficient.
+The result explicitly reports operation status, readback hash (or null),
+`recovery_required` and `fill_verified=false`. Exceptions printed by the CLI are
+redacted; diagnostics stay in the private evidence directories.
+
+Offline integration covers partial-fill stop dispatch with both durable journals,
+raw readback, explicit presence recovery, restart refusal, timeout, changed
+orders, staleness between preflight and POST, failed post-readback, latched-risk
+cancellation, disabled policy, key mismatch, unavailable entry margin proof and
+CLI error redaction. Real demo fixtures, applicable margin/account-cost proof,
+remaining trigger/edit recovery, automatic evidence-backed lifecycle orchestration,
+a durable deployment service and the two-week acceptance window remain open.
+This step does not activate demo or live execution.
