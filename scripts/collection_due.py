@@ -10,14 +10,13 @@ from cycles import resolve, utc, iso
 
 def collection_due(document, now, event, run_attempt=1, kind=None, boundary=None):
     kind, point = resolve(now, kind, boundary, event)
-    if event == 'push':
-        return True
     try:
         meta = document['meta']
         generated = utc(meta['generated_at_utc'])
         healthy = meta['fresh'] is True and meta['status'] in ('ok', 'partial')
         same = utc(meta['cycle_boundary_utc']) == point and meta['run_kind'] == kind
-        # A committed cycle is immutable; reruns cannot replace its archived inputs.
+        # A committed cycle is immutable, including after a code push. A forced
+        # old-hour rerun would also try to rewind an already advanced ledger.
         return not (healthy and same and point <= generated <= now + timedelta(seconds=60))
     except (KeyError, TypeError, ValueError, AttributeError):
         return True

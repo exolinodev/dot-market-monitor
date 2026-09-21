@@ -37,6 +37,21 @@ def test_full_hour_only_and_measured_lateness():
     assert metadata('light', '2026-09-20T20:00:00Z', now)['late']
 
 
+@pytest.mark.parametrize('status', ['ok', 'partial'])
+def test_code_push_does_not_repeat_published_hour_after_quarter_advances(status):
+    now = datetime(2026, 9, 21, 7, 36, tzinfo=timezone.utc)
+    row = {'meta': {'generated_at_utc': '2026-09-21T07:10:03Z', 'run_kind': 'full',
+                    'cycle_boundary_utc': '2026-09-21T07:00:00Z', 'fresh': True, 'status': status}}
+    assert not module.collection_due(row, now, 'push')
+    assert not module.collection_due(row, now, 'push', 2)
+    # A later hour still needs capture. Deploying before any valid current full
+    # snapshot also remains a collection trigger.
+    assert module.collection_due(row, now.replace(hour=8), 'push')
+    assert module.collection_due(None, now, 'push')
+    row['meta']['fresh'] = False
+    assert module.collection_due(row, now, 'push')
+
+
 def test_boundary_wait_limit_and_late_start():
     spec = importlib.util.spec_from_file_location('wait_boundary', Path(__file__).parents[1] / 'scripts/wait_boundary.py')
     wait = importlib.util.module_from_spec(spec); spec.loader.exec_module(wait)

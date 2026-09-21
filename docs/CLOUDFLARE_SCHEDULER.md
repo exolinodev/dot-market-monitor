@@ -146,3 +146,16 @@ GitHub-Tokens oder eines fehlgeschlagenen Collectors. Der manuelle Wiederanlauf
 veröffentlichte um 02:46 UTC frische Daten. Deshalb wird Cloudflare jetzt durch
 einen unabhängigen GitHub-Zeitplan ergänzt. Ein einzelner erfolgreicher Test
 ist ausdrücklich keine Garantie für spätere pünktliche Cron-Ausführungen.
+
+## Code-Push nach veröffentlichter v4-Runde
+
+Auch ein Code-Push respektiert die bereits veröffentlichte Stundenrunde. Am
+21.09.2026 versuchte [Lauf 35573734331](https://github.com/exolinodev/dot-market-monitor/actions/runs/35573734331)
+nach einem Push um 07:36 UTC erneut die Runde 07:00 zu verarbeiten, obwohl das
+Paper-Ledger bereits bis 07:29 fortgeschritten war. Der Ledger-Guard lehnte das
+ab; bestehende Daten wurden nicht überschrieben. Die Sonderregel, jeden Push
+ungeachtet des Snapshots sammeln zu lassen, ist deshalb entfernt. Ein frischer
+`ok`- oder `partial`-Snapshot derselben Runde unterbindet den Wiederholungslauf.
+Fehlt die aktuelle Runde, wird weiterhin gesammelt. Änderungen am Collector
+werden beim nächsten noch nicht veröffentlichten Zyklus wirksam; bestehende
+Rundenevidenz wird nicht zur sofortigen Code-Aktivierung neu geschrieben.
