@@ -32,6 +32,7 @@ def test_perp_cache_reload_preserves_unknown_optional_measurements(tmp_path):
     assert len(result) == 4
     assert result[['vwap', 'trade_count']].isna().all().all()
     expected = pd.concat([old, fresh])[['open', 'high', 'low', 'close', 'volume']]
+    expected.index.name = 'time'
     pd.testing.assert_frame_equal(result[expected.columns], expected, check_freq=False)
 
 
