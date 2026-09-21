@@ -35,7 +35,11 @@ def merge_candles(old, new, limit=4096):
 
 
 def encode_candles(df):
-    return [[int(ts.timestamp()), *[float(row[c]) for c in COLUMNS]] for ts,row in df.iterrows()]
+    # JSON reloads unknown Perp VWAP/count as None. After concatenation pandas
+    # can retain an object column rather than converting those values to NaN.
+    # Preserve unknown optional measurements; required OHLCV still stay numeric.
+    return [[int(ts.timestamp()), *[None if c in ('vwap', 'trade_count') and pd.isna(row[c])
+                                   else float(row[c]) for c in COLUMNS]] for ts,row in df.iterrows()]
 
 
 def decode_candles(rows):
