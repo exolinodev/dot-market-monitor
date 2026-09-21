@@ -9,7 +9,7 @@ import pytest
 
 from oracle_common import validate
 from oracle_submission import read_push_submission, publish_submission
-from oracle_forecasts import forecast_id, snapshot_strategy_key
+from oracle_forecasts import forecast_id, snapshot_strategy_key, MAX_ACCEPTANCE_DELAY_SECONDS
 from datetime import datetime, timedelta, timezone
 
 ROOT = Path(__file__).parents[1]
@@ -215,7 +215,7 @@ def test_independent_git_writers_cannot_rebase_two_snapshot_winners(submission,t
     assert len(list((clones[0]/'data/oracle/forecasts').glob('*/*/*/*.json'))) == 1
 
 
-def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None):
+def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None,attempt='1'):
     import importlib.util
     spec = importlib.util.spec_from_file_location('publish_dispatch',ROOT/'scripts/publish_oracle_dispatch.py')
     module = importlib.util.module_from_spec(spec)
@@ -226,6 +226,9 @@ def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None):
         def now(tz): return frozen
     monkeypatch.setattr(module,'datetime',Clock)
     monkeypatch.chdir(repo)
+    # A re-run CI job inherits GITHUB_RUN_ATTEMPT=2; the writer refuses reruns by
+    # design, so tests state the attempt instead of inheriting the runner's.
+    monkeypatch.setenv('GITHUB_RUN_ATTEMPT',attempt)
     monkeypatch.setenv('GITHUB_EVENT_NAME',route)
     monkeypatch.setenv('SNAPSHOT_COMMIT',envelope['snapshot_commit'])
     monkeypatch.setenv('FORECAST_JSON',json.dumps(envelope['forecast']))
@@ -263,8 +266,8 @@ def test_both_writer_routes_reject_invalid_forecasts(submission,monkeypatch,rout
         f['snapshot_sha256']='0'*64
         f['forecast_id']=forecast_id(f['created_at_utc'],f['snapshot_sha256'])
     elif invalid=='id': f['forecast_id']='20260916T202328Z-000000000000-oracle-v3'
-    elif invalid=='old_creation': now=later(envelope,121)['forecast']['created_at_utc']
-    elif invalid=='future_creation': now=later(envelope,-121)['forecast']['created_at_utc']
+    elif invalid=='old_creation': now=later(envelope,MAX_ACCEPTANCE_DELAY_SECONDS+1)['forecast']['created_at_utc']
+    elif invalid=='future_creation': now=later(envelope,-MAX_ACCEPTANCE_DELAY_SECONDS-1)['forecast']['created_at_utc']
     elif invalid=='stale_snapshot':
         envelope=later(envelope,91*60);f=envelope['forecast'];now=f['created_at_utc']
     elif invalid=='measurement': f['measurement_config_sha256']='0'*64

@@ -1,7 +1,7 @@
 # Oracle v4 Phase 1 — boundary collection and intraday evidence
 
-Phase 1 and production paper processing are active, including the ChatGPT :05
-job. The 48-hour acceptance window remains outstanding; see
+Phase 1 and production paper processing are active, including the hourly ChatGPT
+job (:03 UTC since prompt 4.0.1; :05 before). The 48-hour acceptance window remains outstanding; see
 `ORACLE_V4_ROLLOUT_STATUS.md` for immutable production evidence.
 
 ## Cycle identity and publication

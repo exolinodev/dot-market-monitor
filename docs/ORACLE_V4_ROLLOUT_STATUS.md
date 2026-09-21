@@ -120,15 +120,112 @@ only 2/5 captures meet the 30-second target (lags 24.578, 27.748, 33.635,
 (38/42/47/51 seconds), with no gzip changes. These early samples identify a
 prewarming shortfall; the 48-hour timing/storage acceptance remains unproven.
 
+## Production observation through 2026-09-21 18:15 UTC
+
+Read at main `49004bdc0495a251979e32248154907996a3406a` (merge of collector
+#357, 18:03:39 UTC) with a local replay of the committed ledger and a fresh
+`scripts/rollout_timing.py` window 09:00–18:00 UTC. Numbers below are measured,
+not targets. One day of paper operation proves the mechanics, not the strategy.
+
+### First closed paper trade
+
+Forecast `20260921T151021Z-8efa08b7e805-oracle-v4` (created 15:10:21, draft #343
+opened 15:11:16, published 15:16:09) placed a QUARTER-risk LONG LIMIT at
+1.1725 USD, stop 1.1628 (82.7 bps), targets 1.1880/1.1950/1.2008 at 50%/30%/20%,
+stop-after-T1 at entry, expiry 16:30. Against the bound 1.1860/1.1869 quote
+Python sized 1140 contracts (12.5 USD risk budget, 1336.65 USD notional, net
+T1 reward/risk 1.3715). The runtime accepted the order at 15:17:00 (publication
+adjusted), filled it at 15:28 at the limit price (maker fee 0.26733 USD) and
+recorded `EXECUTION_RISK_VARIANCE` (estimated stop loss 12.7172 USD against the
+12.5 USD budget) because the spread recorded at fill time exceeded the plan-time
+spread; the quantity was not resized. T1 filled 570 contracts at 15:52, T2 342 at
+15:55 and T3 228 at 16:10. Fees total 0.53925648 USD, funding −0.001236 USD over
+42 one-minute accruals, net **+22.441907 USD = 2.0295 R** in 2520 seconds,
+status `complete`. Quantity, reward/risk, fees and net result were recomputed
+independently from the plan and candle evidence and matched exactly.
+
+Ledger state after the closed 17:59 candle: 736 journal records (674 candles,
+45 spreads, 12 funding rates, 5 instructions), equity 5022.441907 USD, no open
+order or position, kill switch off, minute-close maximum drawdown 0.06%.
+The passive perpetual benchmark stood at 5087.22 USD (excess −64.78 USD); with
+one complete trade `sample_sufficient` is false and no performance claim follows.
+
+### Hourly task acceptance
+
+Nine v4 drafts were opened between 08:00 and 18:15 UTC; five were accepted
+(#297, #315, #321, #332, #343: 08:11 LONG order, 10:11/11:09/13:12 FLAT,
+15:10 LONG order) and four rejected by the writer with recorded reasons:
+#307 (09:10, requested CANCEL of the resting order) opened 131 s after its
+declared creation, #353 (17:12) 122 s, both beyond the 120-second limit;
+#328 (created 12:15:55) exceeded the 900-second `execution_quote_max_age_seconds`
+measured from the 12:00:09 quote; #338 (14:09) failed schema validation. The
+16:00 round produced no draft (its full publication took 443 s), and the 18:00
+round created branch `oracle-submission/20260921T180825Z` without a file or PR.
+Five of eleven hourly rounds therefore reached the ledger; the requested CANCEL
+never did, and the fail-safe expiry at 09:42 closed that order instead. Accepted
+drafts took 150–318 s from opening to main publication, above the two-minute
+writer target, largely because the writer's producer step ran the full test
+suite (twice, with the staged pre-pass) and shares the collector concurrency group.
+The publication fast path below removes that cost.
+
+### Timing and publication
+
+All 36 expected quarters between 09:00 and 18:00 were published. Recorded
+acquisition lag was 8.4–9.0 s in 34 quarters; 10:15 (31.1 s) and 15:15
+(103.3 s, late runner start) exceeded the 30-second target, giving 94.4%
+against the 95% criterion. Light quarters reached main 21–44 s after the
+boundary except 15:15 (119 s), with no gzip changes. Full hours reached main
+179–443 s after the boundary (median 229 s). The 18:00 run shows the split:
+runner ready 55 s before the boundary, collection 50 s, then 170 s of
+publication of which `pytest` took 124 s and the two archive-guard passes 16 s
+each; PR creation, check and merge took 12 s. At least 48 hours are still
+required before either criterion can be evaluated.
+
+### Publication fast path and prompt 4.0.1 (evening of 2026-09-21)
+
+Three changes target the time chain measured above; none touches the ledger,
+the contract or the data formats. `scripts/promote_data.py` now verifies each
+data commit once (the intraday, ledger-replay and Oracle-archive guards, the
+snapshot schema, the three focused runtime test files and the scheduler tests)
+instead of a staged pre-pass plus the whole Python suite; locally the full
+verification dropped from about 115 s to about 10 s, and `encode_candles` was
+rewritten without per-row pandas Series so the archive guard's recomputation of
+all 834 archived horizon hashes takes 3 s instead of 9 s (every archived hash
+still matches). The writer accepts 180 seconds between declared creation and
+the draft's GitHub opening time (`MAX_ACCEPTANCE_DELAY_SECONDS`). Prompt 4.0.1
+moves the hourly job to :03 UTC and allows four status polls over 150 seconds
+while a collector is still publishing. Expected on the runner: full snapshot on
+main about two minutes after the boundary, writer publication under two minutes,
+and roughly twelve minutes between the job start and the 900-second quote
+deadline. These are expectations from measured components; the next production
+day has to confirm them, and the ChatGPT task schedule must be moved to :03 by
+hand.
+
+### Repository growth
+
+Fully deltified incremental packs for the three 24-hour windows ending 18:15
+UTC on 19, 20 and 21 September are 33.0, 33.4 and 41.6 MB. In the latest window
+`data/raw/ohlc_cache.json.gz` (15.1 MB across 27 versions) and
+`data/raw/latest.json.gz` (14.8 MB) dominate because gzip prevents Git deltas
+on rolling caches; `oracle_feature_history.json.gz` added 4.2 MB (the file holds
+118 hourly records of about 88 KB each uncompressed, 65 KB of which are archived
+inputs), the plain-JSON snapshot and history files 4.1 MB, and the append-only
+ledger journal plus intraday archive 0.6 MB together. A local experiment storing
+six hourly versions of each cache uncompressed instead of gzipped shrank the
+packed size from 3.42 to 0.61 MB (`ohlc_cache`) and 3.38 to 0.99 MB (`latest`).
+The local pack is 272 MB after 762 commits. The Phase 1 storage rule ("no more
+replaced bytes than before") is not met yet; the WP3.4 relocation of rolling
+caches out of Git, or delta-friendly storage, is the identified remedy.
+
 ## Phase requirements and remaining proof
 
 | Scope | Prepared implementation/evidence | Still required |
 |---|---|---|
 | Phase 0 | Writer fix, draft cleanup, runner fixtures and interpretation merged (#221/#222/#224/#225) | No new phase-0 code gate identified in this audit |
-| WP1–WP3 / Phase 1 | #228: boundary scheduling, light capture, perp candles, incremental funding and lossless history storage; isolated local/runner smokes | 48 h with >=95% lag <=30 s; light publication <60 s; writer queue <=2 min; four real quarters and actual Git growth |
+| WP1–WP3 / Phase 1 | #228 deployed; two-minute prewarm (#70864e6); 36/36 quarters published 09:00–18:00 with 34 at <=30 s lag | 48 h with >=95% lag <=30 s (9 h sample: 94.4%); light publication <60 s (one 119 s outlier); writer queue <=2 min (150–318 s before the publication fast path; remeasure); storage rule not met (see growth section) |
 | WP4–WP5 / Phase 2 | #230/#232/#235: deterministic ledger, v4 writer contract and runtime; source/replay and synthetic writer-to-runtime tests | Completed via #283/#285 and run 35571581958; continuing runtime evidence required |
-| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests | Hourly/daily migration and first real model → writer → runtime cycle proven below; subsequent fill/management evidence, two weeks paper and >=30 closed trades remain required |
-| WP7 / Phase 3 | #243 through #296: demo transport, durable journal, evidence-backed recovery including ordinary limit edits, raw account/market/preferences evidence, reconciliation, preflight, account logs and integrated protective preview; 668 offline Python tests green | Integrated sending/protective-management runner; remaining edit/trigger recovery; margin and net-accounting proof; dedicated demo setup; real fixtures; two-week demo/no-orphan/idempotency/readback acceptance |
+| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests; first fill and first closed trade observed 15:28–16:10 UTC | Model management path (CANCEL/CLOSE/MODIFY) not yet applied in production; hourly acceptance 5 of 11 rounds; two weeks paper and >=30 closed trades remain required |
+| WP7 / Phase 3 | #243 through #312: demo transport, durable journal, evidence-backed recovery including ordinary and stop edits, raw account/market/preferences evidence, reconciliation, preflight, account logs, integrated protective preview and gated single-attempt dispatch; 725 offline Python tests green, all synthetic | Deferred by user decision on 2026-09-21 until paper acceptance: demo account/host access, dedicated private runner, real fixtures, margin and net-accounting proof, two-week demo/no-orphan/idempotency/readback acceptance |
 | WP7 / Phase 4 | Live remains disabled | Complete prior gates, implement/test live-specific operation, and obtain separate approvals for 500/2000/5000 USD notional |
 
 The unavailable demo host does **not** prevent Phase-1/2 paper rollout. Its public

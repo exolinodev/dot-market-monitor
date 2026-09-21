@@ -139,7 +139,7 @@ the record to its exact snapshot. No model outcome or probability fields are all
 `python scripts/oracle.py publish forecast.json --snapshot exact_snapshot.json`
 validates schema, timestamp, snapshot hash, feature evidence, positive risk, ordered
 targets and nominal T1/R. It checks the necessary reversal gates for reversal regimes.
-Created time must be within 120 seconds of actual acceptance (for draft PRs the
+Created time must be within 180 seconds (120 before 2026-09-21) of actual acceptance (for draft PRs the
 GitHub-recorded opening time, for manual dispatch the writer clock) and snapshot age
 within 90 minutes; the rejection message reports the measured offset. Publication uses a fully written/fsynced temporary file and an atomic
 hard-link to the final forecast path, failing if any file already exists:

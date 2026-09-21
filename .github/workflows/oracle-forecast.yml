@@ -10,7 +10,7 @@ on:
         required: true
         type: string
       forecast_json:
-        description: Complete schema-valid Oracle forecast JSON (creation within 120 seconds)
+        description: Complete schema-valid Oracle forecast JSON (creation within 180 seconds)
         required: true
         type: string
 permissions:

@@ -165,7 +165,31 @@ def test_real_validation_command_failure_stops_following_checks(monkeypatch):
     monkeypatch.setattr(promotion.subprocess, 'run', fail)
     with pytest.raises(subprocess.CalledProcessError):
         promotion.verify('trusted-base')
-    assert calls == [[sys.executable, 'scripts/validate_intraday.py', '--base', 'trusted-base']]
+    assert calls == [[sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base']]
+
+
+def test_full_verification_runs_every_guard_once_with_focused_tests(monkeypatch):
+    calls = []
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: calls.append(args))
+    promotion.verify('trusted-base')
+    assert calls[0] == [sys.executable, 'scripts/check_oracle_archive.py', '--base', 'trusted-base']
+    assert [sys.executable, 'scripts/validate_snapshot.py'] in calls
+    pytest_calls = [c for c in calls if c[:3] == [sys.executable, '-m', 'pytest']]
+    assert pytest_calls == [[sys.executable, '-m', 'pytest', '-q', *promotion.FOCUSED_TESTS]]
+    assert ['node', '--test', 'tests/scheduler.test.mjs'] in calls
+    assert not any('--staged' in c for c in calls)
+
+
+def test_producer_verifies_the_committed_candidate_once_before_pushing(producer, monkeypatch):
+    env, state, calls = producer
+    order = []
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: order.append(('subprocess', args)))
+    monkeypatch.setattr(promotion, 'verify', lambda base: (order.append(('verify', base)), state.update(verified=True)))
+    assert promotion.promote('oracle', env)['merged']
+    assert order == [('verify', 'a' * 40)]  # No staged pre-pass, no second run.
+    commit = calls.index(['git', 'commit', '-m', 'data: validated oracle publication'])
+    push = calls.index(['git', 'push', 'origin', 'HEAD:refs/heads/automation/oracle-123-1'])
+    assert commit < push
 
 
 def test_main_advance_after_attestation_revokes_check_and_closes_pr(producer):

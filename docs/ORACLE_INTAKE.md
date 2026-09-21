@@ -5,8 +5,12 @@ Prompt 3.3.x sends one fresh envelope through a same-repository draft PR. Create
 final forecast is written. Add exactly one regular
 `data/oracle/submissions/<forecast_id>.json`, then immediately open a draft PR
 to main. No other commits, test files, edits, reopenings or reruns are supported.
-The 120-second creation-to-acceptance limit is unchanged. Since the 19 September
-stabilisation it is measured against the draft's GitHub-recorded opening time
+The creation-to-acceptance limit is 180 seconds since 2026-09-21
+(`MAX_ACCEPTANCE_DELAY_SECONDS`; 120 seconds before). Two honest v4 drafts had
+been rejected at +122 s and +131 s; executable plans are timed by first main
+publication anyway, so the limit only bounds how much newer information the
+directional spot horizons could have seen. It is measured against the draft's
+GitHub-recorded opening time
 (`pull_request.created_at`), an independent timestamp the consumer cannot edit,
 instead of the moment the Actions runner happened to start. Runner queueing no
 longer rejects an honest submission; the consumer's own delay between
@@ -54,9 +58,13 @@ required test policy as already deployed.
 
 The trusted collector/writer stages only allowlisted data and uses
 `scripts/promote_data.py` to create a unique automation branch. It runs archive
-integrity, snapshot schema, all Python tests and scheduler tests on the exact
-commit before publishing a `test` check and normally merging its data PR with
-SHA binding. GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
+integrity (intraday, ledger replay, Oracle archive), snapshot schema, the focused
+runtime tests and scheduler tests on the exact commit before publishing a `test`
+check and normally merging its data PR with SHA binding. Until 2026-09-21 it also
+ran the complete Python suite twice over (a staged pre-pass plus the committed
+candidate); that cost about 2.5 minutes per publication on the runner without
+adding data evidence, because the code is unchanged main and the full suite runs
+in the tests workflow on every code push. Guards now run once, on the commit. GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
 to the actual producer test logs. Failed checks never create a success result or
 merge. A main advance aborts publication instead of replaying stale data. After
 an abort, the producer revokes its success check, closes its data PR and removes

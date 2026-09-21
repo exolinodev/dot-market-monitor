@@ -38,8 +38,12 @@ def encode_candles(df):
     # JSON reloads unknown Perp VWAP/count as None. After concatenation pandas
     # can retain an object column rather than converting those values to NaN.
     # Preserve unknown optional measurements; required OHLCV still stay numeric.
-    return [[int(ts.timestamp()), *[None if c in ('vwap', 'trade_count') and pd.isna(row[c])
-                                   else float(row[c]) for c in COLUMNS]] for ts,row in df.iterrows()]
+    # Column lists instead of iterrows: identical values, without building one
+    # pandas Series per candle (the archive guard encodes hundreds of windows).
+    stamps = [int(ts.timestamp()) for ts in df.index]
+    columns = [df[c].tolist() for c in COLUMNS]
+    return [[stamp, *[None if c in ('vwap', 'trade_count') and pd.isna(value) else float(value)
+                      for c, value in zip(COLUMNS, values)]] for stamp, values in zip(stamps, zip(*columns))]
 
 
 def decode_candles(rows):

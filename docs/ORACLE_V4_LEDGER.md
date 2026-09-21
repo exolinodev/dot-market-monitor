@@ -1,9 +1,14 @@
 # Oracle v4 paper ledger core
 
-Status: isolated core; disabled in `config/ledger.json`, no production account
-initialized and no exchange calls. This change depends on the Phase 1 cycle
-helpers. Collector ingestion, v4 writer binding and execution are subsequent
-integration work. Existing v3 forecasts and evaluation remain active.
+Status (2026-09-21): the production paper account is active. Genesis was
+initialized from published 06:45 market evidence (epoch
+`2026-09-21T06:45:25.677258Z`, PR #283) and is advanced by every collector and
+light run; the v4 writer binds plans to it. `config/ledger.json` deliberately
+stays `enabled: false`: it is the reviewed baseline template, while the frozen
+copy inside `data/ledger/genesis.json` carries `enabled: true` and the hash that
+every plan and state binds. Changing a parameter still requires a new, explicitly
+initialized epoch. There are no exchange calls; demo/live execution stays
+disabled. v3 forecasts and their spot evaluator remain archived and comparable.
 
 ## Parameters and profitability
 

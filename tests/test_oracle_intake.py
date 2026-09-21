@@ -89,11 +89,9 @@ def test_pr_entrypoint_uses_main_code_and_rejects_reruns(submission,monkeypatch)
     # Local origin, exact immutable object fetch; no network or production clock bypass.
     git(repo,'remote','add','origin',str(repo))
     monkeypatch.setenv('GITHUB_REPOSITORY',REPOSITORY)
-    monkeypatch.setenv('GITHUB_RUN_ATTEMPT','1')
     run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target')
-    monkeypatch.setenv('GITHUB_RUN_ATTEMPT','2')
     with pytest.raises(ValueError,match='reruns are forbidden'):
-        run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target')
+        run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target',attempt='2')
 
 
 def guard():
@@ -151,7 +149,7 @@ def test_draft_opening_time_is_the_acceptance_clock_not_the_runner_start(submiss
     assert (repo/'data/oracle/receipts'/(envelope['forecast']['forecast_id']+'.json')).is_file()
 
 
-@pytest.mark.parametrize('opened,ran,message',[(150,160,r'\+150s \(limit 120s\)'),
+@pytest.mark.parametrize('opened,ran,message',[(210,220,r'\+210s \(limit 180s\)'),
     (60,60+1801,'stale queue'),(200,100,'ahead of the writer clock')])
 def test_late_or_implausible_draft_opening_still_rejects(submission,monkeypatch,opened,ran,message):
     repo,envelope,event=draft(submission)
