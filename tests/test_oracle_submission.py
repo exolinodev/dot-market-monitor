@@ -215,7 +215,7 @@ def test_independent_git_writers_cannot_rebase_two_snapshot_winners(submission,t
     assert len(list((clones[0]/'data/oracle/forecasts').glob('*/*/*/*.json'))) == 1
 
 
-def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None):
+def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None,attempt='1'):
     import importlib.util
     spec = importlib.util.spec_from_file_location('publish_dispatch',ROOT/'scripts/publish_oracle_dispatch.py')
     module = importlib.util.module_from_spec(spec)
@@ -226,6 +226,9 @@ def run_entrypoint(monkeypatch,repo,envelope,event,route,now=None):
         def now(tz): return frozen
     monkeypatch.setattr(module,'datetime',Clock)
     monkeypatch.chdir(repo)
+    # A re-run CI job inherits GITHUB_RUN_ATTEMPT=2; the writer refuses reruns by
+    # design, so tests state the attempt instead of inheriting the runner's.
+    monkeypatch.setenv('GITHUB_RUN_ATTEMPT',attempt)
     monkeypatch.setenv('GITHUB_EVENT_NAME',route)
     monkeypatch.setenv('SNAPSHOT_COMMIT',envelope['snapshot_commit'])
     monkeypatch.setenv('FORECAST_JSON',json.dumps(envelope['forecast']))

@@ -89,11 +89,9 @@ def test_pr_entrypoint_uses_main_code_and_rejects_reruns(submission,monkeypatch)
     # Local origin, exact immutable object fetch; no network or production clock bypass.
     git(repo,'remote','add','origin',str(repo))
     monkeypatch.setenv('GITHUB_REPOSITORY',REPOSITORY)
-    monkeypatch.setenv('GITHUB_RUN_ATTEMPT','1')
     run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target')
-    monkeypatch.setenv('GITHUB_RUN_ATTEMPT','2')
     with pytest.raises(ValueError,match='reruns are forbidden'):
-        run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target')
+        run_entrypoint(monkeypatch,repo,envelope,{**event,'after':event['pull_request']['head']['sha']},'pull_request_target',attempt='2')
 
 
 def guard():
