@@ -34,7 +34,7 @@ also succeeded. Production paper genesis, current account context and the
 subsequent task migration are separate activation steps; exchange sending remains
 disabled.
 
-## Production paper genesis candidate
+## Production paper genesis and first advance
 
 The regular 06:45 light run
 [35569808440](https://github.com/exolinodev/dot-market-monitor/actions/runs/35569808440)
@@ -49,9 +49,39 @@ baseline. Reviewed plan SHA:
 The two funding/spread seed events replay identically to state
 `d0d0c6ad47026243f5a7ac743c7e9ff8468368b5eaf82a8a46ae94619cd93d9c`.
 The genesis is enabled; the baseline config file remains an inactive template.
-This candidate contains no trade, model forecast or exchange operation. Activation
-requires this candidate's protected merge, then a real collector advance and
-current full-hour execution context before migrating the hourly task.
+Genesis merged through #283 at 06:50:19 UTC. The first 07:00 collector failed
+when cached null Perp VWAP/trade counts were converted with float(None). Hotfix
+#285 preserves those unknown optional measurements; 29 targeted tests and the
+full PR CI passed before its merge.
+
+The retry [35571581958](https://github.com/exolinodev/dot-market-monitor/actions/runs/35571581958)
+succeeded and published main `d1f0596`. It is the 07:00 full cycle, generated at
+07:10:03 UTC and correctly marked late (575.817 seconds capture lag). Overall
+snapshot status is partial; DOT execution_context is ok. The account reached
+06:59 UTC with 16 events, USD 5000 and zero trades. Replay from merged main is
+identical, state SHA `6573411698e4dda38f074d81249d11a618719f391c4c43626b8ea3dd73a70835`.
+
+After this evidence, the existing hourly task was saved as DOT/BTC Oracle v4
+with the compact public v4 prompt and preserved separate private context
+(19,672 characters total). Reopening confirmed exact text equality. Its :05
+custom schedule was preserved. The daily v4 system check was also saved and
+read back exactly, with its existing 8:20 displayed schedule unchanged.
+The preceding hourly v3 result correctly refused the stale 06:00 snapshot;
+no first successful v4 forecast/writeback or exchange operation is claimed.
+
+The subsequent regular 07:15 light run
+[35572069813](https://github.com/exolinodev/dot-market-monitor/actions/runs/35572069813)
+published on main `ff13560`: 12 requests, 0.394-second capture, 24.578-second
+boundary lag, fresh and not late. The workflow completed at 07:15:42 UTC.
+It advanced the account through 07:14 UTC with 33 events and identical replay,
+state SHA `a0a2713fbbf4971dd3e093b4784f02eefb31b823a64eacb87688b29ca2712e34`.
+The five changed files are intraday and ledger data; no gzip archives changed.
+
+A live Worker log shows the correct `59,14,29,44 * * * *` trigger invoked at
+07:14:58.505 UTC and dispatched the 07:15 light cycle. Thus this observed
+minute-boundary dispatch is late Cron delivery within :14, not a rejected or
+normalized cron string. It leaves only two seconds of prewarming. This sample
+meets the 30-second capture target but does not establish the 48-hour percentile.
 
 ## Phase requirements and remaining proof
 
@@ -59,8 +89,8 @@ current full-hour execution context before migrating the hourly task.
 |---|---|---|
 | Phase 0 | Writer fix, draft cleanup, runner fixtures and interpretation merged (#221/#222/#224/#225) | No new phase-0 code gate identified in this audit |
 | WP1–WP3 / Phase 1 | #228: boundary scheduling, light capture, perp candles, incremental funding and lossless history storage; isolated local/runner smokes | 48 h with >=95% lag <=30 s; light publication <60 s; writer queue <=2 min; four real quarters and actual Git growth |
-| WP4–WP5 / Phase 2 | #230/#232/#235: deterministic ledger, v4 writer contract and runtime; source/replay and synthetic writer-to-runtime tests | Protected production genesis PR; first actual collector advance; current full snapshot with execution context |
-| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests | Existing task migration to v4 at :05 after prerequisites; daily task migration; real model run, accepted forecast/plan and runtime processing; two weeks paper and >=30 closed trades before performance conclusions |
+| WP4–WP5 / Phase 2 | #230/#232/#235: deterministic ledger, v4 writer contract and runtime; source/replay and synthetic writer-to-runtime tests | Completed via #283/#285 and run 35571581958; continuing runtime evidence required |
+| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests | Hourly/daily migration saved and read back; still required: real v4 model run, accepted forecast/plan and runtime processing; two weeks paper and >=30 closed trades before performance conclusions |
 | WP7 / Phase 3 | #243 through #263: demo transport, durable journal, recovery layers, raw account/market evidence, quantity reconciliation, preflight and account logs; 603 offline Python tests green | Integrated sending/protective-management runner; remaining edit/trigger recovery; margin and net-accounting proof; dedicated demo setup; real fixtures; two-week demo/no-orphan/idempotency/readback acceptance |
 | WP7 / Phase 4 | Live remains disabled | Complete prior gates, implement/test live-specific operation, and obtain separate approvals for 500/2000/5000 USD notional |
 

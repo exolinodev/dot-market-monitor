@@ -33,11 +33,15 @@ schedule was changed to minute :05; the task chat confirmed the next occurrence
 as 2026-09-21T07:05:00Z after correcting its initial timezone description.
 A first real run is still needed to verify effective scheduling.
 
-After verifying the first current full snapshot with execution_context, replace
-the existing hourly task prompt with the compact v4 copy and read it back.
-Preserve destination and notifications. Replace the daily task prompt separately
-while preserving its schedule. No replacement local automation or exchange
-execution is introduced. Until this step is verified the saved task remains v3.
+The first current full snapshot was published by run 35571581958 on main
+d1f0596, with DOT execution_context status ok and identical account replay.
+The hourly task is now saved as DOT/BTC Oracle v4 with the compact v4 copy;
+reopening confirmed exact equality (19,672 characters including the preserved,
+separate private context). The existing :05 schedule was unchanged. The daily
+v4 system check was separately saved and read back with its existing 8:20
+schedule. No replacement local automation or exchange execution was introduced.
+The preceding real v3 result refused the stale 06:00 snapshot; a first successful
+v4 model/writeback cycle is still pending.
 
 Check the first real run for boundary matching, complete management, valid
 schema, timely writer acceptance, published forecast/plan, and subsequent
