@@ -765,7 +765,7 @@ Each successful command appends one validated event under the journal lock and
 invalidates any cached reconciliation. A repeated successful resolution is
 refused without another event. Empty readbacks, partial fills, changed identity,
 stale observations and incomplete histories leave the unknown operation
-unresolved. Edited-size full fills and activated-stop child-order recovery
+unresolved. Full fills after unresolved edits and activated-stop child-order recovery
 remain unsupported by their underlying validators. Run fresh reconciliation
 before later dispatch; the output always says `authorizes_execution: false`.
 
@@ -773,3 +773,36 @@ Integration tests exercise acquisition of synthetic raw API responses, import,
 CLI resolution and restart replay for all five paths, plus refusal cases. These
 are offline integration evidence, not proof of a working demo account or actual
 exchange executions. This command does not enable the demo/live sender.
+
+
+## Proven effective terms after ordinary limit edits
+
+The journal now accepts `edit_resolved` for a dispatched ordinary limit edit
+whose exact outcome is supported by the latest observation. The observation
+binds complete account-specific order history over the edit lifetime. Recovery
+requires a unique `OrderUpdated` or `OrderEditRejected`, matching old terms and
+requested new/attempted terms, and an exact current open-order readback. Other
+lifecycle events for the same order during that interval make recovery ambiguous.
+Changed account, client/exchange identity, direction, reduce-only policy, order
+type, price, quantity or decreasing cumulative fills are refused. Stops and
+already-terminal orders still require their separate recovery paths.
+
+The recovery command adds `--resolve-edit-applied OPERATION_ID` and
+`--resolve-edit-rejected OPERATION_ID`, each requiring `--capture-sha256`,
+`--exchange-order-id` and `--event-id`. The exchange ID must already belong to the
+journal's proven open order. Acquired raw evidence remains mandatory in the CLI.
+A successful resolution invalidates cached reconciliation; it sends no request.
+
+`demo_edits.effective_params` derives current size/price by replaying proven edit
+outcomes in journal order. Applied edits update terms, rejected or never-sent
+edits preserve them, and an unresolved edit still blocks effective-size claims.
+Position reconciliation uses the derived size. Full-fill recovery can therefore
+resolve a later terminal fill at the proven edited quantity, rather than the
+original send quantity. Successive edits must each start from the previous
+proven terms. Raw history and original intents remain immutable.
+
+Fifteen new synthetic tests cover applied/rejected CLI recovery followed by
+position reconciliation and a later complete fill, successive edits, replay,
+stale/repeated resolution, conflicting history and wrong readback. This closes
+ordinary open-limit edit recovery; it does not establish stop-market edit
+semantics, activated-stop child mapping, margin sufficiency or real demo results.

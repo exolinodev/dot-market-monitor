@@ -152,6 +152,10 @@ def transition(state, event):
         owner = result['ownership'][client_id]
         owner.update(status='open', exchange_order_id=payload['exchange_order_id'])
         operation.update(status='resolved', resolution_sha256=payload['capture_sha256'])
+    elif kind == 'edit_resolved':
+        operation = result['operations'][payload['operation_id']]
+        operation.update(status='resolved', outcome=payload['outcome'],
+                         resolution_sha256=payload['capture_sha256'])
     elif kind == 'order_filled':
         client_id = payload['client_id']
         owner = result['ownership'][client_id]
@@ -269,6 +273,9 @@ class Journal:
             self._validate_terminal(payload)
         if event['type'] == 'trigger_cancelled':
             self._validate_trigger_cancelled(payload)
+        if event['type'] == 'edit_resolved':
+            from demo_edits import validate_edit
+            validate_edit(self, payload)
 
     def _validate_presence(self, payload):
         capture = self._read_artifact(payload['capture_sha256'])
@@ -339,6 +346,10 @@ class Journal:
         return self.append('resolve_send', {'operation_id': operation_id, 'capture_sha256': capture_sha256,
                                             'exchange_order_id': exchange_order_id})
 
+    def resolve_limit_edit(self, operation_id, capture_sha256, history_sha256, event_id, outcome):
+        return self.append('edit_resolved', {'operation_id': operation_id, 'capture_sha256': capture_sha256,
+                           'history_sha256': history_sha256, 'event_id': event_id, 'outcome': outcome})
+
 
     def _validate_full_fill(self, payload):
         from decimal import Decimal, localcontext
@@ -349,14 +360,8 @@ class Journal:
         if origin['status'] == 'prepared' or origin.get('outcome') == 'not_dispatched':
             raise ExecutionError('Never-dispatched intent cannot have exchange fills')
         action = origin['action']
-        params = action['params']
-        # An edit can change the order's total quantity. Until that effective
-        # contract is independently reconstructed, original send size is not
-        # sufficient evidence of completion (including an in-flight edit).
-        if any(o['action']['params']['cliOrdId'] == client_id and o['action']['endpoint'] == 'editorder'
-               and o.get('outcome') != 'not_dispatched'
-               for o in self._state['operations'].values()):
-            raise ExecutionError('Edited order needs effective-size recovery evidence')
+        from demo_edits import effective_params
+        params = effective_params(self._state, client_id)
         capture = self._read_artifact(payload['capture_sha256'])
         history = self._read_artifact(payload['history_sha256'])
         prior = self._read_artifact(action['capture_sha256'])
