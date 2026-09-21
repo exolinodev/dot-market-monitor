@@ -1,7 +1,10 @@
-"""Verify published v4 plans; create isolated paper candidates or demo previews."""
+"""Verify published v4 plans; run paper candidates or gated demo operations."""
 import argparse
 from datetime import datetime, timezone
 import json
+import os
+import hashlib
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -21,32 +24,51 @@ def main(argv=None):
     parser.add_argument('--journal-dir', type=Path, help='Existing private demo journal for entry preflight')
     parser.add_argument('--account-uid', help='Expected demo account UUID')
     parser.add_argument('--key-fingerprint', help='Expected SHA-256 of demo API key; not the key itself')
+    parser.add_argument('--dispatch-once', action='store_true', help='One gated demo attempt with durable raw readback; never retries')
     parser.add_argument('--preview', action='store_true', help='Read-only demo request preview; never sends')
-    parser.add_argument('--protection', action='store_true', help='Preview protection for the original entry using acquired journal evidence')
+    parser.add_argument('--protection', action='store_true', help='Manage protection for the original entry using acquired journal evidence')
     args = parser.parse_args(argv)
     journal_options = (args.journal_dir, args.account_uid, args.key_fingerprint)
-    if any(journal_options) and (args.mode != 'demo' or not args.preview or not all(journal_options)):
-        parser.error('Journal preflight requires demo --preview plus journal, account UID and key fingerprint')
-    if args.protection and (args.mode != 'demo' or not args.preview or not all(journal_options)):
-        parser.error('Protection requires demo --preview and a complete journal identity')
+    if any(journal_options) and (args.mode != 'demo' or not (args.preview or args.dispatch_once) or not all(journal_options)):
+        parser.error('Demo requires --preview or --dispatch-once plus journal, account UID and key fingerprint')
+    if args.protection and (args.mode != 'demo' or not (args.preview or args.dispatch_once) or not all(journal_options)):
+        parser.error('Protection requires demo preview/dispatch and a complete journal identity')
+    if args.dispatch_once and (args.mode != 'demo' or args.preview or not all(journal_options)):
+        parser.error('--dispatch-once requires demo, complete journal identity and no --preview')
     if args.mode == 'live':
         parser.error('Live execution is unavailable: staged approvals and rollout gates are not implemented')
-    if args.mode == 'demo' and not args.preview:
-        parser.error('Demo sending is unavailable until durable mutation orchestration and demo gates are implemented; use --preview')
+    if args.mode == 'demo' and not (args.preview or args.dispatch_once):
+        parser.error('Demo requires --preview or gated --dispatch-once; live execution is unavailable')
     if args.mode == 'paper':
         if not args.boundary or not args.output_dir or args.preview:
             parser.error('Paper requires --boundary and a new --output-dir, without --preview')
         result = run_paper(args.repo, args.trusted_head, args.forecast_id, args.boundary, args.output_dir)
     else:
         if args.boundary or args.output_dir:
-            parser.error('Demo preview does not accept paper output/boundary arguments')
+            parser.error('Demo does not accept paper output/boundary arguments')
         with tempfile.TemporaryDirectory(prefix='oracle-demo-preview-') as temp:
             data = materialize(args.repo, args.trusted_head, temp)
             if args.journal_dir:
                 from demo_journal import locked
                 from demo_preflight import entry_preflight
                 with locked(args.journal_dir, args.account_uid, args.key_fingerprint) as store:
-                    if args.protection:
+                    if args.dispatch_once:
+                        from demo_dispatch import dispatch_once
+                        from kraken_execution import DemoClient
+                        probe = subprocess.run(['git', '-C', str(args.journal_dir.resolve()), 'rev-parse', '--is-inside-work-tree'], capture_output=True)
+                        if probe.returncode == 0:
+                            parser.error('Private demo journal must be outside a Git worktree')
+                        key = os.environ.get('KRAKEN_DEMO_API_KEY', '')
+                        secret = os.environ.get('KRAKEN_DEMO_API_SECRET', '')
+                        if not key or not secret or hashlib.sha256(key.encode()).hexdigest() != args.key_fingerprint:
+                            parser.error('Protected demo environment credentials must match the journal fingerprint')
+                        try:
+                            result = dispatch_once(data, args.repo, args.trusted_head, args.forecast_id, store,
+                                                   DemoClient(key, secret), protection=args.protection)
+                        except Exception:
+                            print('Demo dispatch stopped; inspect the private journal before recovery. No automatic retry.', file=sys.stderr)
+                            return 1
+                    elif args.protection:
                         from demo_protection import protection_preview
                         result = protection_preview(data, args.repo, args.trusted_head, args.forecast_id, store, datetime.now(timezone.utc))
                     else:

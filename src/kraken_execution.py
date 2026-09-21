@@ -60,6 +60,7 @@ class DemoClient:
         if not api_key or not api_secret:
             raise ExecutionError('Demo credentials required')
         self._key, self._secret = api_key, api_secret
+        self.key_fingerprint = hashlib.sha256(api_key.encode()).hexdigest()
         self._session = requests.Session()
         self._session.trust_env = False
 
@@ -147,7 +148,7 @@ class DemoAttempts:
         self.root.mkdir(parents=True, exist_ok=True)
         self.client = client
 
-    def mutate(self, operation_id, endpoint, params):
+    def mutate(self, operation_id, endpoint, params, *, before_send=None):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', operation_id):
             raise ExecutionError('Invalid stable operation ID')
         if endpoint not in MUTATIONS:
@@ -191,6 +192,8 @@ class DemoAttempts:
             raise ExecutionError('Malformed open order list')
         if endpoint == 'sendorder' and any(o.get('cliOrdId') == client_id for o in opened):
             raise OutcomeUnknown('Client order already exists; reconcile without sending')
+        if before_send is not None:
+            before_send(status, raw)
         _create(directory / 'attempt.json', _json_bytes({'intent_sha256': hashlib.sha256(_json_bytes(intent)).hexdigest()}))
         status, raw = self.client.request(endpoint, params)
         _create(directory / 'response.raw', raw)
