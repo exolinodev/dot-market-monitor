@@ -839,3 +839,47 @@ Synthetic tests cover raw-byte retention and replay, old bundle compatibility,
 missing/null settings, duplicate/invalid values, settings timestamps outside the
 history window, fixed-host signed GET behavior, and legacy preflight refusal.
 No authenticated real demo account settings were acquired during implementation.
+
+## Integrated protective-action preview
+
+`execute_orders.py --mode demo --preview --protection` now connects immutable
+published plans, the acquired account journal, quantity reconciliation, bracket
+requirements and single-action selection. `--forecast-id` identifies the
+original entry forecast; journal/account/key-fingerprint arguments are required.
+The CLI materializes exact Git blobs and holds the journal lock for the preview.
+
+The integration refuses a stale head or readback, missing/currently invalid
+reconciliation, an entry whose effective parameters differ from the published
+order/quantity, and another active trade. It binds all selected owners to the
+original entry plan and checks their provenance commits. Complete acquired fills
+and the reconciled account position determine protective quantities. It never
+uses the paper fill quantity as a substitute for exchange fills.
+
+Relevant management plans are independently revalidated against their forecasts
+and first publication. Only instructions effective at the reference time apply,
+in the ledger's deterministic time/event-ID order. CANCEL and CLOSE latch across
+later HOLD instructions. Stop changes cannot loosen accumulated protection.
+Target changes are refused if an actual exit had already occurred at their
+instruction time. Unknown stop-market edit semantics continue to block edits;
+no stop-limit price or child-order identity is invented.
+
+The resulting report binds the trusted head, original plan, capture,
+reconciliation and journal control hash, lists management publications, and
+returns the bracket requirements plus at most one next action. Its action
+contains original plan/head provenance for the eventual sender. Pending attempts
+must first be recovered; each subsequent action needs a new acquired readback and
+reconciliation. Entry expiry, maximum hold and partial-close handling come from
+the existing deterministic bracket planner. The preview itself changes no
+journal or exchange state and always has `authorizes_execution: false`.
+
+Integration tests use an actual Git/writer publication and synthetic raw demo
+acquisition: a 10-contract partial fill first requires a reduce-only stop for 10;
+after that stop's durable readback it requires T1 for 4. Restart reproduces the
+same result. Tests also cover expiry cancellation, stale/unreconciled accounts,
+wrong original quantity, the CLI, management chronology/latching and actual
+exit-time checks. The management aggregation tests are synthetic planner cases,
+not successful scheduled-model or exchange executions.
+
+Remaining runner work includes durable dispatch orchestration, account risk and
+kill-switch integration, verified margin requirements, actual costs, stop/child
+lifecycle recovery and real demo acceptance. This preview does not enable sends.
