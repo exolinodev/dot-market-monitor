@@ -72,7 +72,7 @@ def read_push_submission(event, event_sha, repo=Path('.')):
     if len(changes) != 3 or changes[0] != b'A' or changes[-1] != b'':
         raise ValueError('One create-only submission per push required')
     path = changes[1].decode('utf-8')
-    match = re.fullmatch(r'data/oracle/submissions/([0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3)\.json', path)
+    match = re.fullmatch(r'data/oracle/submissions/([0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v[34])\.json', path)
     if not match:
         raise ValueError('Invalid submission path')
     if git(repo, 'log', '-1', '--format=%H', before, '--', path).strip():
@@ -110,7 +110,7 @@ def read_pr_submission(event, repository, repo=Path('.')):
     if len(changes) != 3 or changes[0] != b'A' or changes[-1] != b'':
         raise ValueError('Draft must add exactly one submission and no other files')
     path = changes[1].decode()
-    match = re.fullmatch(r'data/oracle/submissions/([0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v3)\.json', path)
+    match = re.fullmatch(r'data/oracle/submissions/([0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-oracle-v[34])\.json', path)
     if not match or not git(repo, 'ls-tree', head, '--', path).startswith(b'100644 blob '):
         raise ValueError('Draft must contain one regular submission JSON file')
     if git(repo, 'log', '-1', '--format=%H', 'origin/main', '--', path).strip():
@@ -129,7 +129,12 @@ def publish_submission(envelope, now, repo=Path('.'), archive_submission=False):
     ancestor(repo, commit, 'origin/main')
     snapshot = json.loads(git(repo, 'show', commit + ':data/llm_snapshot.json'))
     validate_forecast(envelope['forecast'], snapshot)
-    path = persist_forecast(envelope['forecast'], snapshot, repo / 'data/oracle', now)
+    ledger_args = {}
+    if envelope['forecast'].get('schema_version') == 2:
+        state = json.loads(git(repo, 'show', commit + ':data/ledger/state.json'))
+        genesis = json.loads(git(repo, 'show', commit + ':data/ledger/genesis.json'))
+        ledger_args = {'ledger_state': state, 'ledger_config': genesis['config']}
+    path = persist_forecast(envelope['forecast'], snapshot, repo / 'data/oracle', now, **ledger_args)
     if archive_submission:
         submission_path = repo / 'data/oracle/submissions' / (envelope['forecast']['forecast_id'] + '.json')
         if submission_path.exists():

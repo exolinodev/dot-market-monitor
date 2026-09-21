@@ -1,0 +1,58 @@
+{
+  "evidence_kind": "manually_transcribed_rendered_official_documentation",
+  "observed_on": "2026-09-21",
+  "source_url": "https://support.kraken.com/articles/4844359082772-linear-multi-collateral-derivatives-contract-specifications",
+  "source_updated_on": "2026-09-08",
+  "scope": "linear multi-collateral perpetual contracts; documentary convention, not account readback",
+  "positive_payer": "LONG",
+  "absolute_rate_unit": "USD per contract unit per hour",
+  "relative_conversion": "spot index at rate calculation",
+  "accrual": "continuous; settlement at hour end or net position change",
+  "examples": [
+    {
+      "source_example": 3,
+      "side": "SHORT",
+      "quantity": "4",
+      "reference_index": "37000",
+      "relative_rate": "0.0005",
+      "absolute_rate": "18.5",
+      "minutes": 30,
+      "expected_usd": "37",
+      "current_mark": "38000",
+      "note": "Source rounds per-minute 1.233 to half-hour 36.99; exact stated formula gives 37."
+    },
+    {
+      "source_example": 3,
+      "side": "SHORT",
+      "quantity": "4",
+      "reference_index": "37900",
+      "relative_rate": "0.0003",
+      "absolute_rate": "11.37",
+      "minutes": 60,
+      "expected_usd": "45.48",
+      "current_mark": "38000"
+    },
+    {
+      "source_example": 4,
+      "side": "LONG",
+      "quantity": "2",
+      "reference_index": "37000",
+      "relative_rate": "-0.0004",
+      "absolute_rate": "-14.8",
+      "minutes": 60,
+      "expected_usd": "29.6",
+      "current_mark": "38000"
+    },
+    {
+      "source_example": 4,
+      "side": "LONG",
+      "quantity": "2",
+      "reference_index": "37000",
+      "relative_rate": "0.0004",
+      "absolute_rate": "14.8",
+      "minutes": 60,
+      "expected_usd": "-29.6",
+      "current_mark": "38000"
+    }
+  ]
+}

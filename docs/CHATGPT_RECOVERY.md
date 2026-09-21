@@ -1,48 +1,29 @@
-# ChatGPT kann den Collector neu starten
+# Aktuelle Stundenrunde für den ChatGPT-Monitor abrufen
 
-Eine geplante ChatGPT-Aufgabe kann die in ihrem Chat verfügbaren verbundenen Tools
-verwenden. Voraussetzung ist ein tatsächlich autorisierter GitHub-Anschluss mit
-Actions-Schreibrecht auf `exolinodev/dot-market-monitor`. Ein öffentlich lesbares
-Repository allein genügt nicht. Ein `403 Resource not accessible by integration`
-ist ein Berechtigungsfehler; ein Prompt oder ein öffentlicher GET-Link löst ihn
-nicht. Die App-Freigabe muss im GitHub-Konto erfolgen.
+Der v4-Stundenjob startet um :05 UTC. Lies zuerst main und den vollständigen
+Snapshot bzw. Consumer-Index am zurückgegebenen SHA. Nutzbar ist nur
+`meta.run_kind=full` mit `meta.cycle_boundary_utc` gleich der aktuellen UTC-Stunde;
+Frische und Quellenabdeckung zusätzlich prüfen. Ein junger Snapshot der falschen
+Runde genügt nicht. Nach einem Stundenwechsel erneut prüfen.
 
-Der offizielle OpenAI-Connector bündelt Actions-, Code-, Issue-, Pull-Request- und
-Workflow-Schreibrechte. Bei seiner Installation nur dieses Repository auswählen.
-Einzelne Rechte dieses Bündels sind nicht abwählbar. Es ist kein PAT im Prompt,
-öffentlichen Repository oder URL erforderlich.
+Fehlt die Runde, main/Snapshot einmal neu lesen (CDN-Verzögerung ausschliessen),
+dann über tatsächlich verfügbare GitHub-Tools:
 
-## Ablauf für die stündliche Aufgabe
+1. Runs von `market-data.yml` auf main lesen. Bei queued/in_progress/waiting keinen
+   zweiten Collector starten; auch der Light-Lauf nutzt dieselbe Schreibsperre.
+2. Gibt es keinen aktiven Lauf, höchstens ein `workflow_dispatch` auf main mit
+   `run_kind=full`, `boundary_utc=<aktuelle Stunde als YYYY-MM-DDTHH:00:00Z>`.
+   Tool-Schema zuerst lesen. Kein alter Run-Rerun: dessen feste boundary_utc kann
+   zur falschen Runde gehören. Ein Dispatch-Erfolg ist kein Publikationsnachweis.
+3. Höchstens drei Statusabfragen über insgesamt 90 Sekunden, danach main und
+   Snapshot einmal neu lesen. Neuer Commit, passende Grenze und Quellen prüfen.
+   Ein noch laufender Run wird mit Link als ausstehend gemeldet.
+4. Fehlende Tools oder 403: keinen Toolnamen erfinden, keine Wiederholungsversuche.
+   Störung und [manuellen Start](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml)
+   nennen. Keine v4-Einreichung ohne aktuellen, verifizierten execution_context.
 
-1. `data/llm_snapshot.json` laden und `meta.generated_at_utc` mit UTC vergleichen.
-   Wenn Daten fehlen oder älter als 30 Minuten sind, über den GitHub-Anschluss
-   zunächst `/git/ref/heads/main` lesen und den Snapshot am zurückgegebenen SHA
-   laden. Das vermeidet eine Entscheidung allein anhand eines Raw-CDN-Caches.
-2. Sind die Daten weiterhin zu alt, die Lauf-Liste des festen Workflows lesen:
-   `https://api.github.com/repos/exolinodev/dot-market-monitor/actions/workflows/market-data.yml/runs?branch=main&per_page=10`.
-   Bei aktivem Collector keinen weiteren starten.
-3. Andernfalls im neuesten abgeschlossenen Lauf die Jobs mit
-   `fetch_workflow_run_jobs` lesen und den Job `collect` einmal mit
-   `rerun_workflow_job` neu starten. Die tatsächliche Job-ID aus der Antwort
-   verwenden, keine fest hinterlegte alte ID. Der Lauf muss jünger als 30 Tage sein.
-4. Danach Status, Erfolg, neuen Daten-Commit und Snapshot-Zeit prüfen. Ein
-   angenommener Wiederanlauf ist noch kein erfolgreicher Datenabruf. Höchstens ein
-   Wiederanlauf pro Monitorlauf; nach 403 nicht wiederholt versuchen.
-5. Bei fehlendem Tool oder fehlender Berechtigung den Fehler und den
-   [manuellen Startlink](https://github.com/exolinodev/dot-market-monitor/actions/workflows/market-data.yml)
-   ausgeben. Alte Kurse bleiben als alt gekennzeichnet.
-
-GitHub verwendet beim Wiederanlauf die Workflow-Definition des ausgewählten Runs.
-Unser Checkout setzt ausdrücklich `ref: main`, sodass die aktuellen Python-Dateien
-und Daten geladen werden. `GITHUB_RUN_ATTEMPT > 1` wird im Frische-Guard als
-manueller Abruf behandelt: Ein alter Schedule-Run darf damit innerhalb derselben
-Stundenrunde neue Daten erzeugen. Ein gerade erst erzeugter Snapshot (höchstens
-zwei Minuten alt) unterdrückt redundante Wiederanläufe. Tests laufen separat bei
-Codeänderungen, nicht beim manuellen oder stündlichen Collector.
-
-Die ursprüngliche Aufgabenbeschreibung und Marktinterpretation bleiben in
-ChatGPT. Dieses Dokument enthält nur den technischen Wiederanlauf und keine
-Positionsdaten, Elliott-Wahrscheinlichkeiten oder Handelsanweisungen.
-
-Quelle zu verbundenen Tools in geplanten Aufgaben:
-https://learn.chatgpt.com/docs/automations
+Erforderlich ist ein tatsächlich autorisierter GitHub-Anschluss mit Actions-
+Schreibrecht auf dieses Repository. Öffentliche Lesbarkeit genügt nicht. Keine
+Tokens im Prompt oder in öffentlichen Dateien. Dieser Ablauf ändert keine
+bestehende ChatGPT-Aufgabe von selbst; deren Zeitplan und Prompt müssen separat
+aktualisiert und zurückgelesen werden.

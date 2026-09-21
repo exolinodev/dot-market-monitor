@@ -269,3 +269,16 @@ def test_light_allowlist_excludes_gzip_snapshot_and_funding():
     for path in ('data/raw/latest.json.gz', 'data/llm_snapshot.json', 'data/funding/2026/09.jsonl',
                  'data/intraday/../../src/main.py', 'data/intraday/script.py'):
         assert not promotion.allowed('light', path)
+
+
+def test_light_requires_real_ledger_replay_and_market_evidence_checks(monkeypatch):
+    calls = []
+    monkeypatch.setattr(promotion.subprocess, 'run', lambda args, **kwargs: calls.append(args))
+    promotion.verify_light('trusted-base')
+    assert [sys.executable, 'scripts/validate_ledger.py', '--base', 'trusted-base'] in calls
+    assert any('tests/test_ledger_runtime.py' in args for args in calls)
+    for kind in ('collector', 'light'):
+        for path in ('state.json', 'performance.json', 'events/2026/09/20.jsonl', 'trades/forecast-a.json'):
+            assert promotion.allowed(kind, 'data/ledger/' + path)
+        for path in ('genesis.json', 'plans/forecast-a.json', 'states/' + 'a' * 64 + '.json'):
+            assert not promotion.allowed(kind, 'data/ledger/' + path)

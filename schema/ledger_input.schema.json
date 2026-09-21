@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dot-market-monitor.local/schema/ledger_input.schema.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "const": "spread"
+        },
+        "spread_bps": {
+          "type": "string",
+          "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      },
+      "required": [
+        "event_id",
+        "at_utc",
+        "type",
+        "spread_bps"
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "const": "funding_rate"
+        },
+        "interval_start_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "absolute_rate": {
+          "type": "string",
+          "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "relative_rate": {
+          "type": "string",
+          "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      },
+      "required": [
+        "event_id",
+        "at_utc",
+        "type",
+        "interval_start_utc",
+        "absolute_rate",
+        "relative_rate"
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "const": "instruction"
+        },
+        "plan": {
+          "$ref": "https://dot-market-monitor.local/schema/ledger_plan.schema.json"
+        },
+        "publication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "at_utc",
+            "plan_sha256"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{40}$"
+            },
+            "at_utc": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "plan_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      },
+      "required": [
+        "event_id",
+        "at_utc",
+        "type",
+        "plan"
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "const": "candle"
+        },
+        "trade": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "open": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "high": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "low": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "close": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            }
+          },
+          "required": [
+            "open",
+            "high",
+            "low",
+            "close"
+          ]
+        },
+        "mark": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "open": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "high": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "low": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            },
+            "close": {
+              "type": "string",
+              "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+            }
+          },
+          "required": [
+            "open",
+            "high",
+            "low",
+            "close"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "row_sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(intraday/[0-9]{4}/[0-9]{2}/[0-9]{2}|funding/[0-9]{4}/[0-9]{2})\\.jsonl$"
+            },
+            "row_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      },
+      "required": [
+        "event_id",
+        "at_utc",
+        "type",
+        "trade",
+        "mark"
+      ]
+    }
+  ]
+}

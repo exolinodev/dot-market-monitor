@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dot-market-monitor.local/schema/ledger_plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "forecast_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effective_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ledger_state_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "config_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bid": {
+          "type": "string",
+          "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        },
+        "ask": {
+          "type": "string",
+          "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+        }
+      },
+      "required": [
+        "bid",
+        "ask"
+      ]
+    },
+    "orders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "order": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "client_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "action": {
+                "const": "ENTER"
+              },
+              "side": {
+                "enum": [
+                  "LONG",
+                  "SHORT"
+                ]
+              },
+              "entry": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "LIMIT",
+                      "MARKET",
+                      "STOP"
+                    ]
+                  },
+                  "price_usd": {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "price_usd"
+                ]
+              },
+              "stop_usd": {
+                "type": "string",
+                "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "T1",
+                        "T2",
+                        "T3"
+                      ]
+                    },
+                    "price_usd": {
+                      "type": "string",
+                      "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                    },
+                    "fraction": {
+                      "type": "string",
+                      "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "price_usd",
+                    "fraction"
+                  ]
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "stop_after_t1_usd": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "valid_until_utc": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "risk_tier": {
+                "enum": [
+                  "FULL",
+                  "HALF",
+                  "QUARTER"
+                ]
+              }
+            },
+            "required": [
+              "client_id",
+              "action",
+              "side",
+              "entry",
+              "stop_usd",
+              "targets",
+              "valid_until_utc",
+              "risk_tier"
+            ]
+          },
+          "size": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "quantity": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "risk_budget_usd": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "initial_price_risk_usd": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "estimated_stop_loss_including_costs_usd": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "notional_usd": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "net_reward_risk_t1": {
+                "type": "string",
+                "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+              },
+              "cost_assumptions": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "spread_bps": {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  },
+                  "slippage_bps": {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  },
+                  "fee_maker_pct": {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  },
+                  "fee_taker_pct": {
+                    "type": "string",
+                    "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                  }
+                },
+                "required": [
+                  "spread_bps",
+                  "slippage_bps",
+                  "fee_maker_pct",
+                  "fee_taker_pct"
+                ]
+              },
+              "ledger_state_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "config_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "quantity",
+              "risk_budget_usd",
+              "initial_price_risk_usd",
+              "estimated_stop_loss_including_costs_usd",
+              "notional_usd",
+              "net_reward_risk_t1",
+              "cost_assumptions",
+              "ledger_state_sha256",
+              "config_sha256"
+            ]
+          }
+        },
+        "required": [
+          "order",
+          "size"
+        ]
+      },
+      "maxItems": 1
+    },
+    "management": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "HOLD",
+                  "CANCEL"
+                ]
+              },
+              "client_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              }
+            },
+            "required": [
+              "action",
+              "client_id"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "HOLD"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              }
+            },
+            "required": [
+              "action",
+              "position_id"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "CLOSE"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "type": {
+                "const": "MARKET"
+              }
+            },
+            "required": [
+              "action",
+              "position_id",
+              "type"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "MODIFY"
+              },
+              "position_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "stop_usd": {
+                "type": "string",
+                "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "T1",
+                        "T2",
+                        "T3"
+                      ]
+                    },
+                    "price_usd": {
+                      "type": "string",
+                      "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                    },
+                    "fraction": {
+                      "type": "string",
+                      "pattern": "^-?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "price_usd",
+                    "fraction"
+                  ]
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "action",
+              "position_id"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "stop_usd"
+                ]
+              },
+              {
+                "required": [
+                  "targets"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "maxItems": 1
+    }
+  },
+  "required": [
+    "forecast_id",
+    "strategy_version",
+    "created_at_utc",
+    "effective_at_utc",
+    "ledger_state_sha256",
+    "config_sha256",
+    "quote",
+    "orders",
+    "management"
+  ]
+}

@@ -16,6 +16,7 @@ on:
       - "tests/**"
       - "requirements.txt"
       - "scripts/**"
+      - "data/ledger/**"
       - "data/oracle/forecasts/**"
       - "data/oracle/forecast_keys/**"
       - "data/oracle/submissions/**"
@@ -33,6 +34,7 @@ on:
       - "**"
       - "!data/**"
       - "data/oracle/submissions/**"
+      - "data/ledger/**"
 
 permissions:
   contents: read

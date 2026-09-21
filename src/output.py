@@ -88,6 +88,14 @@ def validate_snapshot(data):
         elif isinstance(value,float) and not math.isfinite(value):
             raise ValueError('Nonfinite value: '+path)
     visit(data)
+    execution=data['markets']['DOTUSD'].get('execution_context')
+    if execution and execution.get('status') == 'ok':
+        from ledger import digest, state_hash
+        state=execution['ledger_state']
+        if digest(state) != execution['ledger_state_sha256'] or state.get('state_sha256') != state_hash(state):
+            raise ValueError('Execution context ledger state hash mismatch')
+        if state['config_sha256'] != execution['ledger_config_sha256']:
+            raise ValueError('Execution context ledger configuration mismatch')
     observation=data['markets']['DOTUSD'].get('observations')
     if observation:
         reference=utc(data['meta']['generated_at_utc'])

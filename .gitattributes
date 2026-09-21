@@ -1,0 +1,2 @@
+# Preserve byte-exact HTTP evidence, including original CRLF line endings.
+tests/fixtures/demo_market_redirect/*.raw binary

@@ -1,0 +1,48 @@
+{
+  "scope": "isolated_real_market_paper_rehearsal",
+  "implementation_commit": "6a3f3c0cda78dddbe0a2279a4b71c34eae8ba70c",
+  "production_main_checked": "5373da84ba44ff7039a839887623adc4e00653da",
+  "initialization": {
+    "mode": "paper",
+    "plan_sha256": "0af61d7fd1fbb5ad7128945467050101ed54204fb32d335091a958975396f11a",
+    "epoch_utc": "2026-09-21T01:28:31.585947Z",
+    "state_sha256": "2cd1540db2111d06a5b0e41e072d006807409466b20edc5625cc8782b981b203",
+    "equity_usd": "5000",
+    "events": 2
+  },
+  "quarter_meta": {
+    "boundary_lag_seconds": 8.418,
+    "cycle_boundary_utc": "2026-09-21T01:30:00Z",
+    "fresh": true,
+    "generated_at_utc": "2026-09-21T01:30:08.533991Z",
+    "late": false,
+    "request_count": 12,
+    "run_duration_seconds": 0.136,
+    "run_kind": "light",
+    "status": "ok"
+  },
+  "quarter_bytes": 7745,
+  "replay": {
+    "replay": "identical",
+    "state_sha256": "942f308938646a8b7696e8653a0a9000befadb2b340be41805c638762635706a",
+    "events": 3,
+    "trades": 0
+  },
+  "source_inputs_verified": 3,
+  "idempotent_replay_files": {
+    "ledger/events/2026/09/21.jsonl": "4e5e01e673ffd1ba3a7e53982709dc08fffd13830b0848cc831639a46241fc18",
+    "ledger/genesis.json": "56b7bcf1f9b4e2bc4d434072bdd421c15ab5d998d73b4c81d7d58c1277ef75b4",
+    "ledger/performance.json": "459b7c3b101fbfeeffd9ec7f4a48b5c96c89ff313185c874e6bd8fe39f170684",
+    "ledger/state.json": "1c2c3745d97fc0f2f89e9af46541a1547959a965e4dceba07a45e87526d19c62",
+    "ledger/states/069e5a701f7fea05e7ff88a020239bbeb5f85d183a3ba4834cab27b324e2d94a.json": "37d5db284f58f03dc25508d14fb021c210d2458a3774c8e1b3bf418d04644919"
+  },
+  "quarter_execution_context_status": "ok",
+  "last_candle_utc": "2026-09-21T01:29:00Z",
+  "equity_usd": "5000",
+  "orders": 0,
+  "closed_trades": 0,
+  "published": false,
+  "full_hour_model_context_verified": false,
+  "model_forecast_tested": false,
+  "raw_sources_availability": "Retained locally in the isolated rehearsal directory; not copied into this repository."
+}

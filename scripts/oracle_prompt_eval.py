@@ -75,7 +75,7 @@ def evaluate_experiment(directory,data_dir):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prompt',type=Path,default=Path('CHATGPT_MONITOR_PROMPT.md'))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prompt',type=Path,default=Path('docs/ORACLE_V3_PROMPT_ARCHIVE.md'))
     p.add_argument('--snapshots',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--evaluate-with',type=Path)
     p.add_argument('--model');p.add_argument('--endpoint',default='https://api.openai.com/v1/chat/completions')

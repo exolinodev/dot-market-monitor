@@ -4,10 +4,28 @@
   "title": "Oracle forecast submission (not proof of publication)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "snapshot_commit", "forecast"],
+  "required": [
+    "schema_version",
+    "snapshot_commit",
+    "forecast"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "snapshot_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-    "forecast": {"$ref": "oracle_forecast.schema.json"}
+    "schema_version": {
+      "const": 1
+    },
+    "snapshot_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "forecast": {
+      "oneOf": [
+        {
+          "$ref": "oracle_forecast.schema.json"
+        },
+        {
+          "$ref": "oracle_forecast_v4.schema.json"
+        }
+      ]
+    }
   }
 }

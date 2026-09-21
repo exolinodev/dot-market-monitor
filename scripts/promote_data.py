@@ -45,6 +45,10 @@ def api(repo, path, method='GET', payload=None):
 
 
 def allowed(kind, path):
+    if path.startswith('data/ledger/'):
+        if kind == 'oracle':
+            return bool(re.fullmatch(r'data/ledger/(plans/[A-Za-z0-9_-]+|states/[a-f0-9]{64})\.json', path))
+        return kind in ('collector', 'light') and bool(re.fullmatch(r'data/ledger/((state|performance)\.json|events/[0-9]{4}/[0-9]{2}/[0-9]{2}\.jsonl|trades/[A-Za-z0-9_-]+\.json)', path))
     if path.startswith('data/intraday/'):
         return kind in ('collector', 'light') and bool(re.fullmatch(r'data/intraday/(latest\.json|[0-9]{4}/[0-9]{2}/[0-9]{2}\.jsonl)', path))
     if path.startswith('data/funding/'):
@@ -79,7 +83,8 @@ def verify(base):
 
 def verify_light(base):
     for command in ([sys.executable, 'scripts/validate_intraday.py', '--base', base],
-                    [sys.executable, '-m', 'pytest', '-q', 'tests/test_intraday.py']):
+                    [sys.executable, 'scripts/validate_ledger.py', '--base', base],
+                    [sys.executable, '-m', 'pytest', '-q', 'tests/test_intraday.py', 'tests/test_ledger_runtime.py', 'tests/test_ledger_market.py']):
         subprocess.run(command, check=True)
 
 
@@ -149,6 +154,8 @@ def promote(kind, env=None):
         if path and not allowed(kind, path):
             raise ValueError('Producer staged a non-allowlisted path: ' + path)
     subprocess.run([sys.executable, 'scripts/validate_intraday.py' if kind == 'light' else 'scripts/check_oracle_archive.py', '--staged'], check=True)
+    if kind == 'light':
+        subprocess.run([sys.executable, 'scripts/validate_ledger.py', '--staged'], check=True)
     run(['git', 'switch', '-c', branch])
     run(['git', 'commit', '-m', f'data: validated {kind} publication'])
     run(['git', 'fetch', 'origin', 'main'])
@@ -161,7 +168,7 @@ def promote(kind, env=None):
     if run(['git', 'rev-parse', 'HEAD']) != head:
         raise ValueError('Tested commit changed')
     run(['git', 'diff', '--exit-code', 'HEAD'])
-    validation = 'light validation: intraday schema, append-only archive guard and focused tests' if kind == 'light' else 'Archive integrity, snapshot schema, full pytest and scheduler tests'
+    validation = 'light validation: intraday schema, immutable market evidence, ledger replay and focused tests' if kind == 'light' else 'Archive integrity, snapshot schema, full pytest and scheduler tests'
     run_url = f'https://github.com/{repo}/actions/runs/{run_id}'
     pr = check_run = None
     try:

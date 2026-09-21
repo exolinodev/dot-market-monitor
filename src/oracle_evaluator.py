@@ -6,7 +6,7 @@ interval, not a fabricated trade timestamp. No executable fill is claimed.
 """
 import pandas as pd
 from oracle_common import EVALUATOR_VERSION, digest
-from oracle_forecasts import validate_forecast
+from oracle_forecasts import validate_forecast, regime_direction
 from observation_common import utc, iso, regular
 from timeframes import validate_candles, encode_candles
 
@@ -61,6 +61,12 @@ def evaluate_horizon(f, hours, frames, now):
         r_multiple=None, time_to_t1_minutes=None, timing_status='not_evaluated',
         excursion_status='unavailable')
     if result['status'] != 'ok': return result
+    if f.get('schema_version') == 2:
+        # Keep spot direction evaluation; executable fills/costs belong solely
+        # to the perpetual ledger, never to synthetic spot barrier trades.
+        result.update(status='abstained' if f['decision']['stance'] == 'FLAT' else 'direction_only',
+                      timing_status='execution_in_perpetual_ledger')
+        return result
     setup = f['trade_setup']
     if setup['direction']=='NONE':
         result.update(status='abstained', timing_status='abstained')
@@ -159,13 +165,17 @@ def evaluate_horizon(f, hours, frames, now):
     return result
 
 
+def evaluator_version(f):
+    return '2.0.0' if f.get('schema_version') == 2 else EVALUATOR_VERSION
+
+
 def evaluate_forecast(f, frames, now):
     validate_forecast(f)
-    return {'schema_version':1, 'evaluator_version':EVALUATOR_VERSION,'forecast_id':f['forecast_id'],
+    return {'schema_version':1, 'evaluator_version':evaluator_version(f),'forecast_id':f['forecast_id'],
         'forecast_sha256':digest(f),'strategy_version':f['strategy_version'],
         'forecast_schema_version':f['schema_version'],'oracle_feature_version':f['oracle_feature_version'],
         'oracle_config_sha256':f['oracle_config_sha256'],'measurement_config_sha256':f['measurement_config_sha256'],
-        'regime':f['regime'],'direction':f['trade_setup']['direction'], 'evaluated_at_utc':iso(now),
+        'regime':regime_direction(f)[0],'direction':regime_direction(f)[1], 'evaluated_at_utc':iso(now),
         'horizons':{f'{h}h':evaluate_horizon(f,h,frames,now) for h in (1,4,12)}}
 
 
