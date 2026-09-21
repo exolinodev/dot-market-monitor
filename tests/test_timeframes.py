@@ -12,6 +12,29 @@ def minute_df(n=12,start='2026-09-12T00:00:00Z'):
     return df
 
 
+def test_perp_cache_reload_preserves_unknown_optional_measurements(tmp_path):
+    from common import read_json
+    from timeframes import CandleCache, decode_candles
+    path = tmp_path/'ohlc.json.gz'
+    key = 'DOTPERP.trade.1'
+    old = minute_df(2)
+    old['vwap'] = old['trade_count'] = np.nan
+    cache = CandleCache(path)
+    cache.merge(key, old); cache.save()
+    stored = read_json(path)[key]
+    assert all(row[5] is None and row[7] is None for row in stored)
+    # A real next process reloads JSON null as None, then appends fresh rows.
+    fresh = minute_df(2, start='2026-09-12T00:02:00Z')
+    fresh['vwap'] = fresh['trade_count'] = np.nan
+    reloaded = CandleCache(path)
+    reloaded.merge(key, fresh); reloaded.save()
+    result = decode_candles(read_json(path)[key])
+    assert len(result) == 4
+    assert result[['vwap', 'trade_count']].isna().all().all()
+    expected = pd.concat([old, fresh])[['open', 'high', 'low', 'close', 'volume']]
+    pd.testing.assert_frame_equal(result[expected.columns], expected, check_freq=False)
+
+
 @pytest.mark.parametrize('target,base',[(3,1),(120,60),(720,240),(2880,1440),(5760,1440)])
 def test_all_resampled_timeframes_match_ohlcv_aggregation(target,base):
     ratio=target//base
