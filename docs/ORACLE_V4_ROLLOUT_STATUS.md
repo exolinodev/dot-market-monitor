@@ -69,6 +69,20 @@ read back exactly, with its existing 8:20 displayed schedule unchanged.
 The preceding hourly v3 result correctly refused the stale 06:00 snapshot;
 no first successful v4 forecast/writeback or exchange operation is claimed.
 
+The subsequent regular 07:15 light run
+[35572069813](https://github.com/exolinodev/dot-market-monitor/actions/runs/35572069813)
+published on main `ff13560`: 12 requests, 0.394-second capture, 24.578-second
+boundary lag, fresh and not late. The workflow completed at 07:15:42 UTC.
+It advanced the account through 07:14 UTC with 33 events and identical replay,
+state SHA `a0a2713fbbf4971dd3e093b4784f02eefb31b823a64eacb87688b29ca2712e34`.
+The five changed files are intraday and ledger data; no gzip archives changed.
+
+A live Worker log shows the correct `59,14,29,44 * * * *` trigger invoked at
+07:14:58.505 UTC and dispatched the 07:15 light cycle. Thus this observed
+minute-boundary dispatch is late Cron delivery within :14, not a rejected or
+normalized cron string. It leaves only two seconds of prewarming. This sample
+meets the 30-second capture target but does not establish the 48-hour percentile.
+
 ## Phase requirements and remaining proof
 
 | Scope | Prepared implementation/evidence | Still required |
