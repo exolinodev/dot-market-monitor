@@ -1,16 +1,17 @@
 // Cloudflare starts/checks GitHub Actions; all market calculations stay in Python.
 export const REPOSITORY = "exolinodev/dot-market-monitor";
 export const WORKFLOW = "market-data.yml";
-export const CRONS = ["59,14,29,44 * * * *", "*/5 * * * *"];
+export const CRONS = ["58,13,28,43 * * * *", "*/5 * * * *"];
 const ACCEPTED_CRONS = new Set(CRONS);
 const API = `https://api.github.com/repos/${REPOSITORY}`;
 const MINUTE = 60_000;
 const QUARTER = 15 * MINUTE;
+const PREWARM = 2 * MINUTE;
 const ACTIVE = new Set(["queued", "in_progress", "waiting", "pending", "requested"]);
 const iso = (time) => new Date(time).toISOString();
 
 export function cycleStart(time) {
-  return Math.floor((time + MINUTE) / QUARTER) * QUARTER - MINUTE;
+  return Math.floor((time + PREWARM) / QUARTER) * QUARTER - PREWARM;
 }
 
 export function scheduleWindow(controller, now) {
@@ -27,7 +28,7 @@ export function decide({ runs, snapshot, start, now, phase }) {
   if (!Array.isArray(runs) || runs.some((r) => !Number.isFinite(Date.parse(r.created_at)) ||
       !(ACTIVE.has(r.status) || r.status === "completed"))) throw new Error("invalid_run_schema");
   const generated = Date.parse(snapshot?.generated_at_utc);
-  const boundary = start + MINUTE;
+  const boundary = start + PREWARM;
   const run_kind = new Date(boundary).getUTCMinutes() === 0 ? "full" : "light";
   const fresh = Date.parse(snapshot?.cycle_boundary_utc) === boundary && snapshot?.run_kind === run_kind &&
     Number.isFinite(generated) && generated >= boundary && generated <= now + MINUTE &&
@@ -79,7 +80,7 @@ export async function readState(env, fetcher = fetch, start = cycleStart(Date.no
     throw new Error("invalid_github_schema");
   }
   // Pin the file to the current commit: avoid stale raw.githubusercontent.com/main responses.
-  const light = new Date(start + MINUTE).getUTCMinutes() !== 0;
+  const light = new Date(start + PREWARM).getUTCMinutes() !== 0;
   const path = light ? "data/intraday/latest.json" : "data/llm_snapshot.json";
   const document = await github(env, `/contents/${path}?ref=${ref.object.sha}`, fetcher, { raw: true, allowMissing: light });
   if (light && document === null) return { runs: runResponse.workflow_runs, snapshot: {}, commit: ref.object.sha };
@@ -121,7 +122,7 @@ export default {
     const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/health") {
       return json({ service: "dot-market-scheduler", enabled: env.ENABLED === "true",
-        configured: Boolean(env.GITHUB_TOKEN && env.CONTROL_TOKEN), crons_utc: CRONS, cycle_boundary_utc: iso(cycleStart(Date.now()) + MINUTE), repository: REPOSITORY });
+        configured: Boolean(env.GITHUB_TOKEN && env.CONTROL_TOKEN), crons_utc: CRONS, cycle_boundary_utc: iso(cycleStart(Date.now()) + PREWARM), repository: REPOSITORY });
     }
     if (!env.CONTROL_TOKEN || request.headers.get("Authorization") !== `Bearer ${env.CONTROL_TOKEN}`) {
       return json({ error: "unauthorized" }, 401);

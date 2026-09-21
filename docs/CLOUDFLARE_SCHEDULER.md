@@ -1,4 +1,27 @@
-# Stündlicher Cloudflare-Starter
+# Cloudflare-Starter für Oracle v4
+
+## Aktueller Betrieb ab 21.09.2026
+
+Der Worker dispatcht vier Viertelstundenrunden pro Stunde. Nach den ersten
+Timing-Messungen wird der Vorlauf von einer auf zwei Minuten erhöht:
+`58,13,28,43 * * * *`, zusätzlich `*/5` zur Kontrolle. Der Runner installiert
+Dependencies vorab und wartet bis zur UTC-Grenze +8 Sekunden (maximal 150 Sekunden).
+Die Grenze :00 erzeugt den vollen Snapshot, :15/:30/:45 einen Light-Lauf.
+Der unabhängige GitHub-Fallback läuft um :03/:18/:33/:48. Bereits erfolgreich
+veröffentlichte Runden werden auch bei Code-Pushes übersprungen. Identität,
+Dispatch-Budget und Recovery beziehen sich auf die jeweilige Viertelstundenrunde.
+
+Das sind regulär 16 Worker-Aufrufe pro Stunde und 96 GitHub-Fallback-Starts pro
+Tag; auch übersprungene GitHub-Jobs benötigen kurze Laufzeit. Deployment allein
+belegt keine Timing-Abnahme. Aktuelle Evidenz und offene Kriterien stehen in
+[ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md), der genaue Vertrag in
+[ORACLE_V4_PHASE1.md](ORACLE_V4_PHASE1.md).
+
+## Historische Einrichtung vor v4
+
+Die folgenden ursprünglichen Stundenzeiten und Kostenmengen beschreiben den
+früheren Betrieb. Für aktuelle Zeiten und Frische gilt der v4-Vertrag oben;
+Zugänge, Betriebsbefehle und die dokumentierte Fehlerhistorie bleiben relevant.
 
 Cloudflare führt keine Marktberechnungen aus. Der Worker startet den bestehenden
 GitHub-Actions-Collector und prüft, ob dieser einen aktuellen Snapshot veröffentlicht

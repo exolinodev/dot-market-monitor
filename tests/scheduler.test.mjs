@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import worker, { cycleStart, decide, reconcile, readState, scheduleWindow } from "../src/scheduler/worker.mjs";
 
-const start = Date.parse("2026-09-12T20:59:00Z");
+const start = Date.parse("2026-09-12T20:58:00Z");
 const now = start + 5 * 60_000;
 const at = (offset) => new Date(start + offset * 60_000).toISOString();
 const run = (status, offset = 0, id = 1) => ({ id, status, created_at: at(offset) });
-const snapshot = (offset, status = "ok") => ({ generated_at_utc: at(offset), status, fresh: true, run_kind: "full", cycle_boundary_utc: at(1) });
+const snapshot = (offset, status = "ok") => ({ generated_at_utc: at(offset), status, fresh: true, run_kind: "full", cycle_boundary_utc: at(2) });
 const choice = (values = {}) => decide({ start, now, phase: "verify", runs: [], snapshot: snapshot(-60), ...values });
 const env = { ENABLED: "true", GITHUB_TOKEN: "test-only-token", CONTROL_TOKEN: "test-control" };
 const sha = "a".repeat(40);
@@ -15,14 +15,14 @@ test("UTC quarter cycle includes previous hour and date rollover", () => {
   assert.equal(cycleStart(start), start);
   assert.equal(cycleStart(now), start);
   assert.equal(cycleStart(start - 1), start - 900000);
-  assert.equal(new Date(cycleStart(Date.parse("2026-09-13T00:00:00Z"))).toISOString(), "2026-09-12T23:59:00.000Z");
+  assert.equal(new Date(cycleStart(Date.parse("2026-09-13T00:00:00Z"))).toISOString(), "2026-09-12T23:58:00.000Z");
 });
 test("fresh successful and partial snapshots suppress duplicate collection", () => {
-  for (const status of ["ok", "partial"]) assert.equal(choice({ snapshot: snapshot(1, status) }).action, "fresh");
+  for (const status of ["ok", "partial"]) assert.equal(choice({ snapshot: snapshot(2, status) }).action, "fresh");
 });
 test("old, future, false freshness, error and invalid timestamps need collection", () => {
-  for (const value of [snapshot(-1), snapshot(7), snapshot(1, "error"),
-    { ...snapshot(1), fresh: false }, { generated_at_utc: "bad" }, null]) {
+  for (const value of [snapshot(-1), snapshot(7), snapshot(2, "error"),
+    { ...snapshot(2), fresh: false }, { generated_at_utc: "bad" }, null]) {
     assert.equal(choice({ snapshot: value }).action, "dispatch");
   }
 });
@@ -59,7 +59,7 @@ function mockGitHub({ runs = [], meta = snapshot(-60), dispatchStatus = 204 } = 
     }
     assert.ok(url.endsWith("/dispatches"));
     assert.equal(options.method, "POST");
-    assert.deepEqual(JSON.parse(options.body), { ref: "main", inputs: {run_kind: "full", boundary_utc: at(1)} });
+    assert.deepEqual(JSON.parse(options.body), { ref: "main", inputs: {run_kind: "full", boundary_utc: at(2)} });
     return new Response(null, { status: dispatchStatus });
   };
   return { fetcher, calls };
@@ -70,7 +70,7 @@ test("one dispatch to the fixed repository and workflow on stale data", async ()
   assert.equal(m.calls.filter((x) => x.options.method === "POST").length, 1);
 });
 test("fresh snapshot uses immutable commit and makes no POST", async () => {
-  const m = mockGitHub({ meta: snapshot(1) });
+  const m = mockGitHub({ meta: snapshot(2) });
   assert.equal((await reconcile(env, { start, now, phase: "verify" }, m.fetcher)).action, "fresh");
   assert.equal(m.calls.length, 3);
 });
@@ -124,7 +124,7 @@ test("late cron delivery recovers the current round instead of discarding it", (
 });
 test("a many-hours-old delivery checks the newest round and keeps the quarter-hour budget", () => {
   const current = start + 4 * 3600000;
-  assert.deepEqual(scheduleWindow({ cron: "59,14,29,44 * * * *", scheduledTime: start }, current),
+  assert.deepEqual(scheduleWindow({ cron: "58,13,28,43 * * * *", scheduledTime: start }, current),
     { start: current, now: current, phase: "initial" });
   assert.equal(scheduleWindow({ cron: "* * * * *", scheduledTime: start }, current), null);
 });
@@ -133,7 +133,7 @@ test("missing GitHub secret fails before any upstream request", async () => {
 });
 
 test("light quarters dispatch explicit cycle inputs and read their own immutable ref", async () => {
-  const quarter = Date.parse("2026-09-20T21:14:00Z");
+  const quarter = Date.parse("2026-09-20T21:13:00Z");
   const requests = [];
   const fetcher = async (url, options) => {
     requests.push(url);
@@ -148,4 +148,15 @@ test("light quarters dispatch explicit cycle inputs and read their own immutable
   };
   assert.equal((await reconcile(env, {start: quarter, now: quarter, phase: 'initial'}, fetcher)).action, 'dispatched');
   assert.equal(requests.length, 4);
+});
+
+
+test("late-in-minute prewarming retains a full minute before the boundary", () => {
+  const delivered = Date.parse("2026-09-21T08:13:58.505Z");
+  const window = scheduleWindow({cron: "58,13,28,43 * * * *", scheduledTime: delivered}, delivered);
+  const result = decide({...window, runs: [], snapshot: null});
+  assert.equal(result.cycle_boundary_utc, "2026-09-21T08:15:00.000Z");
+  assert.equal(Date.parse(result.cycle_boundary_utc) - delivered, 61495);
+  assert.equal(result.action, "dispatch");
+  assert.equal(scheduleWindow({cron: "59,14,29,44 * * * *"}, delivered), null);
 });

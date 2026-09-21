@@ -5,7 +5,7 @@
   "compatibility_date": "2026-09-12",
   "workers_dev": true,
   "preview_urls": false,
-  "triggers": { "crons": ["59,14,29,44 * * * *", "*/5 * * * *"] },
+  "triggers": { "crons": ["58,13,28,43 * * * *", "*/5 * * * *"] },
   "vars": { "ENABLED": "true" },
   "observability": { "enabled": true, "head_sampling_rate": 1 }
 }

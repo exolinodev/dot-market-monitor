@@ -19,8 +19,8 @@ def resolve(now, kind=None, boundary=None, event='schedule'):
         point = utc(boundary)
         if point.second or point.microsecond or point.minute % 15:
             raise ValueError('Boundary must align to a UTC quarter hour')
-        if (point - now).total_seconds() > 90:
-            raise ValueError('Boundary more than 90 seconds in future')
+        if (point - now).total_seconds() > 150:
+            raise ValueError('Boundary more than 150 seconds in future')
     else:
         point = now.replace(minute=(now.minute // 15) * 15, second=0, microsecond=0)
     kind = kind or ('full' if event in ('push', 'workflow_dispatch') and not boundary
