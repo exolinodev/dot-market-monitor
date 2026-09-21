@@ -3,8 +3,8 @@
 WP7 now has an offline-tested demo transport, durable attempt records, execution
 history/reconciliation, protective-order/action planning, and an isolated paper
 CLI in `scripts/execute_orders.py`. It is **not yet an operational exchange
-executor**. There is no credentials lookup, deployment workflow, private API
-fixture capture or placed exchange order. Demo/live orchestration, durable
+executor**. A separate read-only CLI can now acquire private demo evidence from environment
+credentials. There is no deployment workflow or placed exchange order. Demo/live orchestration, durable
 account/capture binding, operational recovery, rollout gates and live support
 remain required. The sections below describe the implemented layers and their
 remaining integration obligations.
@@ -448,3 +448,40 @@ Activated triggers require independently evidenced child-order/fill reconciliati
 before management can continue. Open edits and rejected edit recovery remain
 unimplemented. These tests use synthetic responses; authenticated demo fixtures,
 operational orchestration and acceptance remain outstanding.
+
+
+## Private demo evidence capture
+
+`scripts/capture_demo_evidence.py` is a read-only acquisition entrypoint. Supply
+`KRAKEN_DEMO_API_KEY` and `KRAKEN_DEMO_API_SECRET` through the private runner's
+secret environment (never as command arguments, in Git, or in chat). Use a
+read-only demo key. The fixed transport cannot target the live host.
+
+```sh
+python scripts/capture_demo_evidence.py \
+  --account-uid VERIFIED_DEMO_ACCOUNT_UUID \
+  --since 2026-09-21T00:00:00Z --through 2026-09-21T01:00:00Z \
+  --output-dir /private/demo-evidence/new-capture
+```
+
+The output parent must exist outside a Git worktree; the capture directory must
+be new. Directories/files are owner-only. One client/key fetches raw open orders,
+recent fills, positions and accounts, followed by paginated execution, order and
+trigger histories for the explicit fixed window. Every history checks the
+independently supplied account UID. The bundle records the API key fingerprint,
+raw-file hashes, window and pagination coverage; it never stores signing headers
+or credentials. Stdout contains only the bundle hash and coverage/authority flags.
+Failures leave private evidence in place and do not retry or overwrite it.
+
+`verify_bundle` requires the separately retained acquisition hash and expected
+account/key identity, verifies every file and replays each history. A locally
+recomputed hash is integrity evidence, not proof of remote authenticity. The
+trusted acquisition process must retain the returned hash before later importing
+any report into the journal. The CLI does not yet perform that import.
+
+The readbacks are sequential, not atomic, and may be newer than the requested
+history window. Even complete history does not establish contemporaneous position
+reconciliation or authorize trading. Pagination-budget exhaustion is reported as
+incomplete evidence. These bundles stay outside the public replay archive; do not
+upload them as public CI artifacts. Real capture, account reconciliation, actual
+fee/funding accounting and demo trading acceptance remain outstanding.
