@@ -16,20 +16,28 @@ The unchanged historical v3 replay harness defaults to the archived v3 prompt
 `docs/ORACLE_V3_PROMPT_ARCHIVE.md`. It is not a v4 account/prompt backtest.
 No actual model-run evaluation or profitability result is claimed by unit tests.
 
-## Production rollout still required
+## Task copy and production rollout
 
-The existing hourly ChatGPT task was inspected in its Scheduled editor on
-2026-09-21 local date. It still holds copied prompt 3.3.2 and only accepts a v3
-repository prompt. Merely merging this file does not migrate that task. The
-existing daily task is also still v3. No external task changes were saved.
+`docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.0.
+It preserves the v4 order/management, binding, sizing, cost, REFLOOP and immutable
+writer rules, while condensing explanatory feature examples and repeated writer
+instructions from the canonical file. It has 18,714 characters. The existing
+ChatGPT editor rejected a 20,822-character v3-plus-guard prompt and accepted an
+equivalent integrated version of 19,939 characters; no published product-wide
+limit is inferred from that observation. Keep private legacy context separate
+and out of this repository.
 
-After code deployment, explicit paper initialization, and a verified current
-full snapshot with execution_context, replace the existing hourly task's prompt
-with the v4 contract and set its hourly minute to :05; read back both fields.
-Preserve its existing destination and notification settings. Separately replace
-the daily task prompt while preserving its schedule. Private context in the
-existing task must never be copied into public repository artifacts. Do not
-create a replacement local automation or enable exchange execution.
+Phase 1 and the code stack are deployed (#228/#265). Production paper genesis
+merged in #283 at 06:50:19 UTC, with identical replay. The existing hourly task's
+schedule was changed to minute :05; the task chat confirmed the next occurrence
+as 2026-09-21T07:05:00Z after correcting its initial timezone description.
+A first real run is still needed to verify effective scheduling.
+
+After verifying the first current full snapshot with execution_context, replace
+the existing hourly task prompt with the compact v4 copy and read it back.
+Preserve destination and notifications. Replace the daily task prompt separately
+while preserving its schedule. No replacement local automation or exchange
+execution is introduced. Until this step is verified the saved task remains v3.
 
 Check the first real run for boundary matching, complete management, valid
 schema, timely writer acceptance, published forecast/plan, and subsequent
