@@ -68,6 +68,11 @@ def recover_available(store):
             if event['kind'] == 'OrderTriggerCancelled' and linked(event.get('order', {})):
                 add('trigger_cancelled', client_id=client_id, history_sha256=capture['trigger_history_sha256'],
                     event_id=event['event_id'], exchange_order_id=event['order']['order_id'], reason='cancelled')
+            elif event['kind'] in ('OrderTriggerUpdated', 'OrderTriggerEditRejected') and linked(event.get('order', {})):
+                for ident, operation in operations.items():
+                    if operation['action']['endpoint'] == 'editorder' and operation['status'] in ('unknown', 'acknowledged'):
+                        add('edit_resolved', operation_id=ident, history_sha256=capture['trigger_history_sha256'],
+                            event_id=event['event_id'], outcome='edit_applied' if event['kind']=='OrderTriggerUpdated' else 'edit_rejected')
         valid = {}
         for candidate in candidates:
             try:

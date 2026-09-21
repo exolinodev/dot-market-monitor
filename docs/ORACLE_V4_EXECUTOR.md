@@ -996,3 +996,27 @@ restart progression from stop to T1, empty/partial evidence, prepared intents,
 and conflicting full-fill/cancellation proofs. Activated trigger-child mapping,
 stop-market edit proof and unsupported terminal-edit lifecycles remain blocked.
 No demo/live configuration was enabled and no real exchange operation was made.
+
+
+## Recovery of edits to an unactivated stop
+
+The existing `edit_resolved` event now also accepts applied/rejected size or
+stop-price changes for a still-open mark-triggered stop-market order. Automatic
+recovery selects OrderTriggerUpdated / OrderTriggerEditRejected from the acquired
+trigger history; the explicit edit CLI selects that same source from the original
+order type. Existing limit-edit journals and commands remain compatible.
+
+Recovery requires a previously proven open owner, exact old/attempted/new terms,
+complete bound history, and one current open stop with the final size and price.
+Instrument, side, reduce-only, MarkPrice and Above/Below trigger direction must
+match. Stop-limit/trailing/offset policies, activation, competing history,
+matching executions, filled readback quantities or a missing current stop refuse
+resolution. Positive recovery changes only the effective terms of that owner;
+restart replay repeats validation and a repeated recovery appends nothing.
+
+The tests retain synthetic raw responses through the same acquisition and CLI
+path, including reduce-only sell stops. This establishes recovery semantics,
+not real exchange edit acceptance: `stop_market_edit_verified` remains false
+until authenticated demo evidence verifies that contract. Activated child orders
+and terminal edit races remain separate outstanding lifecycles. Demo/live policy
+remains disabled; no exchange mutation was made by this change.

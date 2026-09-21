@@ -23,8 +23,8 @@ def main(argv=None):
     actions.add_argument('--resolve-cancelled', metavar='CLIENT_ID', help='Prove ordinary order cancellation')
     actions.add_argument('--resolve-rejected', metavar='CLIENT_ID', help='Prove ordinary order rejection')
     actions.add_argument('--resolve-trigger-cancelled', metavar='CLIENT_ID', help='Prove unactivated stop cancellation')
-    actions.add_argument('--resolve-edit-applied', metavar='OPERATION_ID', help='Prove an ordinary limit edit took effect')
-    actions.add_argument('--resolve-edit-rejected', metavar='OPERATION_ID', help='Prove an ordinary limit edit was rejected')
+    actions.add_argument('--resolve-edit-applied', metavar='OPERATION_ID', help='Prove a limit or unactivated stop edit took effect')
+    actions.add_argument('--resolve-edit-rejected', metavar='OPERATION_ID', help='Prove a limit or unactivated stop edit was rejected')
     parser.add_argument('--capture-sha256', help='Expected latest retained observation; never imports evidence')
     parser.add_argument('--exchange-order-id', help='Exchange identity to prove against retained evidence')
     parser.add_argument('--event-id', help='Exact terminal order/trigger history event')
@@ -65,7 +65,10 @@ def main(argv=None):
                     client_id = store.state['operations'][ident]['action']['params']['cliOrdId']
                     if store.state['ownership'][client_id].get('exchange_order_id') != args.exchange_order_id:
                         raise ValueError('Edit exchange identity differs from proven owner')
-                    store.resolve_limit_edit(ident, args.capture_sha256, capture['order_history_sha256'],
+                    from demo_edits import effective_params
+                    original = effective_params(store.state, client_id, exclude=ident)
+                    source = 'trigger_history_sha256' if original['orderType'] == 'stp' else 'order_history_sha256'
+                    store.resolve_limit_edit(ident, args.capture_sha256, capture[source],
                         args.event_id, 'edit_applied' if kind == 'resolve_edit_applied' else 'edit_rejected')
                 else:
                     store.resolve_terminal_order(ident, args.capture_sha256,
