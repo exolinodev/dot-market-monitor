@@ -49,6 +49,10 @@ def position_report(store):
     for client_id, owner in sorted(state['ownership'].items()):
         operation = state['operations'][owner['origin_operation_id']]
         params = operation['action']['params']
+        if operation.get('outcome') == 'not_dispatched':
+            # Keep the identity consumed in the journal, but never whitelist it
+            # as an exchange order. Any matching real order/fill stays unknown.
+            continue
         if operation['status'] == 'prepared':
             issues.append({'kind': 'undispatched_order_intent', 'client_id': client_id})
             continue
@@ -58,7 +62,8 @@ def position_report(store):
         if owner.get('exchange_order_id'):
             known[client_id]['exchange_order_id'] = owner['exchange_order_id']
         for other in state['operations'].values():
-            if other['action']['params']['cliOrdId'] == client_id and other['action']['endpoint'] == 'editorder':
+            if (other['action']['params']['cliOrdId'] == client_id and other['action']['endpoint'] == 'editorder'
+                    and other.get('outcome') != 'not_dispatched'):
                 issues.append({'kind': 'edited_order_terms_unverified', 'client_id': client_id})
                 break
         matches = [r for r in capture['open_orders'] if r.get('cliOrdId') == client_id

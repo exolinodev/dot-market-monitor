@@ -356,8 +356,9 @@ must construct them from the bound history/readback evidence already described,
 and attach the verified plan and publication hashes to planned actions.
 
 Recovery covers open-order presence, full fills and explicit cancellation or
-rejection events as described below. Edit/trigger lifecycles and never-sent crash
-cases still need specific evidence-based recovery before the CLI can send. There is intentionally
+rejection events as described below, plus explicit abandonment before the durable
+dispatch barrier. Edit/activated-trigger lifecycles still need specific
+evidence-based recovery before the CLI can send. There is intentionally
 no generic manual `resolved=true` switch. The existing `DemoAttempts` transport
 journal remains responsible for retaining exact request/response evidence; the
 runner must connect both under the same lock. No demo journal has been initialized
@@ -385,11 +386,12 @@ cancel as `order_already_filled`. This means its desired terminal condition is
 proven, not that the exchange executed the cancellation. A completed send remains
 non-dispatchable, and every decision is reproduced by journal replay.
 
-Any edit in that order's control history blocks this original-size shortcut.
+Any edit in that order's control history, except an explicitly abandoned
+never-dispatched edit, blocks this original-size shortcut.
 An edit may alter total quantity, including while its result is unknown; the
 runner needs separately verified effective-order terms before concluding full
 execution. Cancellation/rejection evidence is handled by the order-history layer below;
-open-edit/activated-trigger outcomes and never-sent crash recovery remain outstanding. No generic absence-based or manual
+open-edit/activated-trigger outcomes remain outstanding. No generic absence-based or manual
 resolution override is added, and CLI demo/live sending remains disabled.
 
 
@@ -641,6 +643,50 @@ spread, market halt or changed tick size can reject an otherwise eligible entry.
 Margin tiers remain raw evidence only; no undocumented margin formula is inferred.
 Successful market payload tests are synthetic until the documented demo endpoint
 returns usable real data. Real demo acceptance has not started.
+
+The official [instruments reference](https://docs.kraken.com/api-reference/instrument-details/get-instruments)
+distinguishes platform `marginSchedules`, professional `marginLevels` and
+`retailMarginLevels`. The authenticated
+[leverage preferences](https://docs.kraken.com/api-reference/multi-collateral/get-leverage-settings)
+are not yet captured. The corresponding setter documents that specifying
+`maxLeverage` selects isolated margin. Neither the public tier list nor positive
+`availableMargin` establishes the applicable account requirement. The documented
+[portfolio-margin simulator](https://docs.kraken.com/api-reference/account-information/calculate-portfolio-margin-pnl-and-greeks)
+is explicitly restricted to pre-production environments; its availability for
+this demo account is unproven. Do not assume it provides a usable margin oracle.
+Real account classification, preferences and applicable requirement evidence
+remain prerequisites for the sending path; no preference is changed here.
+
+## Recovery of an intent that never reached dispatch
+
+`scripts/recover_demo_journal.py` inspects unresolved operations under the existing
+account/key-bound journal lock. Without a mutation argument it leaves the event
+chain unchanged. `--abandon-prepared OPERATION_ID` records a create-only
+`abandon_prepared` event only while that operation is still `prepared`:
+
+```sh
+python scripts/recover_demo_journal.py --journal-dir /private/demo-journal \
+  --account-uid <demo-account-uuid> --key-fingerprint <sha256-of-api-key>
+python scripts/recover_demo_journal.py --journal-dir /private/demo-journal \
+  --account-uid <demo-account-uuid> --key-fingerprint <sha256-of-api-key> \
+  --abandon-prepared <operation-id>
+```
+
+The sender contract requires `before_dispatch()` to be durably committed before
+any network request. Once that barrier exists, abandonment is refused even if
+the process crashed before opening a socket. Unknown and acknowledged requests
+still require positive exchange evidence. An incomplete journal head/chain also
+blocks recovery; the command cannot repair or reset it.
+
+An abandoned operation is resolved with outcome `not_dispatched`. Its ID remains
+consumed permanently. For a send, ownership is terminal without an exchange ID;
+for an edit/cancel, the existing order is unchanged. Reconciliation excludes an
+abandoned send from known exchange intents, so any actual matching fill/order
+remains an unexplained discrepancy. An abandoned edit cannot change effective
+quantity or price, expand terminal-recovery bounds or prevent original-size fill
+recovery. The event invalidates the cached position report. New work must pass
+fresh reconciliation and normal preflight; this local recovery authorizes no
+exchange request and does not enable demo execution.
 
 
 ## Account-log evidence and external-flow gate

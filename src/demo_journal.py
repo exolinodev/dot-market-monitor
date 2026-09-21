@@ -117,6 +117,17 @@ def transition(state, event):
         elif client_id not in result['ownership'] or result['ownership'][client_id]['role'] != action['role']:
             raise ExecutionError('Mutation has no matching durable owner')
         result['operations'][ident] = {'action': deepcopy(action), 'status': 'prepared'}
+    elif kind == 'abandon_prepared':
+        operation = result['operations'][payload['operation_id']]
+        if operation['status'] != 'prepared':
+            raise ExecutionError('Only a never-dispatched prepared operation can be abandoned')
+        operation.update(status='resolved', outcome='not_dispatched')
+        action = operation['action']
+        if action['endpoint'] == 'sendorder':
+            owner = result['ownership'][action['params']['cliOrdId']]
+            owner.update(status='terminal', terminal_reason='not_dispatched')
+        # Edits/cancels that never left the process cannot change the original
+        # order's ownership, economics or exchange lifecycle.
     elif kind in ('dispatch', 'response'):
         ident = payload['operation_id']
         operation = result['operations'][ident]
@@ -312,6 +323,14 @@ class Journal:
     def before_dispatch(self, operation_id):
         return self.append('dispatch', {'operation_id': operation_id})
 
+    def abandon_prepared(self, operation_id):
+        """Consume an unsent intent permanently; never resolve an attempted send.
+
+        The sender must persist before_dispatch() before contacting the exchange.
+        A crash after that barrier remains unknown even if no socket was opened.
+        """
+        return self.append('abandon_prepared', {'operation_id': operation_id})
+
     def response(self, operation_id, response_evidence):
         ident = self.artifact(response_evidence)
         return self.append('response', {'operation_id': operation_id, 'artifact_sha256': ident})
@@ -327,7 +346,7 @@ class Journal:
         client_id = payload['client_id']
         owner = self._state['ownership'][client_id]
         origin = self._state['operations'][owner['origin_operation_id']]
-        if origin['status'] == 'prepared':
+        if origin['status'] == 'prepared' or origin.get('outcome') == 'not_dispatched':
             raise ExecutionError('Never-dispatched intent cannot have exchange fills')
         action = origin['action']
         params = action['params']
@@ -335,6 +354,7 @@ class Journal:
         # contract is independently reconstructed, original send size is not
         # sufficient evidence of completion (including an in-flight edit).
         if any(o['action']['params']['cliOrdId'] == client_id and o['action']['endpoint'] == 'editorder'
+               and o.get('outcome') != 'not_dispatched'
                for o in self._state['operations'].values()):
             raise ExecutionError('Edited order needs effective-size recovery evidence')
         capture = self._read_artifact(payload['capture_sha256'])
@@ -386,7 +406,7 @@ class Journal:
         client_id = payload['client_id']
         owner = self._state['ownership'][client_id]
         origin = self._state['operations'][owner['origin_operation_id']]
-        if origin['status'] == 'prepared':
+        if origin['status'] == 'prepared' or origin.get('outcome') == 'not_dispatched':
             raise ExecutionError('Terminal history cannot resolve a never-dispatched send')
         params = origin['action']['params']
         if params['orderType'] == 'stp':
@@ -433,7 +453,8 @@ class Journal:
             for operation in self._state['operations'].values():
                 action = operation['action']
                 if (action['params']['cliOrdId'] == client_id and action['endpoint'] == 'editorder'
-                        and operation['status'] != 'prepared' and 'size' in action['params']):
+                        and operation['status'] != 'prepared' and operation.get('outcome') != 'not_dispatched'
+                        and 'size' in action['params']):
                     maximum = max(maximum, numeric(action['params']['size'], positive=True))
             quantity, filled = numeric(order['quantity']), numeric(order['filled'])
             if quantity < 0 or quantity > maximum or filled < 0 or filled > quantity:
@@ -466,7 +487,8 @@ class Journal:
         owner = self._state['ownership'][client_id]
         origin = self._state['operations'][owner['origin_operation_id']]
         params = origin['action']['params']
-        if origin['status'] == 'prepared' or params['orderType'] != 'stp' or payload['reason'] != 'cancelled':
+        if (origin['status'] == 'prepared' or origin.get('outcome') == 'not_dispatched'
+                or params['orderType'] != 'stp' or payload['reason'] != 'cancelled'):
             raise ExecutionError('Only dispatched stop triggers can use cancellation recovery')
         capture = self._read_artifact(payload['capture_sha256'])
         history = self._read_artifact(payload['history_sha256'])
@@ -494,7 +516,8 @@ class Journal:
         prices = {numeric(params['stopPrice'], positive=True)}
         for operation in self._state['operations'].values():
             action = operation['action']
-            if action['params']['cliOrdId'] == client_id and action['endpoint'] == 'editorder' and operation['status'] != 'prepared':
+            if (action['params']['cliOrdId'] == client_id and action['endpoint'] == 'editorder'
+                    and operation['status'] != 'prepared' and operation.get('outcome') != 'not_dispatched'):
                 if 'size' in action['params']: maximum = max(maximum, numeric(action['params']['size'], positive=True))
                 if 'stopPrice' in action['params']: prices.add(numeric(action['params']['stopPrice'], positive=True))
         if not 0 <= numeric(order['quantity']) <= maximum or numeric(order['trigger_price']) not in prices:
