@@ -7,7 +7,7 @@ import re
 
 from account_log import capture_account_log, verify_account_log
 from exchange_history import account_id, capture_executions, capture_orders, capture_triggers, verify_capture, milliseconds
-from kraken_execution import READS, ExecutionError, _create, _json_bytes, _response, _sync_directory, capture_readback
+from kraken_execution import READS, READS_WITH_PREFERENCES, ExecutionError, _create, _json_bytes, _response, _sync_directory, capture_readback
 
 HISTORIES = {'executions': (capture_executions, 'execution_history'),
              'orders': (capture_orders, 'order_history'),
@@ -17,6 +17,10 @@ HISTORIES = {'executions': (capture_executions, 'execution_history'),
 
 def histories_for(version):
     return {k: v for k, v in HISTORIES.items() if version >= 3 or k != 'account-log'}
+
+
+def readbacks_for(version):
+    return READS_WITH_PREFERENCES if version >= 4 else READS
 
 
 def digest(raw):
@@ -60,12 +64,12 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
         market = capture_market(root/'market', client)
         if not market['available']:
             raise ExecutionError('Public demo market unavailable; private requests not attempted')
-        capture_readback(root / 'readback', client)
+        capture_readback(root / 'readback', client, include_preferences=True)
         if through is None:
             from datetime import timedelta
             from cycles import iso
             from exchange_reconciliation import exchange_time
-            latest = max(exchange_time(json.loads((root/'readback'/f'{name}.raw').read_bytes())['serverTime']) for name in READS)
+            latest = max(exchange_time(json.loads((root/'readback'/f'{name}.raw').read_bytes())['serverTime']) for name in READS_WITH_PREFERENCES)
             if latest.microsecond % 1000:
                 latest += timedelta(microseconds=1000 - latest.microsecond % 1000)
             through = iso(latest)
@@ -75,7 +79,7 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
         for name, (capture, _) in HISTORIES.items():
             report = capture(root / name, client, expected_account, since, through, max_pages=max_pages)
             complete = complete and report['coverage_complete']
-        manifest = {'version': 3, 'environment': 'demo', 'account_uid': expected_account,
+        manifest = {'version': 4, 'environment': 'demo', 'account_uid': expected_account,
                     'api_key_fingerprint': key_fingerprint, 'since_utc': since, 'through_utc': through,
                     'history_coverage_complete': complete, 'atomic_snapshot': False,
                     'authorizes_execution': False, 'files': inventory(root)}
@@ -101,7 +105,7 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
     if digest(raw) != expected_sha256:
         raise ExecutionError('Demo bundle hash mismatch')
     manifest = json.loads(raw)
-    if (manifest['version'] not in (1, 2, 3) or manifest['environment'] != 'demo'
+    if (manifest['version'] not in (1, 2, 3, 4) or manifest['environment'] != 'demo'
             or manifest['account_uid'] != account_id(expected_account)
             or manifest['api_key_fingerprint'] != key_fingerprint
             or manifest['authorizes_execution'] is not False or manifest['atomic_snapshot'] is not False):
@@ -118,11 +122,12 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
     if {p.name for p in root.iterdir()} != expected_roots:
         raise ExecutionError('Unexpected demo bundle artifacts')
     readback = root / 'readback'
-    expected_names = {'manifest.json'} | {name + ext for name in READS for ext in ('.raw', '.json')}
+    fields = readbacks_for(manifest['version'])
+    expected_names = {'manifest.json'} | {name + ext for name in fields for ext in ('.raw', '.json')}
     if {p.name for p in readback.iterdir()} != expected_names:
         raise ExecutionError('Unexpected readback artifacts')
     metadata = {}
-    for endpoint, field in READS.items():
+    for endpoint, field in fields.items():
         response = (readback / (endpoint + '.raw')).read_bytes()
         item = json.loads((readback / (endpoint + '.json')).read_bytes())
         if item['sha256'] != digest(response) or item['bytes'] != len(response):
@@ -130,8 +135,11 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
         value = _response(item['http_status'], response, field)
         if not isinstance(value[field], dict if endpoint == 'accounts' else list):
             raise ExecutionError('Malformed readback collection')
+        if endpoint == 'leveragepreferences':
+            from demo_leverage import preference
+            preference(value)
         metadata[endpoint] = item
-    if json.loads((readback / 'manifest.json').read_bytes()) != {'version': 1, 'environment': 'demo', 'responses': metadata}:
+    if json.loads((readback / 'manifest.json').read_bytes()) != {'version': 2 if manifest['version'] >= 4 else 1, 'environment': 'demo', 'responses': metadata}:
         raise ExecutionError('Readback manifest differs from raw evidence')
     complete = True
     for name, (_, source) in sources.items():

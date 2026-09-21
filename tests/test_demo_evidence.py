@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from demo_evidence import capture_bundle, verify_bundle
-from kraken_execution import READS, ExecutionError
+from kraken_execution import READS_WITH_PREFERENCES, ExecutionError
 from test_exchange_history import ACCOUNT, OTHER, START, END, DATE, body
 
 KEY = hashlib.sha256(b'synthetic-key').hexdigest()
@@ -29,10 +29,10 @@ class Client:
         return market_response(endpoint)
 
     def request(self, endpoint, params=None):
-        assert endpoint in READS
+        assert endpoint in READS_WITH_PREFERENCES
         self.calls.append(endpoint)
         return 200, json.dumps({'result': 'success', 'serverTime': END,
-                               READS[endpoint]: {} if endpoint == 'accounts' else []}).encode() + b' \n'
+                               READS_WITH_PREFERENCES[endpoint]: {} if endpoint == 'accounts' else []}).encode() + b' \n'
 
     def history(self, endpoint, params):
         assert endpoint in ('executions', 'orders', 'triggers', 'account-log')
@@ -46,7 +46,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     root = tmp_path/'bundle'; client = Client()
     result = capture_bundle(root, client, ACCOUNT, KEY, START, END)
     manifest = verify_bundle(root, ACCOUNT, KEY, result['bundle_sha256'])
-    assert client.calls == ['tickers', 'instruments', *READS, 'executions', 'orders', 'triggers', 'account-log']
+    assert client.calls == ['tickers', 'instruments', *READS_WITH_PREFERENCES, 'executions', 'orders', 'triggers', 'account-log']
     assert manifest['history_coverage_complete'] and not manifest['atomic_snapshot']
     assert not manifest['authorizes_execution']
     assert root.stat().st_mode & 0o777 == 0o700
@@ -54,7 +54,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     assert (root/'readback/accounts.raw').read_bytes().endswith(b' \n')
     with pytest.raises(FileExistsError):
         capture_bundle(root, client, ACCOUNT, KEY, START, END)
-    assert len(client.calls) == 10
+    assert len(client.calls) == 11
 
 
 @pytest.mark.parametrize('change', ['raw', 'extra', 'symlink', 'manifest'])
@@ -105,7 +105,7 @@ def test_cli_refuses_repository_output_before_credentials_or_network(tmp_path):
     assert not (repo/'private-demo-test').exists()
 
 
-@pytest.mark.parametrize('version', [1, 2])
+@pytest.mark.parametrize('version', [1, 2, 3])
 def test_legacy_bundle_remains_replayable(tmp_path, version):
     import shutil
     from demo_evidence import digest, inventory
@@ -113,7 +113,12 @@ def test_legacy_bundle_remains_replayable(tmp_path, version):
     root = tmp_path/'legacy'
     capture_bundle(root, Client(), ACCOUNT, KEY, START, END)
     if version == 1: shutil.rmtree(root/'market')
-    shutil.rmtree(root/'account-log')
+    if version < 3: shutil.rmtree(root/'account-log')
+    for ext in ('.raw', '.json'): (root/'readback'/('leveragepreferences'+ext)).unlink()
+    metadata = json.loads((root/'readback/manifest.json').read_bytes())
+    metadata['version'] = 1
+    del metadata['responses']['leveragepreferences']
+    (root/'readback/manifest.json').write_bytes(_json_bytes(metadata))
     manifest = json.loads((root/'bundle.json').read_bytes())
     manifest.update(version=version, files=inventory(root))
     raw = _json_bytes(manifest); (root/'bundle.json').write_bytes(raw)

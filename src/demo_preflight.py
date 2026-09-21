@@ -69,6 +69,9 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
     baseline = acquired(store, current['baseline_capture'])
     at = utc(reference)
     reasons = []
+    leverage = capture.get('leverage_preference')
+    if leverage is None:
+        reasons.append('demo_leverage_preferences_missing')
     flow_check = {'verified_no_external_flows': False, 'issues': [{'kind': 'account_log_missing'}]}
     if capture.get('account_log_sha256'):
         from account_log import cashflow_check
@@ -145,5 +148,6 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
             'entry_checks_passed': not reasons, 'reasons': reasons, 'demo_enabled': settings['enabled'],
             'entry_request': entry_request(plan, config), 'budget_equity_usd': number(budget_equity),
             'available_margin_usd': number(available), 'quantity_ceiling': None if ceiling is None else ceiling['quantity'],
+            'demo_leverage_preference': leverage, 'leverage_preferences_verified': leverage is not None,
             'account_flows_verified': flow_check['verified_no_external_flows'], 'account_flow_issues': flow_check['issues'], 'live_quote_verified': market_verified, 'exchange_margin_requirement_verified': False,
             'authorizes_execution': False}
