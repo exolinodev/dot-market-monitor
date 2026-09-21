@@ -21,6 +21,8 @@ class Client:
         values = {'openorders': self.orders, 'openpositions': self.positions, 'fills': [], 'accounts': {}}
         return 200, json.dumps({'result': 'success', 'serverTime': self.at, READS[endpoint]: values[endpoint]}).encode()
     def history(self, endpoint, params):
+        if endpoint == 'account-log':
+            return 200, json.dumps({'accountUid': ACCOUNT, 'logs': []}).encode(), {'Date': DATE}
         return 200, json.dumps(body(self.events if endpoint == 'executions' else [])).encode(), {'Date': DATE}
 
 

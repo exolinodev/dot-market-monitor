@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 
 from cycles import iso, utc
-from demo_evidence import HISTORIES, verify_bundle
+from demo_evidence import HISTORIES, histories_for, verify_bundle
 from exchange_reconciliation import exchange_time
 from kraken_execution import READS, ExecutionError, _sync_directory
 
@@ -23,10 +23,12 @@ def observation(directory, expected_account, key_fingerprint, bundle_sha256):
     start, end = utc(manifest['since_utc']), utc(manifest['through_utc'])
     if not start <= earliest <= latest <= end:
         raise ExecutionError('History does not cover all readback times')
-    histories = {name: json.loads((root/name/'manifest.json').read_bytes()) for name in HISTORIES}
+    histories = {name: json.loads((root/name/'manifest.json').read_bytes()) for name in histories_for(manifest['version'])}
     events = [utc(fill['fillTime']) for fill in histories['executions']['fills']]
     events += [utc(event['at_utc']) for name in ('orders', 'triggers')
                for event in histories[name][name[:-1] + '_events']]
+    if 'account-log' in histories:
+        events += [utc(row['at_utc']) for row in histories['account-log']['entries']]
     # Any account activity during collection makes absence/quantity comparisons
     # unsafe; require a later acquisition rather than infer an ordering.
     if any(earliest <= stamp <= end for stamp in events):
@@ -37,7 +39,7 @@ def observation(directory, expected_account, key_fingerprint, bundle_sha256):
             'positions': responses['openpositions']['openPositions'], 'accounts': responses['accounts']['accounts'],
             'bundle_sha256': bundle_sha256, 'quantity_reconciled': False,
             'authorizes_execution': False}
-    if manifest['version'] == 2:
+    if manifest['version'] >= 2:
         from demo_market import verify_market
         value['market'] = verify_market(root/'market')['market']
     return value, histories
@@ -77,7 +79,8 @@ def import_observation(store, directory, bundle_sha256):
     copied, copied_histories = observation(destination, identity['account_uid'], identity['api_key_fingerprint'], bundle_sha256)
     if copied != value or copied_histories != histories:
         raise ExecutionError('Acquisition changed during import')
-    for name, (_, source) in HISTORIES.items():
+    for name in histories:
+        _, source = HISTORIES[name]
         value[source + '_sha256'] = store.artifact(histories[name])
     return store.capture(value)
 
@@ -88,7 +91,8 @@ def verify_journal_observation(store, value):
     rebuilt, histories = observation(store.root/'evidence'/value['bundle_sha256'],
                                     store.identity['account_uid'], store.identity['api_key_fingerprint'], value['bundle_sha256'])
     from demo_journal import sha
-    for name, (_, source) in HISTORIES.items():
+    for name in histories:
+        _, source = HISTORIES[name]
         ident = sha(histories[name])
         if store._read_artifact(ident) != histories[name]:
             raise ExecutionError('Journal history differs from acquired evidence')

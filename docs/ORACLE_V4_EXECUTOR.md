@@ -151,7 +151,7 @@ acceptance window.
 [execution events endpoint](https://docs.kraken.com/api-reference/account-history/get-execution-events)
 at `/api/history/v3/executions`. The demo transport now supports read-only
 history calls to executions/orders/triggers/account-log on the same fixed demo
-host. Executions, orders and triggers have account-bound capture/parsers; account logs are not yet parsed.
+host. Executions, orders, triggers and account logs now have account-bound capture/parsers; account-log ID pagination is described separately below.
 
 The signing path includes `/api/history/v3/...`; it is not a trading
 `/api/v3/...` endpoint and has no `/derivatives` URL prefix. This follows the
@@ -596,7 +596,8 @@ and reward/risk check. The request keeps the exact published quantity; exceeding
 the current ceiling rejects it rather than silently resizing it.
 
 This is still preflight evidence, with `authorizes_execution=false`. It does not
-verify account transfers or an exact exchange initial-margin requirement. These
+verify an exact exchange initial-margin requirement. Account-log flow classification
+is now required as described below; actual net accounting is still unverified. These
 limits are explicit in the output. Successful real demo market acquisition,
 cash-flow/cost accounting, effective-term recovery and final dispatch orchestration remain
 required before demo sending. A preview cannot be cached as permission: the
@@ -640,3 +641,48 @@ spread, market halt or changed tick size can reject an otherwise eligible entry.
 Margin tiers remain raw evidence only; no undocumented margin formula is inferred.
 Successful market payload tests are synthetic until the documented demo endpoint
 returns usable real data. Real demo acceptance has not started.
+
+
+## Account-log evidence and external-flow gate
+
+`src/account_log.py` implements the documented
+[account log endpoint](https://docs.kraken.com/api-reference/account-history/get-account-log),
+whose response is `{accountUid, logs}` rather than execution-history `elements`.
+It requests all entry types, ascending order, count 500 and conversion details.
+The initial fixed millisecond window is expanded by one millisecond at each edge,
+then locally filtered to the requested inclusive window. RFC3339 entry dates
+retain supported microsecond precision; finer nonzero precision is rejected.
+
+Pagination uses documented inclusive `from` IDs: each next request starts at the
+last ID plus one while keeping the original time window. Even a short page is
+followed; only an explicit empty page establishes pagination coverage. Duplicate
+IDs/bookings, decreasing chronology, wrong accounts, out-of-window entries,
+invalid response Date, changed request bindings or exhausted page budgets cannot
+claim complete evidence. Replay verifies every raw page and reconstructs the
+manifest. Coverage follows the API contract, not an undocumented ingestion-delay
+guarantee. IDs need not be contiguous within a time-filtered query.
+
+Bundle version 3 adds this source to private acquisition and journal replay.
+Version-1/2 bundles remain replayable. Any account-log activity overlapping the
+readback interval rejects observation import, just like executions/order changes.
+The stored rows retain exact fee, realized-funding, realized-PnL, old/new balance,
+asset, collateral, contract, wallet and optional conversion fields. Null is not
+converted into zero, and wallet balance changes are not confused with position
+size changes. No total in USD is inferred from potentially duplicated or
+non-USD wallet/position rows; `actual_costs_verified` remains false.
+
+Entry preflight now requires complete account-log coverage from the flat baseline
+through its current observation. Deposits, withdrawals and documented transfer
+categories produce `external_account_flow`; unknown categories produce
+`unclassified_account_activity`. A futures-trade row must name PF_DOTUSD and link
+to an execution in the acquired history; a funding-rate-change row must name
+PF_DOTUSD. Otherwise it remains unclassified. Only a fully covered interval with
+no external/unclassified activity sets `account_flows_verified=true`—a statement
+about declared API activity, not a net-profit calculation. A matching flat
+position cannot hide a deposit. Detected external flows do not automatically
+reset the baseline or relax the equity floor.
+
+Tests are synthetic, including the wallet/position field examples. Authenticated
+account-log fixtures, currency/booking reconciliation, actual fee/funding totals
+and verified exchange net performance remain outstanding while the public demo
+host is unavailable from the current environment.

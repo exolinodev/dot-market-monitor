@@ -64,7 +64,7 @@ def test_current_flat_account_and_published_entry_pass_without_authorizing(tmp_p
     result = run(args)
     assert result['entry_checks_passed'] and not result['reasons']
     assert not result['demo_enabled'] and not result['authorizes_execution']
-    assert not result['account_flows_verified'] and result['live_quote_verified']
+    assert result['account_flows_verified'] and result['live_quote_verified']
     assert result['entry_request']['size'] == result['quantity_ceiling']
     # A local policy edit must not relax the committed limits.
     (args[0]/'config/demo_executor.json').write_text('{}')
@@ -176,3 +176,25 @@ def test_current_market_controls_entry_checks(tmp_path, change, reason):
         store.reconcile_position()
     result = run(args)
     assert reason in result['reasons'] and not result['entry_checks_passed']
+
+
+def test_external_deposit_blocks_preflight_even_with_matching_flat_position(tmp_path):
+    from test_account_log import row
+    from test_exchange_history import DATE
+    args = setup(tmp_path)
+    class Deposit(Funded):
+        def history(self, endpoint, params):
+            if endpoint == 'account-log':
+                rows = [] if 'from' in params else [row(at='2026-09-20T20:04:50Z', info='deposit',
+                    contract=None, execution='deposit-reference', new_balance='5100')]
+                return 200, json.dumps({'accountUid': ACCOUNT, 'logs': rows}).encode(), {'Date': DATE}
+            return super().history(endpoint, params)
+    with locked(args[4], ACCOUNT, KEY) as store:
+        result = capture_bundle(tmp_path/'deposit', Deposit(AT), ACCOUNT, KEY, START)
+        import_observation(store, tmp_path/'deposit', result['bundle_sha256'])
+        _, position = store.reconcile_position()
+        assert position['quantity_reconciled']
+    result = run(args)
+    assert not result['account_flows_verified'] and not result['entry_checks_passed']
+    assert 'account_flows_unverified_or_external' in result['reasons']
+    assert result['account_flow_issues'][0]['kind'] == 'external_account_flow'

@@ -69,6 +69,14 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
     baseline = acquired(store, current['baseline_capture'])
     at = utc(reference)
     reasons = []
+    flow_check = {'verified_no_external_flows': False, 'issues': [{'kind': 'account_log_missing'}]}
+    if capture.get('account_log_sha256'):
+        from account_log import cashflow_check
+        execution = store._read_artifact(capture['execution_history_sha256'])
+        flow_check = cashflow_check(store._read_artifact(capture['account_log_sha256']),
+                                   baseline['reference_utc'], capture['reference_utc'], execution['fills'])
+    if not flow_check['verified_no_external_flows']:
+        reasons.append('account_flows_unverified_or_external')
     age = (at - utc(capture['readback_start_utc'])).total_seconds()
     span = (utc(capture['readback_end_utc']) - utc(capture['readback_start_utc'])).total_seconds()
     if at < utc(capture['reference_utc']) or age < 0:
@@ -137,5 +145,5 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
             'entry_checks_passed': not reasons, 'reasons': reasons, 'demo_enabled': settings['enabled'],
             'entry_request': entry_request(plan, config), 'budget_equity_usd': number(budget_equity),
             'available_margin_usd': number(available), 'quantity_ceiling': None if ceiling is None else ceiling['quantity'],
-            'account_flows_verified': False, 'live_quote_verified': market_verified, 'exchange_margin_requirement_verified': False,
+            'account_flows_verified': flow_check['verified_no_external_flows'], 'account_flow_issues': flow_check['issues'], 'live_quote_verified': market_verified, 'exchange_margin_requirement_verified': False,
             'authorizes_execution': False}

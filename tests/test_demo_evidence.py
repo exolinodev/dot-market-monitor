@@ -35,8 +35,10 @@ class Client:
                                READS[endpoint]: {} if endpoint == 'accounts' else []}).encode() + b' \n'
 
     def history(self, endpoint, params):
-        assert endpoint in ('executions', 'orders', 'triggers')
+        assert endpoint in ('executions', 'orders', 'triggers', 'account-log')
         self.calls.append(endpoint)
+        if endpoint == 'account-log':
+            return 200, json.dumps({'accountUid': self.account, 'logs': []}).encode(), {'Date': DATE}
         return 200, json.dumps(body([], token=self.continuation, account=self.account)).encode(), {'Date': DATE}
 
 
@@ -44,7 +46,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     root = tmp_path/'bundle'; client = Client()
     result = capture_bundle(root, client, ACCOUNT, KEY, START, END)
     manifest = verify_bundle(root, ACCOUNT, KEY, result['bundle_sha256'])
-    assert client.calls == ['tickers', 'instruments', *READS, 'executions', 'orders', 'triggers']
+    assert client.calls == ['tickers', 'instruments', *READS, 'executions', 'orders', 'triggers', 'account-log']
     assert manifest['history_coverage_complete'] and not manifest['atomic_snapshot']
     assert not manifest['authorizes_execution']
     assert root.stat().st_mode & 0o777 == 0o700
@@ -52,7 +54,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     assert (root/'readback/accounts.raw').read_bytes().endswith(b' \n')
     with pytest.raises(FileExistsError):
         capture_bundle(root, client, ACCOUNT, KEY, START, END)
-    assert len(client.calls) == 9
+    assert len(client.calls) == 10
 
 
 @pytest.mark.parametrize('change', ['raw', 'extra', 'symlink', 'manifest'])
@@ -103,14 +105,16 @@ def test_cli_refuses_repository_output_before_credentials_or_network(tmp_path):
     assert not (repo/'private-demo-test').exists()
 
 
-def test_legacy_v1_bundle_remains_replayable(tmp_path):
+@pytest.mark.parametrize('version', [1, 2])
+def test_legacy_bundle_remains_replayable(tmp_path, version):
     import shutil
     from demo_evidence import digest, inventory
     from kraken_execution import _json_bytes
     root = tmp_path/'legacy'
     capture_bundle(root, Client(), ACCOUNT, KEY, START, END)
-    shutil.rmtree(root/'market')
+    if version == 1: shutil.rmtree(root/'market')
+    shutil.rmtree(root/'account-log')
     manifest = json.loads((root/'bundle.json').read_bytes())
-    manifest.update(version=1, files=inventory(root))
+    manifest.update(version=version, files=inventory(root))
     raw = _json_bytes(manifest); (root/'bundle.json').write_bytes(raw)
-    assert verify_bundle(root, ACCOUNT, KEY, digest(raw))['version'] == 1
+    assert verify_bundle(root, ACCOUNT, KEY, digest(raw))['version'] == version

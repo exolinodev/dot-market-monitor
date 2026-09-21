@@ -43,6 +43,8 @@ def test_stale_history_end_cannot_resolve_newer_readback(tmp_path):
 def test_readback_race_rejected_even_if_final_quantity_might_match(tmp_path):
     class Racing(Client):
         def history(self, endpoint, params):
+            if endpoint == 'account-log':
+                return 200, json.dumps({'accountUid': ACCOUNT, 'logs': []}).encode(), {'Date': DATE}
             return 200, json.dumps(body([event(at=END)] if endpoint == 'executions' else [])).encode(), {'Date': DATE}
     journal, bundle, sha = setup(tmp_path, Racing())
     with locked(journal, ACCOUNT, KEY) as store:
@@ -77,3 +79,18 @@ def test_nested_source_cannot_recursively_copy_into_itself(tmp_path):
             import_observation(store, bundle, result['bundle_sha256'])
         assert store.state['latest_capture'] is None
     assert not (bundle/result['bundle_sha256']).exists()
+
+
+def test_account_log_activity_during_readbacks_prevents_import(tmp_path):
+    from test_account_log import row
+    class Deposit(Client):
+        def history(self, endpoint, params):
+            if endpoint == 'account-log':
+                rows = [] if 'from' in params else [row(at=END, info='deposit', execution=None, contract=None)]
+                return 200, json.dumps({'accountUid': ACCOUNT, 'logs': rows}).encode(), {'Date': DATE}
+            return super().history(endpoint, params)
+    journal, bundle, sha = setup(tmp_path, Deposit())
+    with locked(journal, ACCOUNT, KEY) as store:
+        with pytest.raises(ExecutionError, match='overlaps readbacks'):
+            import_observation(store, bundle, sha)
+        assert store.state['latest_capture'] is None

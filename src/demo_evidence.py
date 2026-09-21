@@ -5,12 +5,18 @@ import os
 from pathlib import Path
 import re
 
+from account_log import capture_account_log, verify_account_log
 from exchange_history import account_id, capture_executions, capture_orders, capture_triggers, verify_capture, milliseconds
 from kraken_execution import READS, ExecutionError, _create, _json_bytes, _response, _sync_directory, capture_readback
 
 HISTORIES = {'executions': (capture_executions, 'execution_history'),
              'orders': (capture_orders, 'order_history'),
-             'triggers': (capture_triggers, 'trigger_history')}
+             'triggers': (capture_triggers, 'trigger_history'),
+             'account-log': (capture_account_log, 'account_log')}
+
+
+def histories_for(version):
+    return {k: v for k, v in HISTORIES.items() if version >= 3 or k != 'account-log'}
 
 
 def digest(raw):
@@ -69,7 +75,7 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
         for name, (capture, _) in HISTORIES.items():
             report = capture(root / name, client, expected_account, since, through, max_pages=max_pages)
             complete = complete and report['coverage_complete']
-        manifest = {'version': 2, 'environment': 'demo', 'account_uid': expected_account,
+        manifest = {'version': 3, 'environment': 'demo', 'account_uid': expected_account,
                     'api_key_fingerprint': key_fingerprint, 'since_utc': since, 'through_utc': through,
                     'history_coverage_complete': complete, 'atomic_snapshot': False,
                     'authorizes_execution': False, 'files': inventory(root)}
@@ -95,15 +101,16 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
     if digest(raw) != expected_sha256:
         raise ExecutionError('Demo bundle hash mismatch')
     manifest = json.loads(raw)
-    if (manifest['version'] not in (1, 2) or manifest['environment'] != 'demo'
+    if (manifest['version'] not in (1, 2, 3) or manifest['environment'] != 'demo'
             or manifest['account_uid'] != account_id(expected_account)
             or manifest['api_key_fingerprint'] != key_fingerprint
             or manifest['authorizes_execution'] is not False or manifest['atomic_snapshot'] is not False):
         raise ExecutionError('Demo bundle identity/policy mismatch')
     if inventory(root) != manifest['files']:
         raise ExecutionError('Demo bundle files changed')
-    expected_roots = {'bundle.json', 'readback', *HISTORIES}
-    if manifest['version'] == 2:
+    sources = histories_for(manifest['version'])
+    expected_roots = {'bundle.json', 'readback', *sources}
+    if manifest['version'] >= 2:
         from demo_market import verify_market
         expected_roots.add('market')
         if not verify_market(root/'market')['available']:
@@ -127,8 +134,9 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
     if json.loads((readback / 'manifest.json').read_bytes()) != {'version': 1, 'environment': 'demo', 'responses': metadata}:
         raise ExecutionError('Readback manifest differs from raw evidence')
     complete = True
-    for name, (_, source) in HISTORIES.items():
-        report = verify_capture(root / name, expected_account, manifest['since_utc'], manifest['through_utc'], source=source)
+    for name, (_, source) in sources.items():
+        report = (verify_account_log(root/name, expected_account, manifest['since_utc'], manifest['through_utc'])
+                  if source == 'account_log' else verify_capture(root / name, expected_account, manifest['since_utc'], manifest['through_utc'], source=source))
         complete = complete and report['coverage_complete']
     if complete is not manifest['history_coverage_complete']:
         raise ExecutionError('Bundle coverage differs from history')
