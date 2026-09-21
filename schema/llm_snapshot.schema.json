@@ -127,6 +127,10 @@
         "consumer_max_age_seconds"
       ],
       "properties": {
+        "run_kind": {"enum": ["full"]},
+        "cycle_boundary_utc": {"type": "string", "format": "date-time"},
+        "boundary_lag_seconds": {"type": "number", "minimum": 0},
+        "late": {"type": "boolean"},
         "schema_version": {
           "const": 2
         },

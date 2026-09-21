@@ -2,9 +2,18 @@ name: Update DOT market data
 
 on:
   workflow_dispatch:
+    inputs:
+      run_kind:
+        type: choice
+        options: [full, light]
+        default: full
+      boundary_utc:
+        description: UTC quarter-hour boundary; empty for manual current cycle
+        type: string
+        default: ''
   schedule:
     # Independent fallback if Cloudflare stops delivering events. GitHub can be late.
-    - cron: "52 * * * *"
+    - cron: "3,18,33,48 * * * *"
   push:
     branches: [main]
     paths:
@@ -40,6 +49,9 @@ jobs:
 
       - name: Skip collection when the snapshot is already current
         id: freshness
+        env:
+          RUN_KIND: ${{ inputs.run_kind }}
+          BOUNDARY_UTC: ${{ inputs.boundary_utc }}
         run: python3 scripts/collection_due.py
 
       - name: Set up Python
@@ -56,14 +68,23 @@ jobs:
         if: steps.freshness.outputs.due == 'true'
         run: python -m pip install --disable-pip-version-check --progress-bar off -r tests/requirements.txt
 
+      - name: Wait until boundary plus eight seconds
+        if: steps.freshness.outputs.due == 'true'
+        env:
+          RUN_KIND: ${{ steps.freshness.outputs.run_kind }}
+          BOUNDARY_UTC: ${{ steps.freshness.outputs.boundary_utc }}
+        run: python scripts/wait_boundary.py --run-kind "$RUN_KIND" --boundary "$BOUNDARY_UTC"
+
       - name: Collect market data and indicators
         if: steps.freshness.outputs.due == 'true'
         env:
+          RUN_KIND: ${{ steps.freshness.outputs.run_kind }}
+          BOUNDARY_UTC: ${{ steps.freshness.outputs.boundary_utc }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
-        run: python src/main.py
+        run: python src/main.py --run-kind "$RUN_KIND" --boundary "$BOUNDARY_UTC"
 
       - name: Set up Node for scheduler checks
-        if: steps.freshness.outputs.due == 'true'
+        if: steps.freshness.outputs.due == 'true' && steps.freshness.outputs.run_kind == 'full'
         uses: actions/setup-node@v7.0.0
         with:
           node-version: "22"
@@ -71,10 +92,21 @@ jobs:
       - name: Publish tested snapshot through a protected data PR
         if: steps.freshness.outputs.due == 'true'
         env:
+          RUN_KIND: ${{ steps.freshness.outputs.run_kind }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "dot-market-bot"
           git config user.email "dot-market-bot@users.noreply.github.com"
+          if [ -d data/intraday ]; then
+            git add data/intraday
+          fi
+          if [ "$RUN_KIND" = "light" ]; then
+            python scripts/promote_data.py light
+            exit 0
+          fi
+          if [ -d data/funding ]; then
+            git add data/funding
+          fi
           git add data/latest.json data/latest.md data/llm_snapshot.json data/history.json data/raw/latest.json.gz data/raw/ohlc_cache.json.gz
           git add data/oracle/consumer
           if [ -f data/raw/observation_history.json.gz ]; then

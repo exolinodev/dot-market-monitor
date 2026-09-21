@@ -22,6 +22,8 @@ def compact_snapshot(data):
     out=copy.deepcopy(data)
     out['meta']={key:out.pop(key) for key in ['schema_version','generated_at_utc','generated_at_unix',
                 'collection_started_at_utc','run_duration_seconds','formula_version','status','history_points','raw_data','definitions']}
+    for key in ('run_kind', 'cycle_boundary_utc', 'boundary_lag_seconds', 'late'):
+        if key in out: out['meta'][key] = out.pop(key)
     out['meta']['consumer_max_age_seconds']=5400
     out['meta']['fresh']=True
     out['meta']['numeric_export_significant_digits']=12

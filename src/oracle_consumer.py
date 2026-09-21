@@ -65,6 +65,8 @@ def build_consumer_bundle(snapshot):
             add('timeframes', *base, 'last_closed', 'indicators', key)
         if tf in ('1w', '1d', '4h', '1h'):
             add('structure', *base, 'structure')
+    add('intraday', *dot, 'intraday')
+    add('intraday', *dot, 'perp', 'historical_data')
     add('timing', *dot, 'time_fibs')
     for key in OBSERVATION_COMPONENTS:
         add('observations', *dot, 'observations', 'components', key)

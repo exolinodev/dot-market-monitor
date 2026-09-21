@@ -89,7 +89,7 @@ flowchart LR
 | `src/pipeline.py`, `output.py`, `main.py` | isolierte Sammlung, Ausgabe, Schema-Prüfung |
 | `data/llm_snapshot.json` | kompakter Consumer-Snapshot; keine Raw-Candle-Arrays |
 | `data/latest.json`, `data/latest.md` | detaillierte Messwerte und Übersicht |
-| `data/history.json` | maximal 720 echte Stundenbeobachtungen / 30 Tage |
+| `data/history.json` | maximal 720 echte Stundenbeobachtungen / 30 Tage; verlustfrei `hourly-columnar-v1`, lesbar mit `history.decode_history` |
 | `data/raw/latest.json.gz` | letzte öffentliche HTTP-Responses, Quellen und Berechnungskontext |
 | `data/raw/ohlc_cache.json.gz` | maximal 4096 native Kerzen pro Instrument/Intervall |
 | `data/raw/observation_history.json.gz` | maximal 365 Tage tatsächlicher Stundenbeobachtungen plus verwendete Konfigurationen; beginnt mit dem neuen Collector |
@@ -159,7 +159,7 @@ Für reine Datensammlung genügt `python -m pip install -r requirements.txt`; py
 
 ## GitHub Actions
 
-**Cloudflare prüft alle fünf Minuten; eine neue Sammelrunde beginnt um :50 UTC. Ein unabhängiger GitHub-Zeitplan um :52 dient als Ersatz.** Frische Daten und laufende Collector verhindern weitere Starts. Der Ersatzjob überspringt bei aktuellen Daten Python-Setup, Dependencies und Sammlung. Auch verspätete Prüfungen können fehlende Daten nachholen. Details: [Cloudflare-Starter](docs/CLOUDFLARE_SCHEDULER.md).
+**v4-Phase-1-Zielplan: Cloudflare startet bei :59/:14/:29/:44 und prüft alle fünf Minuten; GitHub dient bei :03/:18/:33/:48 als Ersatz. Aktivierung und 48-h-Nachweis stehen noch aus.** Frische Daten und laufende Collector verhindern weitere Starts. Der Ersatzjob überspringt bei aktuellen Daten Python-Setup, Dependencies und Sammlung. Auch verspätete Prüfungen können fehlende Daten nachholen. Details: [Phase 1](docs/ORACLE_V4_PHASE1.md); bisheriger Betrieb: [Cloudflare-Starter](docs/CLOUDFLARE_SCHEDULER.md).
 
 Ziel: Daten bis zur folgenden vollen Stunde verfügbar machen. Der Puffer berücksichtigt Startverzögerungen, Laufzeit und den GitHub-Raw-Cache (beobachtet: bis zu fünf Minuten). Auch Cloudflare und extern gestartete GitHub-Runner bieten keine feste Zusage zur vollen Stunde. ChatGPT muss immer `meta.generated_at_utc` und die Quellen-Freshness prüfen. Der Snapshot enthält den tatsächlichen Erfassungszeitpunkt und keine vorgetäuschten Kurse der vollen Stunde. Manuelle Starts per `workflow_dispatch` und passende Code-Pushes auf `main` bleiben möglich.
 

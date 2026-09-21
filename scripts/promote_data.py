@@ -23,7 +23,8 @@ COLLECTOR_FILES = {
     'data/oracle/pending_outcomes.json',
 }
 PREFIXES = {
-    'collector': ('data/oracle/consumer/', 'data/oracle/outcomes/', 'data/oracle/outcome_inputs/'),
+    'light': ('data/intraday/',),
+    'collector': ('data/intraday/', 'data/funding/', 'data/oracle/consumer/', 'data/oracle/outcomes/', 'data/oracle/outcome_inputs/'),
     'oracle': tuple('data/oracle/' + p + '/' for p in
                     ('forecasts', 'inputs', 'forecast_keys', 'submissions', 'receipts')),
 }
@@ -44,6 +45,10 @@ def api(repo, path, method='GET', payload=None):
 
 
 def allowed(kind, path):
+    if path.startswith('data/intraday/'):
+        return kind in ('collector', 'light') and bool(re.fullmatch(r'data/intraday/(latest\.json|[0-9]{4}/[0-9]{2}/[0-9]{2}\.jsonl)', path))
+    if path.startswith('data/funding/'):
+        return kind == 'collector' and bool(re.fullmatch(r'data/funding/[0-9]{4}/[0-9]{2}\.jsonl', path))
     return (kind == 'collector' and path in COLLECTOR_FILES) or any(
         path.startswith(prefix) and '..' not in Path(path).parts
         for prefix in PREFIXES[kind])
@@ -61,6 +66,7 @@ def validate_paths(kind, base, head='HEAD'):
 
 def verify(base):
     commands = [
+        [sys.executable, 'scripts/validate_intraday.py', '--base', base],
         [sys.executable, 'scripts/check_oracle_archive.py', '--base', base],
         [sys.executable, 'scripts/validate_snapshot.py'],
         [sys.executable, '-m', 'pytest', '-q'],
@@ -71,9 +77,15 @@ def verify(base):
         subprocess.run(command, check=True)
 
 
+def verify_light(base):
+    for command in ([sys.executable, 'scripts/validate_intraday.py', '--base', base],
+                    [sys.executable, '-m', 'pytest', '-q', 'tests/test_intraday.py']):
+        subprocess.run(command, check=True)
+
+
 def delete_branch(branch, head):
     """Delete only this run's ref, atomically refusing a changed branch head."""
-    if not re.fullmatch(r'automation/(collector|oracle)-[0-9]+-[0-9]+', branch):
+    if not re.fullmatch(r'automation/(collector|oracle|light)-[0-9]+-[0-9]+', branch):
         raise ValueError('Ref cleanup is restricted to producer branches')
     if not re.fullmatch(r'[0-9a-f]{40}', head):
         raise ValueError('Ref cleanup requires the tested commit')
@@ -136,7 +148,7 @@ def promote(kind, env=None):
     for path in run(['git', 'diff', '--cached', '--name-only', '-z']).split('\0'):
         if path and not allowed(kind, path):
             raise ValueError('Producer staged a non-allowlisted path: ' + path)
-    subprocess.run([sys.executable, 'scripts/check_oracle_archive.py', '--staged'], check=True)
+    subprocess.run([sys.executable, 'scripts/validate_intraday.py' if kind == 'light' else 'scripts/check_oracle_archive.py', '--staged'], check=True)
     run(['git', 'switch', '-c', branch])
     run(['git', 'commit', '-m', f'data: validated {kind} publication'])
     run(['git', 'fetch', 'origin', 'main'])
@@ -145,10 +157,11 @@ def promote(kind, env=None):
         raise ValueError('Main advanced during production; no stale data will be merged')
     head = run(['git', 'rev-parse', 'HEAD'])
     validate_paths(kind, base)
-    verify(base)
+    verify_light(base) if kind == 'light' else verify(base)
     if run(['git', 'rev-parse', 'HEAD']) != head:
         raise ValueError('Tested commit changed')
     run(['git', 'diff', '--exit-code', 'HEAD'])
+    validation = 'light validation: intraday schema, append-only archive guard and focused tests' if kind == 'light' else 'Archive integrity, snapshot schema, full pytest and scheduler tests'
     run_url = f'https://github.com/{repo}/actions/runs/{run_id}'
     pr = check_run = None
     try:
@@ -156,7 +169,7 @@ def promote(kind, env=None):
         pr = api(repo, 'pulls', 'POST', {
             'title': f'data: validated {kind} publication ({run_id})',
             'head': branch, 'base': 'main',
-            'body': f'Trusted main producer. Archive and snapshot validation, full Python tests and scheduler tests passed on `{head}`.\n\nEvidence: {run_url}\n\nNo strategy or code changes.',
+            'body': f'Trusted main producer. {validation} passed on `{head}`.\n\nEvidence: {run_url}\n\nNo strategy or code changes.',
         })
         if pr['head']['sha'] != head or pr['base']['ref'] != 'main':
             raise ValueError('Created PR does not match the tested data commit')
@@ -164,7 +177,7 @@ def promote(kind, env=None):
             'name': 'test', 'head_sha': head, 'status': 'completed', 'conclusion': 'success',
             'details_url': run_url,
             'output': {'title': 'Trusted producer tests passed',
-                       'summary': f'Archive integrity, snapshot schema, full pytest and scheduler tests passed on {head}. Logs: {run_url}'},
+                       'summary': f'{validation} passed on {head}. Logs: {run_url}'},
         })
         # Wait only for GitHub to calculate mergeability. No admin/bypass flag.
         for _ in range(10):

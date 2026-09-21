@@ -78,9 +78,9 @@ class CandleCache:
         self.path=path
         self.rows=read_json(path,{})
 
-    def merge(self, key, new):
+    def merge(self, key, new, limit=4096):
         old = decode_candles(self.rows[key]) if key in self.rows else None
-        merged = merge_candles(old,new)
+        merged = merge_candles(old,new,limit=limit)
         self.rows[key]=encode_candles(merged)
         return merged
 
