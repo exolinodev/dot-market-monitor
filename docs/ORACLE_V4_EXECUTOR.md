@@ -310,3 +310,55 @@ a stop-limit price or cancel protection to work around missing evidence. These
 are planned actions, not automatic authority to call the transport. Durable
 orchestration, account/capture binding, private-state persistence, execution
 freshness, recovery and demo/live rollout gates remain to be connected.
+
+## Durable demo control journal
+
+`src/demo_journal.py` adds the persistent control state for the future runner.
+Initialization is explicit, creates a new private directory, and pins the demo
+account UID plus a SHA-256 fingerprint of the API key. It neither verifies that
+pair against an exchange by itself nor stores credentials; the orchestrator must
+establish the authenticated pairing before initialization. Existing directories
+are never reset or rebound implicitly. Keep this private directory on durable
+storage, outside the public paper archive and ephemeral Actions checkout.
+
+Use `locked(...)` for the entire prepare/dispatch/readback cycle. A nonblocking
+exclusive filesystem lock rejects a second runner. The context verifies account
+identity and replays numbered, create-only events and hash-addressed artifacts.
+Every event links its predecessor. A separately fsynced head records the committed
+sequence and digest, so removing the last event does not silently expose a
+previous prepared state. Event/head disagreement, interrupted head replacement,
+corrupt artifacts and symlinks fail closed. There is no automatic repair or reset.
+This protects local consistency; it cannot detect a coherent replacement of the
+entire directory without an independent trusted checkpoint/storage guarantee.
+
+The control lifecycle is:
+
+1. Retain an independently verified observation bound to account, key fingerprint
+   and reference time. Time must not move backwards.
+2. Prepare a stable mutation bound to the latest capture, immutable plan SHA and
+   trusted publication SHA. New sends claim their client-ID ownership durably;
+   exits must be reduce-only. One unresolved mutation blocks another preparation.
+3. Persist `dispatch` **before** calling the existing transport. That state is
+   `unknown` until independent evidence resolves it; the same operation cannot
+   be dispatched twice, including after a process restart.
+4. Preserve a response as evidence. An acknowledgement alone does not declare a
+   fill, open order or terminal outcome.
+5. For an unresolved send, a strictly later capture may prove unique open-order
+   presence. Client/exchange IDs, instrument, side, type, total quantity, prices,
+   reduce-only and trigger must agree with the dispatched intent. Only then is
+   ownership marked open and the operation resolved. Empty openorders never
+   resolves the attempt and never permits resending.
+
+Observation artifacts are supplied by the trusted acquisition/verification layer;
+merely supplying matching account labels to this low-level store does not prove
+authentication, freshness or raw-response provenance. The future orchestrator
+must construct them from the bound history/readback evidence already described,
+and attach the verified plan and publication hashes to planned actions.
+
+The current resolver covers positive open-order presence only. Fully filled,
+cancelled, rejected, edited, and never-sent crash cases still need their own
+specific evidence-based recovery before the CLI can send. There is intentionally
+no generic manual `resolved=true` switch. The existing `DemoAttempts` transport
+journal remains responsible for retaining exact request/response evidence; the
+runner must connect both under the same lock. No demo journal has been initialized
+outside isolated tests, and demo/live CLI sending remains disabled.
