@@ -1,4 +1,4 @@
-"""Wait at most 90 seconds until the assigned UTC boundary plus eight seconds."""
+"""Wait at most 150 seconds until the assigned UTC boundary plus eight seconds."""
 import argparse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,8 +10,8 @@ from cycles import resolve, utc
 
 def wait(boundary, clock=lambda: datetime.now(timezone.utc), sleep=time.sleep):
     delay = (utc(boundary) - clock()).total_seconds() + 8
-    if delay > 90:
-        raise ValueError('Boundary wait exceeds 90 seconds')
+    if delay > 150:
+        raise ValueError('Boundary wait exceeds 150 seconds')
     if delay > 0:
         sleep(delay)
     return max(0, delay)

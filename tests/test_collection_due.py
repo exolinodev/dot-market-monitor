@@ -61,3 +61,16 @@ def test_boundary_wait_limit_and_late_start():
     assert delays == [68]
     assert wait.wait('2026-09-20T20:45:00Z', lambda: now, delays.append) == 0
     with pytest.raises(ValueError): wait.wait('2026-09-20T21:15:00Z', lambda: now, delays.append)
+
+
+def test_two_minute_prewarm_waits_until_boundary_plus_eight():
+    spec = importlib.util.spec_from_file_location('wait_boundary', Path(__file__).parents[1] / 'scripts/wait_boundary.py')
+    wait = importlib.util.module_from_spec(spec); spec.loader.exec_module(wait)
+    now = datetime(2026, 9, 20, 23, 58, tzinfo=timezone.utc)
+    kind, boundary = resolve(now, 'full', '2026-09-21T00:00:00Z')
+    delays = []
+    assert kind == 'full' and boundary.day == 21
+    assert wait.wait(boundary, lambda: now, delays.append) == 128
+    assert delays == [128]
+    with pytest.raises(ValueError):
+        resolve(now.replace(minute=57), 'full', '2026-09-21T00:00:00Z')

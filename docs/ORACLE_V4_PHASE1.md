@@ -1,14 +1,15 @@
 # Oracle v4 Phase 1 — boundary collection and intraday evidence
 
-Implementation branch; activation and the 48-hour acceptance window are still
-pending. Phase 2 ledger/forecast changes and the ChatGPT :05 job are not enabled.
+Phase 1 and production paper processing are active, including the ChatGPT :05
+job. The 48-hour acceptance window remains outstanding; see
+`ORACLE_V4_ROLLOUT_STATUS.md` for immutable production evidence.
 
 ## Cycle identity and publication
 
-Worker cron `59,14,29,44 * * * *` dispatches the following boundary, with the
+Worker cron `58,13,28,43 * * * *` dispatches the following boundary, with the
 existing `*/5` verifier. Boundary is UTC :00/:15/:30/:45, full only at :00.
 The workflow installs dependencies before waiting until boundary + 8 seconds.
-Wait is capped at 90 seconds; late starts still run and record measured lag.
+Wait is capped at 150 seconds; late starts still run and record measured lag.
 Late means >360 seconds for full or >240 seconds for light. The independent
 GitHub fallback is `3,18,33,48 * * * *`. Dispatch carries both boundary and kind.
 
@@ -113,3 +114,17 @@ the total comparison still involves different collection times, while the
 encoding comparison uses identical observations. Growth and timing must still
 be measured after deployment. No existing repository data was rewritten by this
 implementation change.
+
+
+## Production timing adjustment on 2026-09-21
+
+The first five regular boundaries from 07:15 through 08:15 met the 30-second
+capture target only twice. A Worker trace delivered the previous :14 cron at
+:14:58.505, leaving less than two seconds of prewarming. The trigger now starts
+two minutes before each boundary (:58/:13/:28/:43); the runner accepts a bounded
+150-second future window and still waits until boundary +8 seconds. This is an
+evidence-driven adjustment from the plan's original one-minute prewarm, not a
+change to market bucket identity, publication or fill times. Retired one-minute
+cron deliveries are ignored during propagation. The five-minute verifier and
+per-cycle dispatch budget remain in place. New real timing samples and the full
+48-hour acceptance window are still required; earlier misses remain evidence.
