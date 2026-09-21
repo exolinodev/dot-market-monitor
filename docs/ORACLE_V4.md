@@ -33,7 +33,13 @@ feeds instead of inventing fixtures. One successful run does not prove stable
 availability. Runtime ingestion and funding accounting remain disabled until
 this inspection and the corresponding parser tests are complete.
 
-Phase 1 timing/collector changes are in PR #228, pending merge and rollout
-evidence. The isolated, disabled paper ledger core is described in
-[ORACLE_V4_LEDGER.md](ORACLE_V4_LEDGER.md). Runtime ledger integration, the v4
-forecast contract, ChatGPT schedule change, demo and live execution remain open.
+Phase 1 timing/collector changes remain in PR #228, pending merge and rollout.
+The dependent stack now implements the paper ledger, v4 forecast contract,
+runtime, prompts, explicit initialization and substantial demo infrastructure.
+Those open branches are not deployed main. The saved hourly task remains v3;
+production paper/model, demo and live acceptance remain outstanding.
+
+See [ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md) for the current
+phase-by-phase audit, specific production gates and the isolated real-market
+paper initialization/first-quarter rehearsal. The ledger contract is described
+in [ORACLE_V4_LEDGER.md](ORACLE_V4_LEDGER.md).

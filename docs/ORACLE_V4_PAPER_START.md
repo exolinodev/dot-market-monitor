@@ -78,3 +78,15 @@ The test also verifies closed-trade feedback in execution_context, byte-identica
 reruns, protected Git candidate replay and rejection of altered source candles.
 These are synthetic integration scenarios; they provide no production fill,
 profitability, exchange API or rollout-acceptance evidence.
+
+
+## Real-market initialization rehearsal (2026-09-21)
+
+An isolated local rehearsal used fresh public quarter/funding evidence to
+initialize the configured USD 5000 account at 01:28:31.585947 UTC, then advanced it
+through the actual 01:30 boundary. The three resulting input records replayed
+identically, their archived sources verified, and a repeated advance changed no
+ledger files. This exercised real-source activation and runtime rather than only
+synthetic fixtures. It created no model forecast, trade, production genesis or
+external account change. See the measured values and remaining gates in
+[ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md).
