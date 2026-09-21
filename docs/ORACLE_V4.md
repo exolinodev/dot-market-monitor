@@ -33,11 +33,13 @@ feeds instead of inventing fixtures. One successful run does not prove stable
 availability. Runtime ingestion and funding accounting remain disabled until
 this inspection and the corresponding parser tests are complete.
 
-Phase 1 timing/collector changes remain in PR #228, pending merge and rollout.
-The dependent stack now implements the paper ledger, v4 forecast contract,
-runtime, prompts, explicit initialization and substantial demo infrastructure.
-Those open branches are not deployed main. The saved hourly task remains v3;
-production paper/model, demo and live acceptance remain outstanding.
+Phase 1 was merged in #228 and the quarter-hour Worker deployed on 2026-09-21.
+The dependent implementation stack was published together in release #265
+(main `172c855`), with 613 Python tests passing on the exact release candidate.
+The original stacked PRs were closed after checking their inclusion in that
+release. The saved hourly v3 task now includes the authorized boundary guard.
+Production paper genesis and model migration are tracked separately below;
+demo/live sending remains disabled and acceptance windows remain open.
 
 See [ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md) for the current
 phase-by-phase audit, specific production gates and the isolated real-market
