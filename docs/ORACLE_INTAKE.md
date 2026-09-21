@@ -64,7 +64,9 @@ check and normally merging its data PR with SHA binding. Until 2026-09-21 it als
 ran the complete Python suite twice over (a staged pre-pass plus the committed
 candidate); that cost about 2.5 minutes per publication on the runner without
 adding data evidence, because the code is unchanged main and the full suite runs
-in the tests workflow on every code push. Guards now run once, on the commit. GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
+in the tests workflow on every code push. Guards now run once, on the commit,
+concurrently, with their logs replayed in a fixed order as the run evidence.
+GITHUB_TOKEN-created PRs do not start ordinary PR CI; the check links
 to the actual producer test logs. Failed checks never create a success result or
 merge. A main advance aborts publication instead of replaying stale data. After
 an abort, the producer revokes its success check, closes its data PR and removes
@@ -102,18 +104,23 @@ The archive guard now checks every commit in the inspected range as well as the
 net diff, and runs for PRs, direct main push CI and staged collector/writer data.
 It rejects temporary add/delete sequences, updates, renames, symlinks and invalid
 new submission paths/content. Existing immutable forecast/input/outcome bindings
-and every new receipt are verified. Every code, docs or submission PR gets a
+and every new receipt are verified. Every code or docs PR gets a
 test check, so the required status cannot remain pending due to path filters;
 pure `data/**` producer PRs are covered by the producer run's own `test` check.
+Since 2026-09-21 the tests workflow no longer runs for submission drafts (the
+writer is their only gate and they are never merged) nor after data-only merges
+to main; a manual data-only PR obtains its `test` check by dispatching
+`tests.yml` on its branch.
 
 Rejected submissions (the 17 September 12:06/16:01 drafts as well as the 18/19
 September drafts #35, #52, #78, #89, #94, #96 and #101: two late openings, three
 unbalanced JSON envelopes, two citations of `unavailable` features) remain
 historical evidence; they are not repaired, re-dated, retried or treated as
-forecasts. Ordinary PR CI no longer runs on `data/**` changes except
-`data/oracle/submissions/**`, because trusted producer data PRs carry their own
-`test` check-run and a GITHUB_TOKEN-created PR only produced an empty failed
-run. The historical addition and
+forecasts. Ordinary PR CI no longer runs on any `data/**` change, because
+trusted producer data PRs carry their own `test` check-run, a GITHUB_TOKEN-created
+PR only produced an empty failed run, and submission drafts are validated by the
+writer alone (the earlier `data/oracle/submissions/**` exception was removed on
+2026-09-21 after 20 full-suite runs on drafts in one day). The historical addition and
 deletion of `submissions/test.json` remains visible in Git. A historical audit
 including that deletion correctly fails; ordinary new change ranges do not
 silently exempt future deletions. No strategy, feature, threshold or past outcome

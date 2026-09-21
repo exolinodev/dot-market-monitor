@@ -122,8 +122,9 @@ PR-Öffnungszeit. Prompt 3.3.3 verlangt vor Create-File die Prüfung der exakt z
 schreibenden Zeichenkette (Anfang, Ende `}}`, Klammerbilanz, erneutes Parsen) und
 den Abgleich jeder zitierten Feature-ID gegen `status: "ok"` im geladenen
 features-Teil. Der Tests-Workflow läuft für PRs nicht mehr auf reinen
-`data/**`-Änderungen ausser `data/oracle/submissions/**`; die Daten-PRs des
-vertrauenswürdigen Producers tragen ihren eigenen `test`-Check.
+`data/**`-Änderungen (seit 21.09.2026 auch nicht mehr auf Oracle-Drafts, die nur
+der Writer prüft); die Daten-PRs des vertrauenswürdigen Producers tragen ihren
+eigenen `test`-Check.
 
 ## Reproduzierbarer Live-Test ohne Merge
 

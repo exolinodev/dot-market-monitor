@@ -199,7 +199,18 @@ main about two minutes after the boundary, writer publication under two minutes,
 and roughly twelve minutes between the job start and the 900-second quote
 deadline. These are expectations from measured components; the next production
 day has to confirm them, and the ChatGPT task schedule must be moved to :03 by
-hand.
+hand. Merged as #368 at 20:24:51 UTC; the 20:30 light run published 25 seconds
+after its boundary on the new path.
+
+Later the same evening the tests workflow was limited to code changes. In the
+preceding 24 hours it had run the full suite 19 times on data-only merges to
+main and 20 times on Oracle submission drafts, and produced 71 empty failed runs
+for GITHUB_TOKEN producer PRs; none of these runs could block anything, because
+the producer's own `test` check is the gate for data and the writer is the gate
+for drafts. The suite itself now runs with `pytest -n auto` (three runs of 727
+tests with 3 and 4 workers passed locally in 31–38 s instead of 91–106 s), and
+the producer starts its verification commands concurrently while replaying their
+logs in a fixed order.
 
 ### Repository growth
 

@@ -125,8 +125,9 @@ change the journal or overwrite conflicting closed-trade evidence.
 The archive guard checks every commit and the final candidate tree, or the Git
 index for staged checks. Rewriting/restoring an artifact within a PR is rejected.
 It replays the candidate's exact bytes, independently of unstaged working files.
-The existing required `test` job runs this guard; ledger data paths also trigger
-CI. The runtime integration opens narrow producer allowlists for derived ledger
+The existing required `test` job runs this guard on code changes; ledger data
+publications are guarded by the producer run before the protected merge (since
+2026-09-21 they no longer trigger the tests workflow). The runtime integration opens narrow producer allowlists for derived ledger
 views, journal entries and closed trades; genesis and plan ownership remain separate.
 
 Current metrics include minute-close maximum drawdown and strategy net results;
