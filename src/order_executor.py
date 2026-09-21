@@ -88,7 +88,7 @@ def load_published(directory, repo, head, forecast_id):
         raise ExecutionError('Executable plan differs from its published forecast')
     event = instruction(repo, head, plan)
     return {'forecast': forecast, 'plan': plan, 'instruction': event,
-            'config': current['genesis']['config'], 'state': current['state']}
+            'config': current['genesis']['config'], 'state': current['state'], 'snapshot': snapshot}
 
 
 def preview(directory, repo, head, forecast_id, reference):
@@ -98,7 +98,7 @@ def preview(directory, repo, head, forecast_id, reference):
     eligible = at >= utc(event['at_utc'])
     request = entry_request(plan, bound['config']) if plan['orders'] else None
     expired = bool(plan['orders'] and at >= min(utc(plan['orders'][0]['order']['valid_until_utc']),
-        utc(event['at_utc']) + timedelta(minutes=bound['config']['max_order_age_minutes'])))
+        utc(event['publication']['at_utc']) + timedelta(minutes=bound['config']['max_order_age_minutes'])))
     return {'mode': 'demo', 'preview_only': True, 'trusted_head': head, 'forecast_id': forecast_id,
             'plan_sha256': digest(plan), 'publication': event['publication'],
             'effective_at_utc': event['at_utc'], 'eligible_time': eligible, 'entry_expired': expired,

@@ -562,3 +562,43 @@ stays in the journal. A quantity match still has `authorizes_execution=false`,
 effective-term verification, account-log costs/funding and sending orchestration
 remain necessary. All verification so far uses isolated synthetic clients, not
 real demo credentials or placed orders.
+
+
+## Journal-bound entry preflight
+
+`execute_orders.py --mode demo --preview` accepts `--journal-dir`,
+`--account-uid` and `--key-fingerprint` together to run `entry_preflight` while
+holding the existing journal lock. This adds an actual integration path from
+immutable Git publication and raw acquired account evidence to the entry checks;
+it does not send, initialize, resize or modify anything.
+
+The check requires the exact current **locally fetched** `origin/main` SHA, a
+replayed current positive quantity reconciliation and its unchanged control-state
+binding. The operator must fetch before invoking it. A later known main revision
+cannot be omitted by passing an older ancestor. Newer or same-time conflicting
+published plans supersede an older entry candidate.
+
+`config/demo_executor.json` is read from that committed SHA, never the worktree.
+It leaves demo execution disabled and configures a 30-second maximum readback age
+and 10-second maximum readback span. Future timestamps, excessive spans and stale
+readbacks fail checks. The published quote retains its ledger-configured age
+limit. Entry eligibility comes from the verified first-parent publication;
+expiry is the earlier of explicit validity and publication plus auto-cancel age.
+A used client identity or a non-flat demo account cannot submit a fresh entry.
+
+The flex wallet parser follows the official wallets reference: portfolioValue
+plus separately reported unrealizedFunding, capped by marginEquity, supplies a
+conservative usable-capital bound. Available margin must be positive. The current
+and baseline wallet also support the configured account-equity floor. The Python
+sizer recomputes a quantity ceiling using the smaller of current paper equity and
+usable demo capital, retaining the kill switch, costs, stop bounds, leverage cap
+and reward/risk check. The request keeps the exact published quantity; exceeding
+the current ceiling rejects it rather than silently resizing it.
+
+This is still preflight evidence, with `authorizes_execution=false`. It does not
+verify account transfers or an exact exchange initial-margin requirement, and its
+quote is the published snapshot quote rather than a new demo quote. These limits
+are explicit in the output. Authenticated current market capture, cash-flow/cost
+accounting, effective-term recovery and final dispatch orchestration remain
+required before demo sending. A preview cannot be cached as permission: the
+future sender must rerun checks against its held lock immediately before dispatch.

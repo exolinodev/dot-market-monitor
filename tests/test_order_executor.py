@@ -76,6 +76,8 @@ def test_demo_preview_preserves_size_and_marks_time_without_authorizing(tmp_path
     assert not result['eligible_time'] and not result['authorizes_execution']
     assert result['entry_request']['size'] == bound['plan']['orders'][0]['size']['quantity']
     assert preview(data, repo, head, ident, '2026-09-20T20:05:00Z')['eligible_time']
+    assert not preview(data, repo, head, ident, '2026-09-20T22:34:29Z')['entry_expired']
+    assert preview(data, repo, head, ident, '2026-09-20T22:34:30Z')['entry_expired']
     assert preview(data, repo, head, ident, '2026-09-21T00:00:00Z')['entry_expired']
 
 

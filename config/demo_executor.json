@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "environment": "demo",
+  "enabled": false,
+  "max_readback_age_seconds": 30,
+  "max_readback_span_seconds": 10
+}

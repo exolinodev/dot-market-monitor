@@ -18,8 +18,14 @@ def main(argv=None):
     parser.add_argument('--forecast-id', required=True)
     parser.add_argument('--boundary', help='Closed paper market boundary to execute through')
     parser.add_argument('--output-dir', type=Path, help='New directory for isolated paper candidate')
+    parser.add_argument('--journal-dir', type=Path, help='Existing private demo journal for entry preflight')
+    parser.add_argument('--account-uid', help='Expected demo account UUID')
+    parser.add_argument('--key-fingerprint', help='Expected SHA-256 of demo API key; not the key itself')
     parser.add_argument('--preview', action='store_true', help='Read-only demo request preview; never sends')
     args = parser.parse_args(argv)
+    journal_options = (args.journal_dir, args.account_uid, args.key_fingerprint)
+    if any(journal_options) and (args.mode != 'demo' or not args.preview or not all(journal_options)):
+        parser.error('Journal preflight requires demo --preview plus journal, account UID and key fingerprint')
     if args.mode == 'live':
         parser.error('Live execution is unavailable: staged approvals and rollout gates are not implemented')
     if args.mode == 'demo' and not args.preview:
@@ -33,7 +39,13 @@ def main(argv=None):
             parser.error('Demo preview does not accept paper output/boundary arguments')
         with tempfile.TemporaryDirectory(prefix='oracle-demo-preview-') as temp:
             data = materialize(args.repo, args.trusted_head, temp)
-            result = preview(data, args.repo, args.trusted_head, args.forecast_id, datetime.now(timezone.utc))
+            if args.journal_dir:
+                from demo_journal import locked
+                from demo_preflight import entry_preflight
+                with locked(args.journal_dir, args.account_uid, args.key_fingerprint) as store:
+                    result = entry_preflight(data, args.repo, args.trusted_head, args.forecast_id, store, datetime.now(timezone.utc))
+            else:
+                result = preview(data, args.repo, args.trusted_head, args.forecast_id, datetime.now(timezone.utc))
     print(json.dumps(result, indent=2))
     return 0
 
