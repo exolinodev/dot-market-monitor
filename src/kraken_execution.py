@@ -17,6 +17,7 @@ import requests
 DEMO_URL = 'https://demo-futures.kraken.com/derivatives'
 READS = {'openorders': 'openOrders', 'fills': 'fills',
          'openpositions': 'openPositions', 'accounts': 'accounts'}
+READS_WITH_PREFERENCES = {**READS, 'leveragepreferences': 'leveragePreferences'}
 MUTATIONS = {'sendorder': 'sendStatus', 'cancelorder': 'cancelStatus', 'editorder': 'editStatus'}
 MAX_RESPONSE_BYTES = 2_000_000
 
@@ -63,10 +64,10 @@ class DemoClient:
         self._session.trust_env = False
 
     def request(self, endpoint, params=None):
-        if endpoint not in READS and endpoint not in MUTATIONS:
+        if endpoint not in READS_WITH_PREFERENCES and endpoint not in MUTATIONS:
             raise ExecutionError('Unsupported private endpoint')
         status, raw, _ = self._request('/api/v3/' + endpoint, params or {},
-                                      'GET' if endpoint in READS else 'POST', DEMO_URL)
+                                      'GET' if endpoint in READS_WITH_PREFERENCES else 'POST', DEMO_URL)
         return status, raw
 
     def market(self, endpoint):
@@ -224,7 +225,7 @@ def entry_request(validated_plan, validated_config):
     return params
 
 
-def capture_readback(directory, client):
+def capture_readback(directory, client, *, include_preferences=False):
     """Create-only raw snapshot, not a complete fills history or reconciliation.
 
     The default fills endpoint returns at most 100 recent fills. The eventual
@@ -233,8 +234,9 @@ def capture_readback(directory, client):
     root = Path(directory)
     root.mkdir(parents=True, exist_ok=False)
     _sync_directory(root.parent)
-    manifest = {'version': 1, 'environment': 'demo', 'responses': {}}
-    for endpoint, field in READS.items():
+    manifest = {'version': 2 if include_preferences else 1, 'environment': 'demo', 'responses': {}}
+    fields = READS_WITH_PREFERENCES if include_preferences else READS
+    for endpoint, field in fields.items():
         status, raw = client.request(endpoint)
         _create(root / (endpoint + '.raw'), raw)
         metadata = {'http_status': status, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
