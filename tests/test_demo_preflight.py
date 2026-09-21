@@ -64,7 +64,7 @@ def test_current_flat_account_and_published_entry_pass_without_authorizing(tmp_p
     result = run(args)
     assert result['entry_checks_passed'] and not result['reasons']
     assert not result['demo_enabled'] and not result['authorizes_execution']
-    assert not result['account_flows_verified'] and not result['live_quote_verified']
+    assert not result['account_flows_verified'] and result['live_quote_verified']
     assert result['entry_request']['size'] == result['quantity_ceiling']
     # A local policy edit must not relax the committed limits.
     (args[0]/'config/demo_executor.json').write_text('{}')
@@ -153,3 +153,26 @@ def test_executor_cli_uses_journal_preflight_without_modifying_it(tmp_path, monk
     result = json.loads(capsys.readouterr().out)
     assert result['entry_checks_passed'] and not result['authorizes_execution']
     with locked(journal, ACCOUNT, KEY) as store: assert store.state == before
+
+
+@pytest.mark.parametrize('change,reason', [('spread', 'published_quantity_exceeds_current_risk_budget'),
+    ('suspended', 'demo_market_not_tradable'), ('tick', 'demo_instrument_config_mismatch'),
+    ('stale', 'demo_market_stale_or_future')])
+def test_current_market_controls_entry_checks(tmp_path, change, reason):
+    args = setup(tmp_path)
+    class Market(Funded):
+        def market(self, endpoint):
+            status, raw, headers = super().market(endpoint)
+            value = json.loads(raw)
+            if change == 'spread' and endpoint == 'tickers':
+                value['tickers'][0].update(bid='.998', ask='1.002')
+            if change == 'suspended' and endpoint == 'tickers': value['tickers'][0]['suspended'] = True
+            if change == 'tick' and endpoint == 'instruments': value['instruments'][0]['tickSize'] = '.01'
+            if change == 'stale': value['serverTime'] = START
+            return status, json.dumps(value).encode(), headers
+    with locked(args[4], ACCOUNT, KEY) as store:
+        result = capture_bundle(tmp_path/'market-changed', Market(AT), ACCOUNT, KEY, START)
+        import_observation(store, tmp_path/'market-changed', result['bundle_sha256'])
+        store.reconcile_position()
+    result = run(args)
+    assert reason in result['reasons'] and not result['entry_checks_passed']

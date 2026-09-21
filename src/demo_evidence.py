@@ -50,6 +50,10 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
     try:
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
         _sync_directory(root.parent)
+        from demo_market import capture_market
+        market = capture_market(root/'market', client)
+        if not market['available']:
+            raise ExecutionError('Public demo market unavailable; private requests not attempted')
         capture_readback(root / 'readback', client)
         if through is None:
             from datetime import timedelta
@@ -65,7 +69,7 @@ def capture_bundle(directory, client, expected_account, key_fingerprint, since, 
         for name, (capture, _) in HISTORIES.items():
             report = capture(root / name, client, expected_account, since, through, max_pages=max_pages)
             complete = complete and report['coverage_complete']
-        manifest = {'version': 1, 'environment': 'demo', 'account_uid': expected_account,
+        manifest = {'version': 2, 'environment': 'demo', 'account_uid': expected_account,
                     'api_key_fingerprint': key_fingerprint, 'since_utc': since, 'through_utc': through,
                     'history_coverage_complete': complete, 'atomic_snapshot': False,
                     'authorizes_execution': False, 'files': inventory(root)}
@@ -91,14 +95,20 @@ def verify_bundle(directory, expected_account, key_fingerprint, expected_sha256)
     if digest(raw) != expected_sha256:
         raise ExecutionError('Demo bundle hash mismatch')
     manifest = json.loads(raw)
-    if (manifest['version'] != 1 or manifest['environment'] != 'demo'
+    if (manifest['version'] not in (1, 2) or manifest['environment'] != 'demo'
             or manifest['account_uid'] != account_id(expected_account)
             or manifest['api_key_fingerprint'] != key_fingerprint
             or manifest['authorizes_execution'] is not False or manifest['atomic_snapshot'] is not False):
         raise ExecutionError('Demo bundle identity/policy mismatch')
     if inventory(root) != manifest['files']:
         raise ExecutionError('Demo bundle files changed')
-    if {p.name for p in root.iterdir()} != {'bundle.json', 'readback', *HISTORIES}:
+    expected_roots = {'bundle.json', 'readback', *HISTORIES}
+    if manifest['version'] == 2:
+        from demo_market import verify_market
+        expected_roots.add('market')
+        if not verify_market(root/'market')['available']:
+            raise ExecutionError('Unavailable demo market in complete bundle')
+    if {p.name for p in root.iterdir()} != expected_roots:
         raise ExecutionError('Unexpected demo bundle artifacts')
     readback = root / 'readback'
     expected_names = {'manifest.json'} | {name + ext for name in READS for ext in ('.raw', '.json')}

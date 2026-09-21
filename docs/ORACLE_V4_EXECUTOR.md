@@ -465,7 +465,7 @@ python scripts/capture_demo_evidence.py \
 ```
 
 The output parent must exist outside a Git worktree; the capture directory must
-be new. Directories/files are owner-only. One client/key fetches raw open orders,
+be new. Directories/files are owner-only. A credential-free public market probe runs first. If available, one client/key fetches raw open orders,
 recent fills, positions and accounts, followed by paginated execution, order and
 trigger histories for the explicit fixed window. Every history checks the
 independently supplied account UID. The bundle records the API key fingerprint,
@@ -582,7 +582,7 @@ published plans supersede an older entry candidate.
 It leaves demo execution disabled and configures a 30-second maximum readback age
 and 10-second maximum readback span. Future timestamps, excessive spans and stale
 readbacks fail checks. The published quote retains its ledger-configured age
-limit. Entry eligibility comes from the verified first-parent publication;
+limit; current captured demo quotes are additionally required. Entry eligibility comes from the verified first-parent publication;
 expiry is the earlier of explicit validity and publication plus auto-cancel age.
 A used client identity or a non-flat demo account cannot submit a fresh entry.
 
@@ -596,9 +596,47 @@ and reward/risk check. The request keeps the exact published quantity; exceeding
 the current ceiling rejects it rather than silently resizing it.
 
 This is still preflight evidence, with `authorizes_execution=false`. It does not
-verify account transfers or an exact exchange initial-margin requirement, and its
-quote is the published snapshot quote rather than a new demo quote. These limits
-are explicit in the output. Authenticated current market capture, cash-flow/cost
-accounting, effective-term recovery and final dispatch orchestration remain
+verify account transfers or an exact exchange initial-margin requirement. These
+limits are explicit in the output. Successful real demo market acquisition,
+cash-flow/cost accounting, effective-term recovery and final dispatch orchestration remain
 required before demo sending. A preview cannot be cached as permission: the
 future sender must rerun checks against its held lock immediately before dispatch.
+
+
+## Public demo market probe and observed availability
+
+On **2026-09-21 at 01:06:51 UTC** (response Date), a credential-free request from
+the local environment to the documented demo ticker URL returned **HTTP 301** to
+`https://www.kraken.com/gb/features/futures`, with 167 bytes of HTML. The official
+[Futures introduction](https://docs.kraken.com/exchange/guides/futures/introduction)
+still documents `https://demo-futures.kraken.com/derivatives/api/v3/tickers` as the
+demo REST URL. This is evidence of unavailability on this network at that time,
+not proof of a global outage or a replacement API host. No redirect was followed,
+no production host was substituted and no credentials/private calls were used.
+The byte-exact response and selected headers are retained under
+`tests/fixtures/demo_market_redirect/`; its manifest replays in CI.
+
+The read-only diagnostic can be run without credentials:
+
+```sh
+python scripts/capture_demo_market.py --output-dir /private/new-demo-market-probe
+```
+
+It returns nonzero when the host does not supply a valid PF_DOTUSD market. The
+transport uses only the fixed demo host, no auth headers, redirects, environment
+proxies or retries, and bounded requests. New account captures run this probe
+**before** private calls and retain a failed probe without creating a complete
+account bundle. A redirect therefore cannot send credentials to another host.
+
+Bundle version 2 adds raw public tickers/instruments, normalized bid/ask/mark,
+server timestamps, suspended/post-only/tradeable status and tick/contract sizes.
+Replay checks them against the raw response. Existing version-1 bundles remain
+replayable but cannot satisfy the new current-market preflight requirement.
+
+Preflight checks both market timestamps against the committed age limit, requires
+an active market and matching instrument configuration, and sizes against the
+**captured demo spread**, retaining the original published quantity. A wider
+spread, market halt or changed tick size can reject an otherwise eligible entry.
+Margin tiers remain raw evidence only; no undocumented margin formula is inferred.
+Successful market payload tests are synthetic until the documented demo endpoint
+returns usable real data. Real demo acceptance has not started.

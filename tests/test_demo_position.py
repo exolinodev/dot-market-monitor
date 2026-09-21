@@ -5,7 +5,7 @@ from demo_evidence import capture_bundle
 from demo_journal import initialize, locked
 from demo_observation import import_observation
 from kraken_execution import READS, ExecutionError
-from test_demo_evidence import KEY
+from test_demo_evidence import KEY, market_response
 from test_demo_journal import action, row
 from test_exchange_history import ACCOUNT, START, END, DATE, body, event
 
@@ -15,6 +15,8 @@ BASE = '2026-09-21T00:05:00Z'
 class Client:
     def __init__(self, at=BASE, orders=(), positions=(), events=()):
         self.at, self.orders, self.positions, self.events = at, list(orders), list(positions), list(events)
+    def market(self, endpoint):
+        return market_response(endpoint, self.at)
     def request(self, endpoint, params=None):
         values = {'openorders': self.orders, 'openpositions': self.positions, 'fills': [], 'accounts': {}}
         return 200, json.dumps({'result': 'success', 'serverTime': self.at, READS[endpoint]: values[endpoint]}).encode()

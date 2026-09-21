@@ -92,10 +92,26 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
         reasons.append('entry_identity_already_used')
     if capture['open_orders'] or any(numeric(p['size']) != 0 for p in capture['positions']):
         reasons.append('demo_account_not_flat')
-    quote = bound['snapshot']['markets']['DOTUSD']['execution_context']['quote']
-    quote_age = (at - utc(quote['asof_utc'])).total_seconds()
+    published_quote = bound['snapshot']['markets']['DOTUSD']['execution_context']['quote']
+    quote_age = (at - utc(published_quote['asof_utc'])).total_seconds()
     if not 0 <= quote_age <= config['execution_quote_max_age_seconds']:
         reasons.append('published_quote_stale_or_future')
+    market = capture.get('market')
+    market_verified = False
+    quote = published_quote
+    if market is None:
+        reasons.append('current_demo_market_missing')
+    else:
+        fresh = all(0 <= (at - utc(market[key])).total_seconds() <= settings['max_readback_age_seconds']
+                    for key in ('quote_at_utc', 'instrument_at_utc'))
+        compatible = (numeric(market['tick_size']) == numeric(config['tick_size_usd'])
+                      and numeric(market['contract_size']) == numeric(config['contract_size_dot']))
+        tradable = market['tradeable'] and not market['suspended'] and not market['post_only']
+        if not fresh: reasons.append('demo_market_stale_or_future')
+        if not compatible: reasons.append('demo_instrument_config_mismatch')
+        if not tradable: reasons.append('demo_market_not_tradable')
+        quote = {'bid': market['bid'], 'ask': market['ask']}
+        market_verified = fresh and compatible and tradable
     capital, available = flex_equity(capture)
     initial_capital, _ = flex_equity(baseline)
     with localcontext() as context:
@@ -121,5 +137,5 @@ def entry_preflight(directory, repo, head, forecast_id, store, reference):
             'entry_checks_passed': not reasons, 'reasons': reasons, 'demo_enabled': settings['enabled'],
             'entry_request': entry_request(plan, config), 'budget_equity_usd': number(budget_equity),
             'available_margin_usd': number(available), 'quantity_ceiling': None if ceiling is None else ceiling['quantity'],
-            'account_flows_verified': False, 'live_quote_verified': False, 'exchange_margin_requirement_verified': False,
+            'account_flows_verified': False, 'live_quote_verified': market_verified, 'exchange_margin_requirement_verified': False,
             'authorizes_execution': False}

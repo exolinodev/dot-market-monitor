@@ -14,9 +14,19 @@ from test_exchange_history import ACCOUNT, OTHER, START, END, DATE, body
 KEY = hashlib.sha256(b'synthetic-key').hexdigest()
 
 
+def market_response(endpoint, at=END):
+    item = ({'symbol': 'PF_DOTUSD', 'bid': '.9998', 'ask': '1.0002', 'markPrice': '1', 'suspended': False, 'postOnly': False}
+            if endpoint == 'tickers' else {'symbol': 'PF_DOTUSD', 'tickSize': '.0001', 'contractSize': '1', 'tradeable': True})
+    return 200, json.dumps({'result': 'success', 'serverTime': at, endpoint: [item]}).encode(), {'Date': DATE}
+
+
 class Client:
     def __init__(self, account=ACCOUNT, continuation=None):
         self.account, self.continuation, self.calls = account, continuation, []
+
+    def market(self, endpoint):
+        self.calls.append(endpoint)
+        return market_response(endpoint)
 
     def request(self, endpoint, params=None):
         assert endpoint in READS
@@ -34,7 +44,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     root = tmp_path/'bundle'; client = Client()
     result = capture_bundle(root, client, ACCOUNT, KEY, START, END)
     manifest = verify_bundle(root, ACCOUNT, KEY, result['bundle_sha256'])
-    assert client.calls == [*READS, 'executions', 'orders', 'triggers']
+    assert client.calls == ['tickers', 'instruments', *READS, 'executions', 'orders', 'triggers']
     assert manifest['history_coverage_complete'] and not manifest['atomic_snapshot']
     assert not manifest['authorizes_execution']
     assert root.stat().st_mode & 0o777 == 0o700
@@ -42,7 +52,7 @@ def test_private_capture_uses_only_reads_and_replays(tmp_path):
     assert (root/'readback/accounts.raw').read_bytes().endswith(b' \n')
     with pytest.raises(FileExistsError):
         capture_bundle(root, client, ACCOUNT, KEY, START, END)
-    assert len(client.calls) == 7
+    assert len(client.calls) == 9
 
 
 @pytest.mark.parametrize('change', ['raw', 'extra', 'symlink', 'manifest'])
@@ -91,3 +101,16 @@ def test_cli_refuses_repository_output_before_credentials_or_network(tmp_path):
         '--output-dir', str(repo/'private-demo-test')], capture_output=True, text=True, env={})
     assert result.returncode != 0 and 'outside a Git worktree' in result.stderr
     assert not (repo/'private-demo-test').exists()
+
+
+def test_legacy_v1_bundle_remains_replayable(tmp_path):
+    import shutil
+    from demo_evidence import digest, inventory
+    from kraken_execution import _json_bytes
+    root = tmp_path/'legacy'
+    capture_bundle(root, Client(), ACCOUNT, KEY, START, END)
+    shutil.rmtree(root/'market')
+    manifest = json.loads((root/'bundle.json').read_bytes())
+    manifest.update(version=1, files=inventory(root))
+    raw = _json_bytes(manifest); (root/'bundle.json').write_bytes(raw)
+    assert verify_bundle(root, ACCOUNT, KEY, digest(raw))['version'] == 1

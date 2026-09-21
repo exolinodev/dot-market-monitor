@@ -31,12 +31,16 @@ def observation(directory, expected_account, key_fingerprint, bundle_sha256):
     # unsafe; require a later acquisition rather than infer an ordering.
     if any(earliest <= stamp <= end for stamp in events):
         raise ExecutionError('Account activity overlaps readbacks; acquire a later observation')
-    return {'account_uid': expected_account, 'api_key_fingerprint': key_fingerprint,
+    value = {'account_uid': expected_account, 'api_key_fingerprint': key_fingerprint,
             'reference_utc': iso(end), 'readback_start_utc': iso(earliest),
             'readback_end_utc': iso(latest), 'open_orders': responses['openorders']['openOrders'],
             'positions': responses['openpositions']['openPositions'], 'accounts': responses['accounts']['accounts'],
             'bundle_sha256': bundle_sha256, 'quantity_reconciled': False,
-            'authorizes_execution': False}, histories
+            'authorizes_execution': False}
+    if manifest['version'] == 2:
+        from demo_market import verify_market
+        value['market'] = verify_market(root/'market')['market']
+    return value, histories
 
 
 def import_observation(store, directory, bundle_sha256):

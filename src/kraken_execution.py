@@ -69,6 +69,10 @@ class DemoClient:
                                       'GET' if endpoint in READS else 'POST', DEMO_URL)
         return status, raw
 
+    def market(self, endpoint):
+        from demo_market import DemoMarketClient
+        return DemoMarketClient().market(endpoint)
+
     def history(self, endpoint, params):
         if endpoint not in ('executions', 'orders', 'triggers', 'account-log'):
             raise ExecutionError('Unsupported history endpoint')
