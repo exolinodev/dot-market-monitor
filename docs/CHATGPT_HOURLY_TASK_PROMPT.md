@@ -172,6 +172,8 @@ Gib einen kurzen REFLOOP-Checkpoint: Analyse-SHA, Forecast-/Trade-IDs, Speicher-
 und Auswertungsstatus, Netto-R mit Abdeckungsstatus, passende Stichprobe,
 Anpassung oder „keine belegte Anpassung“. Halte die Feedbackidentitäten und
 Konsequenz knapp im text_summary fest. Spätere Daten beeinflussen nur neue Orders.
+Ausführbarkeit aus Ledger submitted_at_utc/ORDER_ACCEPTED melden; plan.effective_at_utc
+ist nominell und kann durch die tatsächliche Publikation später wirksam werden.
 
 ## Maschinenlesbarer Forecast
 
@@ -216,20 +218,20 @@ Die einzige neue UTF-8-Datei lautet data/oracle/submissions/<forecast_id>.json:
 {"schema_version":1,"snapshot_commit":"<vollständiger Analyse-SHA>","forecast":{...}}.
 Forecast exakt wie ausgegeben, gemäss schema/oracle_submission.schema.json.
 Keine privaten Positionen/Accountwerte; öffentliches Paper-Ledger per Hash binden.
-Mit tatsächlichem JSON-/Python-Werkzeug das gesamte Objekt parsen, validieren und
-serialisieren; an Create-File exakt diese Zeichenkette übergeben. Vorher genau
-diesen Text erneut vollständig parsen und soweit möglich gegen Schema prüfen.
-Kein manuelles Klammerzählen/Anhängen, kein gekürztes JSON. Ohne Werkzeug keine
-Vorvalidierung behaupten; bei festgestelltem Fehler nicht einreichen.
-Bestehende Submission niemals überschreiben oder löschen.
+Mit verfügbarem JSON-/Python-Werkzeug vollständig parsen, prüfen und serialisieren;
+Create-File erhält exakt diesen Text. Kein Klammerzählen oder gekürztes JSON.
+Ohne Werkzeug keine Vorvalidierung behaupten; bekannte Fehler nicht einreichen.
+Bestehende Submissions nie überschreiben oder löschen.
 
-Vor der finalen Uhrzeit alle Tools/Argumente, Analyse, REFLOOP, JSON-Inhalt,
-PR-Titel/Body vorbereiten. Dann tatsächliche created_at_utc und ID einsetzen,
-Create-File, unmittelbar als nächsten Tool-Aufruf Create-PR. Dazwischen keine
-Reads, Tool-Suche, News, Statusprüfung, Analyse oder Antwortformulierung. Ziel:
-PR binnen 60 Sekunden; Annahmegrenze 120 Sekunden bleibt hart. Titel:
-Oracle submission <forecast_id>; Body nur ID und Analyse-SHA. Bei überschrittenem
-Budget offen unpersistiert melden, niemals Zeit auffrischen oder erneut einreichen.
+Transport-JSON knapp: rationale je ein Satz, limitations nur Daten-/Modellgrenzen,
+text_summary ein kurzer REFLOOP mit IDs und Konsequenz. Keine doppelte Marktanalyse
+oder langen Dezimalreihen; ausführlicher Nutzerbericht erst nach Einreichung.
+Vor dem letzten echten Uhrabruf Werkzeuge/Argumente, Analyse, REFLOOP, JSON und
+PR-Titel/Body fertigstellen und den Inhalt einfrieren. Danach nur tatsächliche
+created_at_utc/IDs einsetzen und serialisieren, Create-File, direkt Create-PR.
+Keine neuen Texte, Reads, Toolsuche oder Analyse. Ziel 60 s, harte Grenze 120 s
+bis PR-Öffnung. Titel Oracle submission <forecast_id>; Body ID und Analyse-SHA.
+Bei Überschreitung unpersistiert melden; keine neue Zeit oder Wiedereinreichung.
 
 oracle-forecast.yml reagiert auf pull_request_target:opened, verwendet nur
 vertrauenswürdigen main-Code und validiert die einzige Addition vom exakten
@@ -259,9 +261,8 @@ Snapshot-/Strategie-Schlüssel in data/oracle/forecast_keys verhindert Duplikate
 Höchstens drei Statusabfragen in insgesamt 90 Sekunden, dann eigenen ausstehenden
 Run/PR nennen und abschliessen. Fremder erfolgreicher Run beweist nichts.
 Bei unbekanntem/ausstehendem Ergebnis keine zweite Einreichung.
-Die 120 Sekunden gelten von tatsächlicher created_at_utc bis GitHubs gestempelter
-PR-Öffnungszeit, nicht bis Writer-Start. Queue-Latenz ändert created_at nicht.
-Bei Ablehnung ehrlich gescheitert; keine Rückdatierung/Zeitstempeländerung.
+Massgeblich ist GitHubs PR-Öffnungszeit, nicht der Writer-Start. Queue-Wartezeit
+erlaubt keine Zeitstempeländerung; abgewiesene Forecasts bleiben gescheitert.
 Ein neuer Versuch braucht neue aktuelle Daten/Analyse/ID und vorherige Prüfung,
 dass der alte Forecast nicht doch persistiert wurde. Forecasts, Submissions,
 Inputs, Receipts und Outcomes bleiben unveränderlich. Spot-Richtung separat von

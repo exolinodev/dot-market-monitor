@@ -221,6 +221,8 @@ Gib einen kurzen REFLOOP-Checkpoint: Analyse-SHA, Forecast-/Trade-IDs, Speicher-
 und Auswertungsstatus, Netto-R mit Abdeckungsstatus, passende Stichprobe,
 Anpassung oder „keine belegte Anpassung“. Halte die Feedbackidentitäten und
 Konsequenz knapp im text_summary fest. Spätere Daten beeinflussen nur neue Orders.
+Ausführbarkeit aus Ledger submitted_at_utc/ORDER_ACCEPTED melden; plan.effective_at_utc
+ist nominell und kann durch die tatsächliche Publikation später wirksam werden.
 
 ## Maschinenlesbarer Forecast
 
@@ -276,17 +278,23 @@ Verwende ein Create-File-Werkzeug; eine bereits
 existierende Einreichung niemals mit Update-File überschreiben. Keine zweite
 Einreichung bei einem lediglich unbekannten/ausstehenden Ergebnis.
 
+Transport-JSON knapp halten: je rationale ein Satz, limitations nur Daten-/Modellgrenzen
+und text_summary ein kurzer REFLOOP mit IDs und Konsequenz. Keine doppelte
+Marktanalyse oder langen Dezimalreihen; der ausführliche Nutzerbericht folgt
+nach der Einreichung. Alle Pflichtfelder, Bindungen und Zahlen bleiben erhalten.
 Bereite den zeitkritischen Abschnitt vollständig vor: Entdecke und lies die
 Schemas von Create-File und Create-PR, bestätige `draft=true` und die Branch-/Base-
-Argumente, schliesse Analyse, REFLOOP, JSON-Inhalt und PR-Titel/Body ab, bevor du
-die finale Erstellungszeit setzt. Fehlende Werkzeuge vorher feststellen.
+Argumente. Schliesse Analyse, REFLOOP, JSON-Inhalt und PR-Titel/Body vor dem letzten
+echten Uhrabruf ab und friere den Inhalt ein. Erst danach die tatsächliche
+Erstellungszeit und IDs einsetzen und serialisieren; keine neuen Texte erzeugen.
+Fehlende Werkzeuge vorher feststellen.
 Danach nur noch tatsächliche UTC-Zeit/ID einsetzen, Create-File aufrufen und als
 unmittelbar nächsten Werkzeugaufruf Create-PR ausführen. Dazwischen keine weitere
 Tool-Suche, Repository-Lektüre, Statusabfrage, News-Recherche, Analyse oder
 Ausformulierung der Nutzerantwort. Insbesondere nicht erst die neue Datei oder
 den Branch zurücklesen: Die sichere Überprüfung übernimmt danach der Writer.
-Ziel sind höchstens 60 Sekunden bis zum geöffneten PR, damit Zeit für GitHub-Start
-und Validierung bleibt. Das ist ein Ablaufbudget, keine gelockerte 120-Sekunden-
+Ziel sind höchstens 60 Sekunden bis zum geöffneten PR, mit Reserve gegenüber
+der 120-Sekunden-Grenze; die Writer-Queue zählt nicht zu dieser Frist. Das ist ein Ablaufbudget, keine gelockerte 120-Sekunden-
 Annahmegrenze. Wenn Tool-/Queue-Latenz das Fenster überschreitet, offen als
 unpersistiert melden; niemals eine Erstellungszeit auffrischen oder erneut einreichen.
 

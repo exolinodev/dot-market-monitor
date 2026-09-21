@@ -21,7 +21,7 @@ No actual model-run evaluation or profitability result is claimed by unit tests.
 `docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.0.
 It preserves the v4 order/management, binding, sizing, cost, REFLOOP and immutable
 writer rules, while condensing explanatory feature examples and repeated writer
-instructions from the canonical file. It has 18,714 characters. The existing
+instructions from the canonical file. It has 18,829 characters. The existing
 ChatGPT editor rejected a 20,822-character v3-plus-guard prompt and accepted an
 equivalent integrated version of 19,939 characters; no published product-wide
 limit is inferred from that observation. Keep private legacy context separate
@@ -59,3 +59,21 @@ Prompt design reference: [OpenAI prompt engineering](https://developers.openai.c
 (code-managed prompts, explicit structure, representative tests and staged rollout).
 Task management reference: [Scheduled tasks](https://learn.chatgpt.com/docs/automations)
 (existing task prompt/schedule controls and first-run verification).
+
+## Follow-up after rejected management submission
+
+The next real forecast `20260921T091040Z-a314999c44e3-oracle-v4` requested
+CANCEL of the resting order. Draft #307 opened at 09:12:51 UTC, 131 seconds
+after its declared creation time. Writer 35582001700 correctly rejected it;
+the cancellation did not enter the ledger. This historical submission must
+not be edited, reopened or resubmitted.
+
+The prompt now requires compact transport prose, complete preparation before
+the last real clock read, and direct Create-File → Create-PR submission. The
+120-second acceptance limit remains unchanged. The evidence does not separate
+model composition time from tool latency; the next real scheduled run must
+show whether this mitigation improves acceptance. Runtime executability must
+be read from submitted_at_utc/ORDER_ACCEPTED, rather than the nominal plan time.
+The revised public copy adds 115 characters; with the existing separate private
+context, the expected saved task length is 19,787 characters. Browser save and
+readback remain a separate deployment step.
