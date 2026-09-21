@@ -145,6 +145,17 @@ def transition(state, event):
             if action['params']['cliOrdId'] == client_id and operation['status'] != 'resolved':
                 operation.update(status='resolved', resolution_sha256=payload['capture_sha256'],
                                  outcome='filled' if action['endpoint'] == 'sendorder' else 'order_already_filled')
+    elif kind == 'order_terminal':
+        owner = result['ownership'][payload['client_id']]
+        if owner['status'] == 'terminal':
+            raise ExecutionError('Order is already terminal')
+        if payload['capture_sha256'] != result['latest_capture']:
+            raise ExecutionError('Terminal resolution requires the latest capture')
+        owner.update(status='terminal', exchange_order_id=payload['exchange_order_id'],
+                     terminal_reason=payload['reason'], resolution_sha256=payload['capture_sha256'])
+        for operation in result['operations'].values():
+            if operation['action']['params']['cliOrdId'] == payload['client_id'] and operation['status'] != 'resolved':
+                operation.update(status='resolved', resolution_sha256=payload['capture_sha256'], outcome='order_terminal')
     else:
         raise ExecutionError('Unknown demo journal event')
     return result
@@ -222,6 +233,8 @@ class Journal:
             self._validate_presence(payload)
         if event['type'] == 'order_filled':
             self._validate_full_fill(payload)
+        if event['type'] == 'order_terminal':
+            self._validate_terminal(payload)
 
     def _validate_presence(self, payload):
         capture = self._read_artifact(payload['capture_sha256'])
@@ -342,3 +355,83 @@ class Journal:
     def resolve_filled_order(self, client_id, capture_sha256, history_sha256, exchange_order_id):
         return self.append('order_filled', {'client_id': client_id, 'capture_sha256': capture_sha256,
                            'history_sha256': history_sha256, 'exchange_order_id': exchange_order_id})
+
+
+    def _validate_terminal(self, payload):
+        from decimal import Decimal, localcontext
+        from exchange_reconciliation import numeric, deduplicate_fills
+        client_id = payload['client_id']
+        owner = self._state['ownership'][client_id]
+        origin = self._state['operations'][owner['origin_operation_id']]
+        if origin['status'] == 'prepared':
+            raise ExecutionError('Terminal history cannot resolve a never-dispatched send')
+        params = origin['action']['params']
+        if params['orderType'] == 'stp':
+            raise ExecutionError('Stop order lifecycle requires trigger-history evidence')
+        capture = self._read_artifact(payload['capture_sha256'])
+        history = self._read_artifact(payload['history_sha256'])
+        prior = self._read_artifact(origin['action']['capture_sha256'])
+        start, end = utc(prior['reference_utc']), utc(capture['reference_utc'])
+        if capture.get('order_history_sha256') != payload['history_sha256'] or end <= start:
+            raise ExecutionError('Terminal history is not bound to a later observation')
+        if (history.get('source') != 'order_history' or history.get('environment') != 'demo'
+                or history.get('account_uid') != self.identity['account_uid'] or history.get('coverage_complete') is not True
+                or utc(history['since_utc']) > start or utc(history['through_utc']) < end):
+            raise ExecutionError('Complete account-bound order lifetime required')
+        candidates = [e for e in history['order_events'] if e['event_id'] == payload['event_id']]
+        if len(candidates) != 1:
+            raise ExecutionError('Unique terminal event required')
+        event = candidates[0]
+        if event['kind'] not in ('OrderCancelled', 'OrderRejected') or payload['reason'] != {'OrderCancelled': 'cancelled', 'OrderRejected': 'rejected'}[event['kind']]:
+            raise ExecutionError('Event does not prove order termination')
+        order = event['order']
+        exchange_id = payload['exchange_order_id']
+        if (order['account_uid'] != self.identity['account_uid'] or order['order_id'] != exchange_id
+                or not exchange_id or (owner.get('exchange_order_id') and owner['exchange_order_id'] != exchange_id)
+                or (order['client_id'] != client_id and not (order['client_id'] is None and owner.get('exchange_order_id') == exchange_id))):
+            raise ExecutionError('Terminal order identity differs from dispatched intent')
+        allowed_types = {'lmt': ('Limit',), 'mkt': ('Market', 'IoC')}
+        if (order['symbol'] != params['symbol'] or order['direction'] != ('Buy' if params['side'] == 'buy' else 'Sell')
+                or order['reduce_only'] != params['reduceOnly'] or order['order_type'] not in allowed_types[params['orderType']]):
+            raise ExecutionError('Terminal order economics differ from intent')
+        at = utc(event['at_utc'])
+        if not start <= at <= end:
+            raise ExecutionError('Terminal event outside send lifetime')
+        for other in history['order_events']:
+            other_order = other.get('order', {})
+            if (other['event_id'] != event['event_id'] and other_order.get('order_id') == exchange_id
+                    and utc(other['at_utc']) >= at):
+                raise ExecutionError('Terminal event is superseded or chronologically ambiguous')
+        if any(r.get('cliOrdId') == client_id or r['order_id'] == exchange_id for r in capture['open_orders']):
+            raise ExecutionError('Terminated order remains open in readback')
+        with localcontext() as context:
+            context.prec = 34
+            maximum = numeric(params['size'], positive=True)
+            for operation in self._state['operations'].values():
+                action = operation['action']
+                if (action['params']['cliOrdId'] == client_id and action['endpoint'] == 'editorder'
+                        and operation['status'] != 'prepared' and 'size' in action['params']):
+                    maximum = max(maximum, numeric(action['params']['size'], positive=True))
+            quantity, filled = numeric(order['quantity']), numeric(order['filled'])
+            if quantity < 0 or quantity > maximum or filled < 0 or filled > quantity:
+                raise ExecutionError('Terminal quantity exceeds persisted authorization')
+            execution = self._read_artifact(capture['execution_history_sha256'])
+            if (execution.get('source') != 'execution_history' or execution.get('environment') != 'demo'
+                    or execution.get('account_uid') != self.identity['account_uid'] or execution.get('coverage_complete') is not True
+                    or utc(execution['since_utc']) > start or utc(execution['through_utc']) < end):
+                raise ExecutionError('Terminal recovery requires complete fill evidence too')
+            total = Decimal(0)
+            for fill in deduplicate_fills(execution['fills']):
+                if fill['order_id'] != exchange_id and fill['cliOrdId'] != client_id: continue
+                if (fill['order_id'] != exchange_id or fill['cliOrdId'] not in (None, client_id)
+                        or fill['symbol'] != params['symbol'] or fill['side'] != params['side']
+                        or not start <= utc(fill['fillTime']) <= at):
+                    raise ExecutionError('Terminal fill contradicts order history')
+                total += numeric(fill['size'], positive=True)
+            if total != filled:
+                raise ExecutionError('Terminal filled quantity differs from actual fills')
+
+    def resolve_terminal_order(self, client_id, capture_sha256, history_sha256, event_id, exchange_order_id, reason):
+        return self.append('order_terminal', {'client_id': client_id, 'capture_sha256': capture_sha256,
+                           'history_sha256': history_sha256, 'event_id': event_id,
+                           'exchange_order_id': exchange_order_id, 'reason': reason})

@@ -151,7 +151,7 @@ acceptance window.
 [execution events endpoint](https://docs.kraken.com/api-reference/account-history/get-execution-events)
 at `/api/history/v3/executions`. The demo transport now supports read-only
 history calls to executions/orders/triggers/account-log on the same fixed demo
-host. Only executions have a capture/parser in this change.
+host. Executions and orders have account-bound capture/parsers; triggers and account logs are not yet parsed.
 
 The signing path includes `/api/history/v3/...`; it is not a trading
 `/api/v3/...` endpoint and has no `/derivatives` URL prefix. This follows the
@@ -355,9 +355,9 @@ authentication, freshness or raw-response provenance. The future orchestrator
 must construct them from the bound history/readback evidence already described,
 and attach the verified plan and publication hashes to planned actions.
 
-The current resolver covers positive open-order presence only. Fully filled,
-cancelled, rejected, edited, and never-sent crash cases still need their own
-specific evidence-based recovery before the CLI can send. There is intentionally
+Recovery covers open-order presence, full fills and explicit cancellation or
+rejection events as described below. Edit/trigger lifecycles and never-sent crash
+cases still need specific evidence-based recovery before the CLI can send. There is intentionally
 no generic manual `resolved=true` switch. The existing `DemoAttempts` transport
 journal remains responsible for retaining exact request/response evidence; the
 runner must connect both under the same lock. No demo journal has been initialized
@@ -388,6 +388,38 @@ non-dispatchable, and every decision is reproduced by journal replay.
 Any edit in that order's control history blocks this original-size shortcut.
 An edit may alter total quantity, including while its result is unknown; the
 runner needs separately verified effective-order terms before concluding full
-execution. Rejected/cancelled orders without full execution, edit outcomes and
-never-sent crash recovery remain outstanding. No generic absence-based or manual
+execution. Cancellation/rejection evidence is handled by the order-history layer below;
+edit/trigger outcomes and never-sent crash recovery remain outstanding. No generic absence-based or manual
 resolution override is added, and CLI demo/live sending remains disabled.
+
+
+## Order-history recovery for cancellation and rejection
+
+`capture_orders` uses the same raw-page/token/account verifier as execution
+history, with `/api/history/v3/orders`, `opened=true`, `closed=true`. It normalizes
+OrderPlaced, OrderUpdated, OrderRejected, OrderCancelled, OrderNotFound and
+OrderEditRejected according to the official
+[order events reference](https://docs.kraken.com/api-reference/account-history/get-order-events).
+All nested order accounts must match, and an update cannot switch exchange IDs.
+`verify_capture(..., source="order_history")` replays this specific source;
+execution verification does not silently accept an order-history manifest.
+
+The journal's `resolve_terminal_order` accepts only a selected OrderCancelled or
+OrderRejected event in complete account-bound history tied to the latest later
+observation. It checks exchange/client identity, side, instrument, reduce-only,
+order type and the maximum size authorized by persisted dispatched intents.
+Native size reductions are allowed; filled quantity must still exactly match
+complete execution history. An open readback, later/same-time contradictory order
+event, excess quantity or mismatching fill leaves the operation unresolved.
+
+Positive terminal evidence may also settle a cancellation/edit that lost the
+race as `order_terminal`. This records that its target order cannot remain open,
+not that the requested modification or cancellation executed. OrderNotFound,
+OrderEditRejected and an update alone do not prove termination. Stop orders are
+excluded from this resolver until their separate trigger lifecycle is verified.
+Open edited orders still need effective-term recovery before further management.
+
+Both history paths remain offline-tested against API-shaped fixtures, not real
+authenticated demo captures. The orchestrator must verify raw artifacts before
+putting their reports into the control journal; no execution authorization or
+CLI sending is enabled by this addition.
