@@ -66,3 +66,14 @@ def test_external_evidence_symlink_rejected_on_restart(tmp_path):
     (journal/'evidence').symlink_to(tmp_path/'moved')
     with pytest.raises(ExecutionError, match='symlink'):
         with locked(journal, ACCOUNT, KEY): pass
+
+
+def test_nested_source_cannot_recursively_copy_into_itself(tmp_path):
+    journal = tmp_path/'journal'; initialize(journal, ACCOUNT, KEY)
+    bundle = journal/'evidence'
+    result = capture_bundle(bundle, Client(), ACCOUNT, KEY, START)
+    with locked(journal, ACCOUNT, KEY) as store:
+        with pytest.raises(ExecutionError, match='must not overlap'):
+            import_observation(store, bundle, result['bundle_sha256'])
+        assert store.state['latest_capture'] is None
+    assert not (bundle/result['bundle_sha256']).exists()

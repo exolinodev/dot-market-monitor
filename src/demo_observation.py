@@ -49,6 +49,10 @@ def import_observation(store, directory, bundle_sha256):
     identity = store.identity
     value, histories = observation(directory, identity['account_uid'], identity['api_key_fingerprint'], bundle_sha256)
     parent = store.root/'evidence'
+    source_path, destination_path = Path(directory).resolve(), (parent/bundle_sha256).resolve()
+    if (source_path == destination_path or source_path in destination_path.parents
+            or destination_path in source_path.parents):
+        raise ExecutionError('Acquisition and journal evidence paths must not overlap')
     if parent.is_symlink():
         raise ExecutionError('Journal evidence directory is a symlink')
     if not parent.exists():
