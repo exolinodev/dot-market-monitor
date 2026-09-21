@@ -13,6 +13,7 @@ from demo_observation import import_observation
 from demo_position import acquired
 from demo_preflight import entry_preflight, policy
 from demo_protection import protection_preview
+from demo_recovery import recover_available
 from exchange_reconciliation import exchange_time
 from kraken_execution import DemoAttempts, ExecutionError, MUTATIONS, _sync_directory
 from ledger import digest
@@ -35,7 +36,8 @@ def dispatch_once(directory, repo, head, forecast_id, store, client, *, protecti
 
     Caller constructs the fixed-host DemoClient from protected environment keys
     and holds this journal's lock throughout. Captures are create-only below the
-    private journal. Unresolved operations refuse even a new forecast/client ID.
+    private journal. Unresolved operations allow fresh read-only recovery, but refuse another
+    mutation without positive evidence. Prepared intents need explicit abandonment.
     Entry sending also requires verified exchange margin evidence; the current
     preflight does not yet provide it and therefore cannot dispatch entries.
     """
@@ -47,8 +49,8 @@ def dispatch_once(directory, repo, head, forecast_id, store, client, *, protecti
         raise ExecutionError('Dispatch requires the current fetched main head')
     if client.key_fingerprint != store.identity['api_key_fingerprint']:
         raise ExecutionError('Demo client key differs from journal identity')
-    if any(x['status'] != 'resolved' for x in store.state['operations'].values()):
-        raise ExecutionError('Recover the unresolved operation before dispatch')
+    if any(x['status'] == 'prepared' for x in store.state['operations'].values()):
+        raise ExecutionError('Recover the unresolved prepared operation before dispatch')
     baseline = acquired(store, store.state['baseline_capture'])
     captures = _directory(store.root, 'captures')
     attempts_root = _directory(store.root, 'attempts')
@@ -60,6 +62,10 @@ def dispatch_once(directory, repo, head, forecast_id, store, client, *, protecti
         return import_observation(store, path, result['bundle_sha256'])
 
     capture()
+    recovery = recover_available(store)
+    if recovery['unresolved_operations'] or recovery['issues']:
+        return {'mode': 'demo', 'mutation_attempted': False, 'result': 'recovery_required',
+                'recovery_required': True, 'recovery': recovery, 'fill_verified': False}
     _, report = store.reconcile_position()
     if not report['quantity_reconciled']:
         raise ExecutionError('Acquired position has unresolved discrepancies')
@@ -77,7 +83,7 @@ def dispatch_once(directory, repo, head, forecast_id, store, client, *, protecti
                   'plan_sha256': preflight['plan_sha256'], 'trusted_head': head}
     if action is None:
         return {'mode': 'demo', 'mutation_attempted': False, 'result': 'no_action',
-                'capture_sha256': store.state['latest_capture']}
+                'capture_sha256': store.state['latest_capture'], 'recovery': recovery}
     action = {k: v for k, v in action.items() if k != 'authorizes_execution'}
     operation = action['operation_id']
     if (attempts_root/operation).exists() or (attempts_root/operation).is_symlink():
@@ -128,7 +134,16 @@ def dispatch_once(directory, repo, head, forecast_id, store, client, *, protecti
             # A missing/overlapping readback leaves the operation unresolved.
             # Its incomplete raw directory remains available for diagnosis.
             pass
+    if readback is not None:
+        recovery = recover_available(store)
+        if not recovery['unresolved_operations'] and not recovery['issues']:
+            _, final_report = store.reconcile_position()
+            if not final_report['quantity_reconciled']:
+                recovery['issues'].append({'reason': 'post_recovery_quantity_discrepancy'})
+    pending = any(o['status'] != 'resolved' for o in store.state['operations'].values())
+    owner = store.state['ownership'][action['params']['cliOrdId']]
     return {'mode': 'demo', 'operation_id': operation, 'mutation_attempted': dispatched,
             'operation_status': store.state['operations'][operation]['status'],
             'preflight_sha256': preflight_sha, 'post_capture_sha256': readback,
-            'recovery_required': True, 'fill_verified': False}
+            'recovery_required': pending or bool(recovery['issues']), 'recovery': recovery,
+            'fill_verified': owner.get('terminal_reason') == 'filled'}

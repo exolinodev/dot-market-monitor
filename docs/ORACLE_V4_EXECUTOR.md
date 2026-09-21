@@ -920,8 +920,10 @@ request was made in implementing or testing this path.
 The CLI requires the existing journal outside Git, its account UID and key
 fingerprint, and matching `KRAKEN_DEMO_API_KEY` / `KRAKEN_DEMO_API_SECRET` in the
 private runner environment. It constructs only the fixed-host demo client.
-Disabled policy, a wrong fingerprint, a stale fetched main or any unresolved
-prior operation stop before acquisition. It never initializes a journal or
+Disabled policy, a wrong fingerprint, a stale fetched main or a prepared unsent
+operation stop before acquisition. Dispatched unknown/acknowledged operations
+permit fresh read-only acquisition and evidence-backed recovery before any new
+mutation. It never initializes a journal or
 uses the production exchange host. Raw captures and attempts live in private
 create-only directories below that journal, retained across restarts.
 
@@ -946,6 +948,7 @@ acquisition. An unavailable or nonquiet readback leaves the operation unresolved
 the partial evidence is retained. Subsequent invocation refuses to send until
 positive evidence resolves the operation with the existing recovery validators.
 An acknowledgement, a cancel reply or an empty open-order read is insufficient.
+Supported positive proofs are now selected automatically as described below.
 The result explicitly reports operation status, readback hash (or null),
 `recovery_required` and `fill_verified=false`. Exceptions printed by the CLI are
 redacted; diagnostics stay in the private evidence directories.
@@ -955,6 +958,41 @@ raw readback, explicit presence recovery, restart refusal, timeout, changed
 orders, staleness between preflight and POST, failed post-readback, latched-risk
 cancellation, disabled policy, key mismatch, unavailable entry margin proof and
 CLI error redaction. Real demo fixtures, applicable margin/account-cost proof,
-remaining trigger/edit recovery, automatic evidence-backed lifecycle orchestration,
+remaining trigger/edit recovery and lifecycle cases,
 a durable deployment service and the two-week acceptance window remain open.
 This step does not activate demo or live execution.
+
+
+## Automatic recovery from unique positive evidence
+
+`demo_recovery.recover_available` selects candidate order-presence, full-fill,
+ordinary cancellation/rejection, unactivated-trigger cancellation and ordinary
+limit-edit proofs from the latest acquired raw bundle. Each candidate must pass
+both the existing journal evidence validator and its state transition without a
+write first. Exactly one valid result for an owner is appended. Conflicting
+valid outcomes, partial fills without lifecycle evidence, and absent orders
+remain unresolved. Prepared intents are never automatically abandoned.
+
+The single-attempt runner acquires fresh evidence, recovers supported lifecycles
+and rechecks position reconciliation before selecting an action. After a POST,
+it repeats recovery and reconciliation on the post-readback. A lost send reply
+can therefore be resolved by exact later open-order presence without resending;
+a proven stop can advance to T1 on the next invocation. Each invocation still
+attempts at most one mutation. An unresolved operation or recovery ambiguity
+returns `recovery_required` without another send. Acquired raw evidence remains
+mandatory; acknowledgements and local normalized JSON cannot supply proof.
+
+For a journal already holding new raw evidence, `recover_demo_journal.py
+--recover-available` applies the same selection without network access. Existing
+explicit selectors remain available. Automatic recovery handles supported order
+lifecycles even when their original send operation was already resolved, so
+subsequent fills or cancellations can update ownership. It never resets IDs or
+establishes a new baseline. After recovery, missing or discrepant position proof
+still prevents another action.
+
+Synthetic tests cover every supported proof, both limit-edit outcomes, replay,
+repeated recovery without duplicate events, actual presence after a lost reply,
+restart progression from stop to T1, empty/partial evidence, prepared intents,
+and conflicting full-fill/cancellation proofs. Activated trigger-child mapping,
+stop-market edit proof and unsupported terminal-edit lifecycles remain blocked.
+No demo/live configuration was enabled and no real exchange operation was made.
