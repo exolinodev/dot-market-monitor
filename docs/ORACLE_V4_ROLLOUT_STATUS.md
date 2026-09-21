@@ -1,6 +1,7 @@
 # Oracle v4 rollout status — 2026-09-21
 
-This is a deployment/acceptance audit, not a claim that v4 is operational.
+This is a deployment/acceptance audit. Production paper processing is active;
+exchange execution and full operational acceptance remain outstanding.
 Implementation and operational acceptance are tracked separately. The original
 scope remains WP1–WP7, including paper, demo and separately approved live stages.
 
@@ -67,7 +68,8 @@ with the compact public v4 prompt and preserved separate private context
 custom schedule was preserved. The daily v4 system check was also saved and
 read back exactly, with its existing 8:20 displayed schedule unchanged.
 The preceding hourly v3 result correctly refused the stale 06:00 snapshot;
-no first successful v4 forecast/writeback or exchange operation is claimed.
+the first successful v4 forecast/writeback is documented below. No exchange
+operation is claimed.
 
 The subsequent regular 07:15 light run
 [35572069813](https://github.com/exolinodev/dot-market-monitor/actions/runs/35572069813)
@@ -83,6 +85,41 @@ minute-boundary dispatch is late Cron delivery within :14, not a rejected or
 normalized cron string. It leaves only two seconds of prewarming. This sample
 meets the 30-second capture target but does not establish the 48-hour percentile.
 
+## First real model order accepted into the paper ledger
+
+The saved :05 task ran on 2026-09-21 and produced forecast
+`20260921T081105Z-5a4bb8b3ee06-oracle-v4` at 08:11:05 UTC, bound to the
+08:00 snapshot on `459fc23f7efb122b395bd81b5676101c65f5ccbb`.
+Submission draft #297 opened at 08:11:29 UTC. Writer
+[35576605314](https://github.com/exolinodev/dot-market-monitor/actions/runs/35576605314)
+validated and published forecast, receipt and plan through #298 at 08:13:59 UTC,
+main `7df8df45e7f0d7b08d644670d0fd163b3b912842`, then closed the draft.
+Opening-to-publication took 150 seconds: this does **not** prove the two-minute
+writer queue/publication target. No submission draft was manually merged.
+
+The regular 08:15 collector
+[35576912142](https://github.com/exolinodev/dot-market-monitor/actions/runs/35576912142)
+published `a3d52722c8db54c16097c73750cad515a5849641` and accepted the order.
+Runtime uses 08:14:00 UTC, after actual publication, rather than retrospectively
+executing the plan's nominal 08:12 effective time. The LONG LIMIT is 1.1545 USD,
+stop 1.1475, targets 1.1648/1.1717/1.1827 at 50%/30%/20%, HALF risk and expiry
+09:41:05 UTC. Python sized 3030 contracts, 3498.135 USD notional and
+24.99556075694 USD estimated stop loss including costs against a 25 USD budget.
+
+Replay at that immutable head is identical: 99 events through the closed 08:14
+candle, state hash
+`d9c3d159309b3c1e1302208b38d1b55716fd337d47309670c708113f0d4d00c0`.
+The order is resting, position is null, closed trade count is zero and equity
+is 5000 USD. This proves real model → writer → paper processing, not a fill,
+profitability, subsequent model management or exchange execution.
+
+The 08:00 snapshot contains four actual quarters (07:15, 07:30, 07:45, 08:00),
+status ok and no missing boundaries. Across the five boundaries 07:15–08:15,
+only 2/5 captures meet the 30-second target (lags 24.578, 27.748, 33.635,
+30.540, 34.949 seconds). All four light publications took less than 60 seconds
+(38/42/47/51 seconds), with no gzip changes. These early samples identify a
+prewarming shortfall; the 48-hour timing/storage acceptance remains unproven.
+
 ## Phase requirements and remaining proof
 
 | Scope | Prepared implementation/evidence | Still required |
@@ -90,8 +127,8 @@ meets the 30-second capture target but does not establish the 48-hour percentile
 | Phase 0 | Writer fix, draft cleanup, runner fixtures and interpretation merged (#221/#222/#224/#225) | No new phase-0 code gate identified in this audit |
 | WP1–WP3 / Phase 1 | #228: boundary scheduling, light capture, perp candles, incremental funding and lossless history storage; isolated local/runner smokes | 48 h with >=95% lag <=30 s; light publication <60 s; writer queue <=2 min; four real quarters and actual Git growth |
 | WP4–WP5 / Phase 2 | #230/#232/#235: deterministic ledger, v4 writer contract and runtime; source/replay and synthetic writer-to-runtime tests | Completed via #283/#285 and run 35571581958; continuing runtime evidence required |
-| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests | Hourly/daily migration saved and read back; still required: real v4 model run, accepted forecast/plan and runtime processing; two weeks paper and >=30 closed trades before performance conclusions |
-| WP7 / Phase 3 | #243 through #263: demo transport, durable journal, recovery layers, raw account/market evidence, quantity reconciliation, preflight and account logs; 603 offline Python tests green | Integrated sending/protective-management runner; remaining edit/trigger recovery; margin and net-accounting proof; dedicated demo setup; real fixtures; two-week demo/no-orphan/idempotency/readback acceptance |
+| WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests | Hourly/daily migration and first real model → writer → runtime cycle proven below; subsequent fill/management evidence, two weeks paper and >=30 closed trades remain required |
+| WP7 / Phase 3 | #243 through #296: demo transport, durable journal, evidence-backed recovery including ordinary limit edits, raw account/market/preferences evidence, reconciliation, preflight, account logs and integrated protective preview; 668 offline Python tests green | Integrated sending/protective-management runner; remaining edit/trigger recovery; margin and net-accounting proof; dedicated demo setup; real fixtures; two-week demo/no-orphan/idempotency/readback acceptance |
 | WP7 / Phase 4 | Live remains disabled | Complete prior gates, implement/test live-specific operation, and obtain separate approvals for 500/2000/5000 USD notional |
 
 The unavailable demo host does **not** prevent Phase-1/2 paper rollout. Its public

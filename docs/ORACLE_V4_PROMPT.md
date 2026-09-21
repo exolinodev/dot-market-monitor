@@ -31,7 +31,8 @@ Phase 1 and the code stack are deployed (#228/#265). Production paper genesis
 merged in #283 at 06:50:19 UTC, with identical replay. The existing hourly task's
 schedule was changed to minute :05; the task chat confirmed the next occurrence
 as 2026-09-21T07:05:00Z after correcting its initial timezone description.
-A first real run is still needed to verify effective scheduling.
+The first real v4 run was observed active at :05 and produced the 08:11 forecast
+documented below.
 
 The first current full snapshot was published by run 35571581958 on main
 d1f0596, with DOT execution_context status ok and identical account replay.
@@ -40,12 +41,17 @@ reopening confirmed exact equality (19,672 characters including the preserved,
 separate private context). The existing :05 schedule was unchanged. The daily
 v4 system check was separately saved and read back with its existing 8:20
 schedule. No replacement local automation or exchange execution was introduced.
-The preceding real v3 result refused the stale 06:00 snapshot; a first successful
-v4 model/writeback cycle is still pending.
+The preceding real v3 result refused the stale 06:00 snapshot. The first real v4
+forecast `20260921T081105Z-5a4bb8b3ee06-oracle-v4` was subsequently accepted by
+writer run 35576605314 and published through #298 at 08:13:59 UTC. Collector
+35576912142 processed it at the publication-adjusted 08:14 effective boundary.
+Replay at main `a3d52722c8db54c16097c73750cad515a5849641` is identical, with a
+resting LONG LIMIT, no position or closed trades, and 5000 USD equity. Details
+and measured timing shortfalls are in `ORACLE_V4_ROLLOUT_STATUS.md`.
 
-Check the first real run for boundary matching, complete management, valid
-schema, timely writer acceptance, published forecast/plan, and subsequent
-ledger processing. Re-read the job and its first results; a saved setting or green
+Continue checking subsequent runs for boundary matching, complete management,
+valid schema, timely writer acceptance, published forecast/plan, and subsequent
+ledger processing. A saved setting or green
 unit test alone is not operational acceptance. Timing/storage and paper/demo/live
 observation gates in the plan remain required.
 
