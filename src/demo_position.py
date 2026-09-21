@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from cycles import utc
 from demo_observation import verify_journal_observation
+from demo_edits import effective_params
 from exchange_reconciliation import numeric, reconcile
 from kraken_execution import ExecutionError
 
@@ -58,14 +59,13 @@ def position_report(store):
             continue
         source = acquired(store, operation['action']['capture_sha256'])
         origin_times[client_id] = utc(source['reference_utc'])
+        try:
+            params = effective_params(state, client_id)
+        except ExecutionError:
+            issues.append({'kind': 'edited_order_terms_unverified', 'client_id': client_id})
         known[client_id] = {key: params[key] for key in ('symbol', 'side', 'size', 'reduceOnly')}
         if owner.get('exchange_order_id'):
             known[client_id]['exchange_order_id'] = owner['exchange_order_id']
-        for other in state['operations'].values():
-            if (other['action']['params']['cliOrdId'] == client_id and other['action']['endpoint'] == 'editorder'
-                    and other.get('outcome') != 'not_dispatched'):
-                issues.append({'kind': 'edited_order_terms_unverified', 'client_id': client_id})
-                break
         matches = [r for r in capture['open_orders'] if r.get('cliOrdId') == client_id
                    or (owner.get('exchange_order_id') and r['order_id'] == owner['exchange_order_id'])]
         if owner['status'] == 'open' and not matches:

@@ -22,17 +22,19 @@ def main(argv=None):
     actions.add_argument('--resolve-cancelled', metavar='CLIENT_ID', help='Prove ordinary order cancellation')
     actions.add_argument('--resolve-rejected', metavar='CLIENT_ID', help='Prove ordinary order rejection')
     actions.add_argument('--resolve-trigger-cancelled', metavar='CLIENT_ID', help='Prove unactivated stop cancellation')
+    actions.add_argument('--resolve-edit-applied', metavar='OPERATION_ID', help='Prove an ordinary limit edit took effect')
+    actions.add_argument('--resolve-edit-rejected', metavar='OPERATION_ID', help='Prove an ordinary limit edit was rejected')
     parser.add_argument('--capture-sha256', help='Expected latest retained observation; never imports evidence')
     parser.add_argument('--exchange-order-id', help='Exchange identity to prove against retained evidence')
     parser.add_argument('--event-id', help='Exact terminal order/trigger history event')
     args = parser.parse_args(argv)
     resolution = next(((kind, getattr(args, kind)) for kind in
                        ('resolve_present', 'resolve_filled', 'resolve_cancelled', 'resolve_rejected',
-                        'resolve_trigger_cancelled') if getattr(args, kind)), None)
-    terminal = resolution and resolution[0] in ('resolve_cancelled', 'resolve_rejected', 'resolve_trigger_cancelled')
+                        'resolve_trigger_cancelled', 'resolve_edit_applied', 'resolve_edit_rejected') if getattr(args, kind)), None)
+    terminal = resolution and resolution[0] not in ('resolve_present', 'resolve_filled')
     if resolution:
         if not args.capture_sha256 or not args.exchange_order_id or bool(args.event_id) != bool(terminal):
-            parser.error('Resolution requires --capture-sha256 and --exchange-order-id; --event-id only for terminal history')
+            parser.error('Resolution requires --capture-sha256 and --exchange-order-id; --event-id for terminal/edit history only')
     elif any((args.capture_sha256, args.exchange_order_id, args.event_id)):
         parser.error('Evidence selectors require a resolution action')
     try:
@@ -54,6 +56,12 @@ def main(argv=None):
                 elif kind == 'resolve_trigger_cancelled':
                     store.resolve_cancelled_trigger(ident, args.capture_sha256,
                         capture['trigger_history_sha256'], args.event_id, args.exchange_order_id)
+                elif kind in ('resolve_edit_applied', 'resolve_edit_rejected'):
+                    client_id = store.state['operations'][ident]['action']['params']['cliOrdId']
+                    if store.state['ownership'][client_id].get('exchange_order_id') != args.exchange_order_id:
+                        raise ValueError('Edit exchange identity differs from proven owner')
+                    store.resolve_limit_edit(ident, args.capture_sha256, capture['order_history_sha256'],
+                        args.event_id, 'edit_applied' if kind == 'resolve_edit_applied' else 'edit_rejected')
                 else:
                     store.resolve_terminal_order(ident, args.capture_sha256,
                         capture['order_history_sha256'], args.event_id, args.exchange_order_id,
