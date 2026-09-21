@@ -52,13 +52,13 @@ forecast schema, strategy and evaluator versions.
 
 ## Remaining activation work
 
-This contract does not initialize an account or enable trading. The current
-production snapshots do not yet contain the required execution context. The
-runtime adapter must create it from verified market/ledger evidence and consume
-only published, matching forecast/plan pairs. It must also resolve instructions
-published after their nominal effective minute without backdating fills, and
-respect serialized writer/collector ownership. Prompt 4.0.0, the :05 job change,
-funding settlement readback, paper observation and demo/live gates remain
-separate rollout work. Direct `scripts/oracle.py write` without bound ledger
+This contract does not initialize an account or enable trading. Since
+2026-09-21 08:00 UTC the production full snapshots carry the required
+`execution_context`, the runtime consumes published, matching forecast/plan
+pairs, and instructions published after their nominal effective minute take
+effect at the next minute after first-parent main publication (see
+`ORACLE_V4_RUNTIME.md`). Prompt 4.0.0 and the :05 job are live; funding
+settlement readback, the paper observation window and the demo/live gates
+remain separate rollout work. Direct `scripts/oracle.py write` without bound ledger
 inputs fails closed for v4; the supported v4 route is the trusted submission
 writer.

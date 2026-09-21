@@ -1,5 +1,15 @@
 # Oracle-Jobs: Betrieb und Browser-Test
 
+Stand 21. September 2026 (v4): Der Stundenjob heisst „DOT/BTC Oracle v4“, läuft um
+**:05 UTC** mit dem kompakten Prompt 4.0.0 und reicht ausführbare Orders für das
+Paper-Ledger ein. Der Collector läuft viertelstündlich (Cloudflare `:58/:13/:28/:43`,
+Grenze +8 s; GitHub-Ersatz `:03/:18/:33/:48`), der volle Snapshot entsteht zur
+vollen Stunde. Writer, Fail-safes und Ablehnungsgründe sind in
+[ORACLE_V4_FORECAST.md](ORACLE_V4_FORECAST.md) und
+[ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md) beschrieben. Der Rest
+dieser Datei dokumentiert den v3-Betrieb vom 16. September 2026 und bleibt als
+Historie stehen.
+
 Stand: 16. September 2026. Der bestehende ChatGPT-Job wurde im Browser von
 „Kraken DOT/BTC Monitor v2“ auf „DOT/BTC Oracle v3“ aktualisiert. Er bleibt
 stündlich aktiv. Persönliche Positionsangaben bleiben ausschliesslich im privaten

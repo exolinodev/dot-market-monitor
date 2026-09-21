@@ -45,6 +45,12 @@ Ein angenommener Start ist noch kein frischer Snapshot; danach Daten-Commit und
 
 ## Ablauf und Grenzen
 
+Die folgenden Absätze beschreiben den Stundentakt bis zum 20.09.2026 (Runde ab
+`:50`, GitHub-Ersatz `:52`). Seit dem 21.09.2026 gilt die Viertelstundenrunde aus
+dem ersten Abschnitt: Vorwärm-Dispatch bei `:58/:13/:28/:43`, Grenze `:00/:15/:30/:45`,
+GitHub-Ersatz `:03/:18/:33/:48`, höchstens zwei Versuche pro Viertelstundenrunde.
+Die Mechanik (Doppelstartprüfung, Frischeprüfung, Nachholen) ist unverändert.
+
 Neue oder geänderte Cron-Konfigurationen können laut Cloudflare bis zu 15 Minuten
 zur Übernahme benötigen. Deshalb wird nach einer Einrichtung ein tatsächlicher
 Cloudflare-Start geprüft; eine erfolgreiche Konfigurationsantwort allein genügt

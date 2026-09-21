@@ -1,4 +1,4 @@
-# Oracle v4 runtime integration (disabled pending activation)
+# Oracle v4 runtime integration (active in production paper mode)
 
 ## Publication chronology
 
@@ -25,13 +25,22 @@ No past candle or archived forecast is rewritten to accommodate publication dela
 
 ## Activation status
 
-Collector integration is implemented for explicitly initialized accounts. No
-production account has been initialized. The funding convention is documented
-and fixture-tested (see `ORACLE_V4_LEDGER.md`); exchange settlement readback is
-still pending. The replay-derived compact equity curve and cost-adjusted passive
-perpetual benchmark are implemented. Prompt/job migration, explicit paper
-initialization and paper/demo/live acceptance gates remain open. This change performs no
-exchange execution.
+Collector integration operates on the explicitly initialized production paper
+account since 2026-09-21 06:45 UTC (see `ORACLE_V4_ROLLOUT_STATUS.md` for the
+first accepted order, the first closed trade and the measured timing). The
+funding convention is documented and fixture-tested (see `ORACLE_V4_LEDGER.md`);
+exchange settlement readback is still pending. The replay-derived compact equity
+curve and cost-adjusted passive perpetual benchmark are implemented. Prompt 4.0.0
+and the :05 hourly task are live. Still open: the 48-hour timing/storage
+acceptance, two weeks of paper observation with at least 30 closed trades, and
+the demo/live gates. Nothing here performs exchange execution.
+
+Operational limit worth knowing: `advance` requires continuous closed candles
+while the account exists. If a quarter is never published (for example two
+failed Kraken chart fetches in one round), every later light and full run fails
+until that quarter is captured. Recovery is currently manual: dispatch
+`market-data.yml` with `run_kind=light` and the exact missing `boundary_utc`,
+oldest first. The Worker only reconciles the current round.
 
 ## Market evidence adapter
 

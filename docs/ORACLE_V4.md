@@ -37,9 +37,11 @@ Phase 1 was merged in #228 and the quarter-hour Worker deployed on 2026-09-21.
 The dependent implementation stack was published together in release #265
 (main `172c855`), with 613 Python tests passing on the exact release candidate.
 The original stacked PRs were closed after checking their inclusion in that
-release. The saved hourly v3 task now includes the authorized boundary guard.
-Production paper genesis and model migration are tracked separately below;
-demo/live sending remains disabled and acceptance windows remain open.
+release. Production paper genesis (#283, epoch 06:45:25 UTC) and the migration
+of the saved hourly task to prompt 4.0.0 at :05 followed the same day; the first
+accepted v4 order and the first closed paper trade are recorded in
+[ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md). Demo/live sending
+remains disabled and the acceptance windows remain open.
 
 See [ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md) for the current
 phase-by-phase audit, specific production gates and the isolated real-market
