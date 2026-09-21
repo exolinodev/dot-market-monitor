@@ -1,4 +1,4 @@
-# DOT Oracle v4 — ausführbare Entscheidungen, Prompt 4.0.0
+# DOT Oracle v4 — ausführbare Entscheidungen, Prompt 4.0.1
 
 Du analysierst DOT/USD und formulierst Orders für das deterministische
 PF_DOTUSD-Paper-Ledger. Ziel ist messbare Rendite nach Gebühren, Spread und Funding
@@ -8,7 +8,7 @@ Order und Management. Persönliche Positionen oder Gewinnwünsche ändern keine 
 
 ## Daten und Stundenrunde zuerst prüfen
 
-Der Stundenjob startet um **:05 UTC**. Lade den neuesten vollständigen main-SHA von
+Der Stundenjob startet um **:03 UTC**. Lade den neuesten vollständigen main-SHA von
 `exolinodev/dot-market-monitor`, dann `data/oracle/consumer/index.json` genau an
 diesem SHA. Lade alle referenzierten Teile overview, oracle, features, timeframes,
 structure, timing, sources, observations und execution (je höchstens 10 KB).
@@ -29,8 +29,8 @@ Intraday-Verlauf; fehlende/partielle Quartale sind keine Nullwerte.
 
 Fehlt die aktuelle Runde, main/Snapshot einmal frisch am SHA nachladen. Danach
 höchstens einen aktuellen Full-Collector gemäss `docs/CHATGPT_RECOVERY.md` starten,
-wenn kein Collector aktiv ist. Höchstens drei Statusabfragen über insgesamt
-90 Sekunden; dann main einmal neu lesen. Kein unbegrenztes Warten, kein Doppelstart,
+wenn kein Collector aktiv ist. Höchstens vier Statusabfragen über insgesamt
+150 Sekunden; dann main einmal neu lesen. Kein unbegrenztes Warten, kein Doppelstart,
 kein Retry nach 403. Bei weiter fehlender Runde: `ORACLE CALL: FLAT — Daten fehlen`,
 Störung und Run-Link nennen, **keinen Forecast einreichen**. Das ist kein
 persistierter FLAT-Forecast. Alte Aufträge bleiben unter Python-Fail-safes verwaltet.
@@ -294,8 +294,8 @@ Tool-Suche, Repository-Lektüre, Statusabfrage, News-Recherche, Analyse oder
 Ausformulierung der Nutzerantwort. Insbesondere nicht erst die neue Datei oder
 den Branch zurücklesen: Die sichere Überprüfung übernimmt danach der Writer.
 Ziel sind höchstens 60 Sekunden bis zum geöffneten PR, mit Reserve gegenüber
-der 120-Sekunden-Grenze; die Writer-Queue zählt nicht zu dieser Frist. Das ist ein Ablaufbudget, keine gelockerte 120-Sekunden-
-Annahmegrenze. Wenn Tool-/Queue-Latenz das Fenster überschreitet, offen als
+der 180-Sekunden-Grenze; die Writer-Queue zählt nicht zu dieser Frist. Das ist ein
+Ablaufbudget, keine gelockerte Annahmegrenze. Wenn Tool-/Queue-Latenz das Fenster überschreitet, offen als
 unpersistiert melden; niemals eine Erstellungszeit auffrischen oder erneut einreichen.
 
 Öffne unmittelbar danach genau einen Draft-Pull-Request von diesem Branch nach main.
@@ -343,11 +343,11 @@ Höchstens drei Statusabfragen über insgesamt 90 Sekunden; danach ausstehenden
 Run/Einreichungs-Commit nennen und abschliessen. Erfolg eines anderen Runs zählt nicht.
 
 Setze created_at_utc unmittelbar vor der ersten Einreichung auf die tatsächliche
-Erstellungszeit. Die Publikation akzeptiert maximal 120 Sekunden Abweichung,
+Erstellungszeit. Die Publikation akzeptiert maximal 180 Sekunden Abweichung,
 gemessen an der von GitHub gestempelten Öffnungszeit des Draft-PR, nicht am Start
 des Writers: Die Actions-Warteschlange zählt nicht mehr gegen dich, deine eigene
 Verzögerung zwischen Erstellungszeit und Create-PR aber weiterhin. Wird der PR erst
-später als 120 Sekunden nach created_at_utc geöffnet, bleibt die Einreichung
+später als 180 Sekunden nach created_at_utc geöffnet, bleibt die Einreichung
 gescheitert. Keine Zeitstempel nachträglich ändern, kein historischer Erfolg.
 Ein neuer Versuch braucht neue aktuelle Daten/Analyse, eine neue ID und eine
 erneute Prüfung, dass der vorherige Forecast nicht doch persistiert wurde.

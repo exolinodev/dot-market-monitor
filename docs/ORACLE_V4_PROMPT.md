@@ -1,6 +1,6 @@
 # Oracle v4 prompt rollout
 
-`CHATGPT_MONITOR_PROMPT.md` is prompt 4.0.0, matched to
+`CHATGPT_MONITOR_PROMPT.md` is prompt 4.0.1, matched to
 `schema/oracle_forecast_v4.schema.json`. `docs/CHATGPT_DAILY_CHECK_PROMPT.md` is
 read-only daily operations prompt 1.1.0. Runtime execution context now supplies
 the five most recently closed trades in deterministic close-time/ID order,
@@ -18,7 +18,7 @@ No actual model-run evaluation or profitability result is claimed by unit tests.
 
 ## Task copy and production rollout
 
-`docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.0.
+`docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.1.
 It preserves the v4 order/management, binding, sizing, cost, REFLOOP and immutable
 writer rules, while condensing explanatory feature examples and repeated writer
 instructions from the canonical file. It has 18,829 characters. The existing
@@ -70,10 +70,27 @@ not be edited, reopened or resubmitted.
 
 The prompt now requires compact transport prose, complete preparation before
 the last real clock read, and direct Create-File → Create-PR submission. The
-120-second acceptance limit remains unchanged. The evidence does not separate
+120-second acceptance limit was kept at that point. The evidence does not separate
 model composition time from tool latency; the next real scheduled run must
 show whether this mitigation improves acceptance. Runtime executability must
 be read from submitted_at_utc/ORDER_ACCEPTED, rather than the nominal plan time.
 The revised public copy adds 115 characters; with the existing separate private
 context, the expected saved task length is 19,787 characters. Browser save and
 readback remain a separate deployment step.
+
+## Prompt 4.0.1: earlier start, longer recovery wait, 180-second limit
+
+After the first production day (5 of 11 hourly rounds reached the ledger, see
+`ORACLE_V4_ROLLOUT_STATUS.md`) three changes address the time chain rather than
+the analysis: the producer publishes the full snapshot about two minutes after
+the boundary instead of three to seven (guards only, no full test suite; see
+`ORACLE_INTAKE.md`), the writer accepts 180 seconds between `created_at_utc` and
+the draft opening (`MAX_ACCEPTANCE_DELAY_SECONDS`), and prompt 4.0.1 describes the
+hourly job at **:03 UTC** with up to four status polls over 150 seconds while a
+collector is still publishing. The ORACLE CALL, order/management contract,
+bindings, REFLOOP and immutable writer rules are unchanged. Both prompt files
+change only those three passages, so the compact copy remains a text replacement
+for the saved task; the task's schedule must be moved from :05 to :03 in the
+ChatGPT editor separately and read back. Until the schedule is moved, the :05
+task keeps working with the new prompt; it merely wastes two minutes of the
+900-second quote window.

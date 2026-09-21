@@ -1,6 +1,6 @@
 # Aktuelle Stundenrunde für den ChatGPT-Monitor abrufen
 
-Der v4-Stundenjob startet um :05 UTC. Lies zuerst main und den vollständigen
+Der v4-Stundenjob startet um :03 UTC (Zeitplan der ChatGPT-Aufgabe). Lies zuerst main und den vollständigen
 Snapshot bzw. Consumer-Index am zurückgegebenen SHA. Nutzbar ist nur
 `meta.run_kind=full` mit `meta.cycle_boundary_utc` gleich der aktuellen UTC-Stunde;
 Frische und Quellenabdeckung zusätzlich prüfen. Ein junger Snapshot der falschen
@@ -15,7 +15,7 @@ dann über tatsächlich verfügbare GitHub-Tools:
    `run_kind=full`, `boundary_utc=<aktuelle Stunde als YYYY-MM-DDTHH:00:00Z>`.
    Tool-Schema zuerst lesen. Kein alter Run-Rerun: dessen feste boundary_utc kann
    zur falschen Runde gehören. Ein Dispatch-Erfolg ist kein Publikationsnachweis.
-3. Höchstens drei Statusabfragen über insgesamt 90 Sekunden, danach main und
+3. Höchstens vier Statusabfragen über insgesamt 150 Sekunden, danach main und
    Snapshot einmal neu lesen. Neuer Commit, passende Grenze und Quellen prüfen.
    Ein noch laufender Run wird mit Link als ausstehend gemeldet.
 4. Fehlende Tools oder 403: keinen Toolnamen erfinden, keine Wiederholungsversuche.

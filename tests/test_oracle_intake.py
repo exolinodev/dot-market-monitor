@@ -151,7 +151,7 @@ def test_draft_opening_time_is_the_acceptance_clock_not_the_runner_start(submiss
     assert (repo/'data/oracle/receipts'/(envelope['forecast']['forecast_id']+'.json')).is_file()
 
 
-@pytest.mark.parametrize('opened,ran,message',[(150,160,r'\+150s \(limit 120s\)'),
+@pytest.mark.parametrize('opened,ran,message',[(210,220,r'\+210s \(limit 180s\)'),
     (60,60+1801,'stale queue'),(200,100,'ahead of the writer clock')])
 def test_late_or_implausible_draft_opening_still_rejects(submission,monkeypatch,opened,ran,message):
     repo,envelope,event=draft(submission)

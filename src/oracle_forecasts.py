@@ -7,6 +7,12 @@ import pandas as pd
 from oracle_common import validate, canonical, digest, FEATURE_VERSION
 from observation_common import utc, iso
 
+# Honest declared creation time: the GitHub-stamped draft opening (or dispatch
+# time) may trail created_at_utc by at most this much. Executable v4 plans are
+# timed by first main publication regardless, so the limit only bounds how much
+# newer information a forecast's directional spot horizons could have seen.
+MAX_ACCEPTANCE_DELAY_SECONDS = 180
+
 
 def forecast_id(created, snapshot_hash):
     return utc(created).strftime('%Y%m%dT%H%M%SZ')+'-'+snapshot_hash[:12]+'-oracle-v3'
@@ -110,9 +116,9 @@ def persist_forecast(f, snapshot, directory, now, *, ledger_state=None, ledger_c
         from ledger_store import persist_plan
         plan = prepare_plan(f, snapshot, ledger_state, ledger_config)
     delta = (utc(now)-utc(f['created_at_utc'])).total_seconds()
-    if abs(delta) > 120:
+    if abs(delta) > MAX_ACCEPTANCE_DELAY_SECONDS:
         raise ValueError('Publication timestamp differs from actual creation by '
-                         f'{delta:+.0f}s (limit 120s); historical write-back forbidden')
+                         f'{delta:+.0f}s (limit {MAX_ACCEPTANCE_DELAY_SECONDS}s); historical write-back forbidden')
     day = utc(f['created_at_utc']).strftime('%Y/%m/%d')
     root = Path(directory)
     path = root/'forecasts'/day/(f['forecast_id']+'.json')

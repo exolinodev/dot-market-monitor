@@ -1,10 +1,12 @@
 # Oracle-Jobs: Betrieb und Browser-Test
 
 Stand 21. September 2026 (v4): Der Stundenjob heisst „DOT/BTC Oracle v4“, läuft um
-**:05 UTC** mit dem kompakten Prompt 4.0.0 und reicht ausführbare Orders für das
+**:03 UTC** mit dem kompakten Prompt 4.0.1 und reicht ausführbare Orders für das
 Paper-Ledger ein. Der Collector läuft viertelstündlich (Cloudflare `:58/:13/:28/:43`,
 Grenze +8 s; GitHub-Ersatz `:03/:18/:33/:48`), der volle Snapshot entsteht zur
-vollen Stunde. Writer, Fail-safes und Ablehnungsgründe sind in
+vollen Stunde und liegt seit dem Publikations-Fast-Path (Wächter statt voller
+Testsuite) etwa zwei Minuten nach der Grenze auf main. Der Writer akzeptiert
+180 Sekunden zwischen `created_at_utc` und PR-Öffnung (vorher 120). Writer, Fail-safes und Ablehnungsgründe sind in
 [ORACLE_V4_FORECAST.md](ORACLE_V4_FORECAST.md) und
 [ORACLE_V4_ROLLOUT_STATUS.md](ORACLE_V4_ROLLOUT_STATUS.md) beschrieben. Der Rest
 dieser Datei dokumentiert den v3-Betrieb vom 16. September 2026 und bleibt als

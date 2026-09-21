@@ -30,8 +30,8 @@ account since 2026-09-21 06:45 UTC (see `ORACLE_V4_ROLLOUT_STATUS.md` for the
 first accepted order, the first closed trade and the measured timing). The
 funding convention is documented and fixture-tested (see `ORACLE_V4_LEDGER.md`);
 exchange settlement readback is still pending. The replay-derived compact equity
-curve and cost-adjusted passive perpetual benchmark are implemented. Prompt 4.0.0
-and the :05 hourly task are live. Still open: the 48-hour timing/storage
+curve and cost-adjusted passive perpetual benchmark are implemented. Prompt 4.0.1
+and the :03 hourly task are live. Still open: the 48-hour timing/storage
 acceptance, two weeks of paper observation with at least 30 closed trades, and
 the demo/live gates. Nothing here performs exchange execution.
 

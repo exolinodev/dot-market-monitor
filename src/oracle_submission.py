@@ -36,7 +36,7 @@ def parse_submission(payload):
 
 def accepted_at(opened, clock, max_queue_seconds=1800):
     """GitHub stamps when the draft was opened. That independent time anchors the
-    120-second creation check, so runner queueing and setup cannot fail an honest
+    creation-time check (`MAX_ACCEPTANCE_DELAY_SECONDS`), so runner queueing and setup cannot fail an honest
     submission while the consumer's own delay before opening the PR still counts."""
     opened, clock = utc(opened), utc(clock)
     if opened > clock + timedelta(seconds=5):

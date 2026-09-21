@@ -164,8 +164,9 @@ round created branch `oracle-submission/20260921T180825Z` without a file or PR.
 Five of eleven hourly rounds therefore reached the ledger; the requested CANCEL
 never did, and the fail-safe expiry at 09:42 closed that order instead. Accepted
 drafts took 150–318 s from opening to main publication, above the two-minute
-writer target, largely because the writer's producer step runs the full test
-suite and shares the collector concurrency group.
+writer target, largely because the writer's producer step ran the full test
+suite (twice, with the staged pre-pass) and shares the collector concurrency group.
+The publication fast path below removes that cost.
 
 ### Timing and publication
 
@@ -179,6 +180,26 @@ runner ready 55 s before the boundary, collection 50 s, then 170 s of
 publication of which `pytest` took 124 s and the two archive-guard passes 16 s
 each; PR creation, check and merge took 12 s. At least 48 hours are still
 required before either criterion can be evaluated.
+
+### Publication fast path and prompt 4.0.1 (evening of 2026-09-21)
+
+Three changes target the time chain measured above; none touches the ledger,
+the contract or the data formats. `scripts/promote_data.py` now verifies each
+data commit once (the intraday, ledger-replay and Oracle-archive guards, the
+snapshot schema, the three focused runtime test files and the scheduler tests)
+instead of a staged pre-pass plus the whole Python suite; locally the full
+verification dropped from about 115 s to about 10 s, and `encode_candles` was
+rewritten without per-row pandas Series so the archive guard's recomputation of
+all 834 archived horizon hashes takes 3 s instead of 9 s (every archived hash
+still matches). The writer accepts 180 seconds between declared creation and
+the draft's GitHub opening time (`MAX_ACCEPTANCE_DELAY_SECONDS`). Prompt 4.0.1
+moves the hourly job to :03 UTC and allows four status polls over 150 seconds
+while a collector is still publishing. Expected on the runner: full snapshot on
+main about two minutes after the boundary, writer publication under two minutes,
+and roughly twelve minutes between the job start and the 900-second quote
+deadline. These are expectations from measured components; the next production
+day has to confirm them, and the ChatGPT task schedule must be moved to :03 by
+hand.
 
 ### Repository growth
 
@@ -201,7 +222,7 @@ caches out of Git, or delta-friendly storage, is the identified remedy.
 | Scope | Prepared implementation/evidence | Still required |
 |---|---|---|
 | Phase 0 | Writer fix, draft cleanup, runner fixtures and interpretation merged (#221/#222/#224/#225) | No new phase-0 code gate identified in this audit |
-| WP1–WP3 / Phase 1 | #228 deployed; two-minute prewarm (#70864e6); 36/36 quarters published 09:00–18:00 with 34 at <=30 s lag | 48 h with >=95% lag <=30 s (9 h sample: 94.4%); light publication <60 s (one 119 s outlier); writer queue <=2 min (measured 150–318 s); storage rule not met (see growth section) |
+| WP1–WP3 / Phase 1 | #228 deployed; two-minute prewarm (#70864e6); 36/36 quarters published 09:00–18:00 with 34 at <=30 s lag | 48 h with >=95% lag <=30 s (9 h sample: 94.4%); light publication <60 s (one 119 s outlier); writer queue <=2 min (150–318 s before the publication fast path; remeasure); storage rule not met (see growth section) |
 | WP4–WP5 / Phase 2 | #230/#232/#235: deterministic ledger, v4 writer contract and runtime; source/replay and synthetic writer-to-runtime tests | Completed via #283/#285 and run 35571581958; continuing runtime evidence required |
 | WP6 / Phase 2 | #236: versioned hourly/daily prompts; #238 explicit initializer; #241 timing report; #242 runtime end-to-end tests; first fill and first closed trade observed 15:28–16:10 UTC | Model management path (CANCEL/CLOSE/MODIFY) not yet applied in production; hourly acceptance 5 of 11 rounds; two weeks paper and >=30 closed trades remain required |
 | WP7 / Phase 3 | #243 through #312: demo transport, durable journal, evidence-backed recovery including ordinary and stop edits, raw account/market/preferences evidence, reconciliation, preflight, account logs, integrated protective preview and gated single-attempt dispatch; 725 offline Python tests green, all synthetic | Deferred by user decision on 2026-09-21 until paper acceptance: demo account/host access, dedicated private runner, real fixtures, margin and net-accounting proof, two-week demo/no-orphan/idempotency/readback acceptance |

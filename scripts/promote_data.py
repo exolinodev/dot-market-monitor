@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Test trusted producer data, then merge a SHA-bound PR under normal main rules.
+"""Verify trusted producer data, then merge a SHA-bound PR under normal main rules.
 
-GITHUB_TOKEN PRs do not trigger pull_request CI. This producer therefore executes
-the same tests itself and records their real result on the exact data commit.
+GITHUB_TOKEN PRs do not trigger pull_request CI. This producer therefore runs the
+data guards itself on the exact data commit and records their real result as the
+PR's `test` check. The guards prove archive immutability, ledger replay and the
+snapshot schema; code regressions are covered by the tests workflow on main, so
+a data commit runs only the focused runtime tests instead of the whole suite.
+Every check runs once, on the committed candidate, to keep publication short.
 It never publishes a successful check before validation, or pushes main directly.
 """
 import argparse
@@ -68,12 +72,21 @@ def validate_paths(kind, base, head='HEAD'):
             raise ValueError('Producer data must be regular non-executable files: ' + path)
 
 
+# Runtime paths a data commit exercises; the full suite runs on code pushes to main.
+FOCUSED_TESTS = ['tests/test_intraday.py', 'tests/test_ledger_runtime.py', 'tests/test_ledger_market.py']
+VALIDATION = {
+    'light': 'light validation: intraday schema, immutable market evidence, ledger replay and focused tests',
+    'collector': 'Archive integrity (intraday, ledger replay, Oracle archive), snapshot schema, focused runtime tests and scheduler tests',
+    'oracle': 'Archive integrity (intraday, ledger replay, Oracle archive), snapshot schema, focused runtime tests and scheduler tests',
+}
+
+
 def verify(base):
+    # check_oracle_archive already includes the intraday and ledger guards.
     commands = [
-        [sys.executable, 'scripts/validate_intraday.py', '--base', base],
         [sys.executable, 'scripts/check_oracle_archive.py', '--base', base],
         [sys.executable, 'scripts/validate_snapshot.py'],
-        [sys.executable, '-m', 'pytest', '-q'],
+        [sys.executable, '-m', 'pytest', '-q', *FOCUSED_TESTS],
         ['node', '--test', 'tests/scheduler.test.mjs'],
     ]
     for command in commands:
@@ -84,7 +97,7 @@ def verify(base):
 def verify_light(base):
     for command in ([sys.executable, 'scripts/validate_intraday.py', '--base', base],
                     [sys.executable, 'scripts/validate_ledger.py', '--base', base],
-                    [sys.executable, '-m', 'pytest', '-q', 'tests/test_intraday.py', 'tests/test_ledger_runtime.py', 'tests/test_ledger_market.py']):
+                    [sys.executable, '-m', 'pytest', '-q', *FOCUSED_TESTS]):
         subprocess.run(command, check=True)
 
 
@@ -149,13 +162,11 @@ def promote(kind, env=None):
         print('No producer data changes; no PR created')
         return None
     run(['git', 'diff', '--exit-code'])  # All tracked producer changes must be staged.
-    # Check staged paths before even creating a commit; archive integrity follows.
+    # Check staged paths before even creating a commit. Archive integrity and
+    # replay are verified once, on the committed candidate, before any push.
     for path in run(['git', 'diff', '--cached', '--name-only', '-z']).split('\0'):
         if path and not allowed(kind, path):
             raise ValueError('Producer staged a non-allowlisted path: ' + path)
-    subprocess.run([sys.executable, 'scripts/validate_intraday.py' if kind == 'light' else 'scripts/check_oracle_archive.py', '--staged'], check=True)
-    if kind == 'light':
-        subprocess.run([sys.executable, 'scripts/validate_ledger.py', '--staged'], check=True)
     run(['git', 'switch', '-c', branch])
     run(['git', 'commit', '-m', f'data: validated {kind} publication'])
     run(['git', 'fetch', 'origin', 'main'])
@@ -168,7 +179,7 @@ def promote(kind, env=None):
     if run(['git', 'rev-parse', 'HEAD']) != head:
         raise ValueError('Tested commit changed')
     run(['git', 'diff', '--exit-code', 'HEAD'])
-    validation = 'light validation: intraday schema, immutable market evidence, ledger replay and focused tests' if kind == 'light' else 'Archive integrity, snapshot schema, full pytest and scheduler tests'
+    validation = VALIDATION[kind]
     run_url = f'https://github.com/{repo}/actions/runs/{run_id}'
     pr = check_run = None
     try:

@@ -57,7 +57,7 @@ This contract does not initialize an account or enable trading. Since
 `execution_context`, the runtime consumes published, matching forecast/plan
 pairs, and instructions published after their nominal effective minute take
 effect at the next minute after first-parent main publication (see
-`ORACLE_V4_RUNTIME.md`). Prompt 4.0.0 and the :05 job are live; funding
+`ORACLE_V4_RUNTIME.md`). Prompt 4.0.1 and the :03 job are live; funding
 settlement readback, the paper observation window and the demo/live gates
 remain separate rollout work. Direct `scripts/oracle.py write` without bound ledger
 inputs fails closed for v4; the supported v4 route is the trusted submission
