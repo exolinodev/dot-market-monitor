@@ -492,8 +492,8 @@ fee/funding accounting and demo trading acceptance remain outstanding.
 Omitting `--through` derives the history endpoint from the latest readback
 `serverTime`, rounded upward to a millisecond. Explicit historical windows remain
 supported for evidence-only captures. Add `--journal-dir /private/existing-journal`
-to hold its account/key-bound lock across acquisition and import. The journal must
-already exist outside Git; this command never initializes or resets an account.
+to hold its account/key-bound lock across acquisition and import. The journal must already exist outside Git unless explicit first-time setup is
+selected as described below. Existing journals are never reset.
 
 `import_observation` requires complete execution/order/trigger histories covering
 all four readback server timestamps. Any history event between the earliest
@@ -517,3 +517,48 @@ for trusted acquisition provenance. The resulting observation explicitly keeps
 position baselines, account/quantity reconciliation, freshness limits and mutation
 orchestration remain required. No real journal has been initialized or populated
 outside isolated tests.
+
+
+## Flat demo baseline and position reconciliation
+
+An existing exchange account is not presumed flat. First-time local journal setup
+is explicit and follows authenticated read-only acquisition:
+
+```sh
+python scripts/capture_demo_evidence.py \
+  --account-uid VERIFIED_DEMO_ACCOUNT_UUID --since BASELINE_WINDOW_START_UTC \
+  --output-dir /private/demo-evidence/first-capture \
+  --journal-dir /private/demo-journal \
+  --initialize-journal --establish-flat-baseline --reconcile
+```
+
+The parents must exist outside Git. Initialization is exclusive, refuses any
+existing journal before network access, and creates only local private files; it
+does not create/fund/reset an exchange account. Baseline establishment requires a
+raw-verified latest observation with no open orders and no nonzero position in
+**any** instrument, before any journal operation. It is recorded once and cannot
+be replaced. If setup fails after creation, inspect the retained journal and
+capture; do not delete/reinitialize them to bypass unresolved state.
+
+Later captures use the same journal with `--reconcile`, omitting initialization
+and baseline flags. Their `--since` must reach at least the baseline timestamp.
+History is filtered strictly after that baseline, avoiding pre-baseline fills.
+The report derives owned orders and authorized quantities from durable dispatched
+intents; callers cannot supply a replacement starting quantity or known-order map.
+Complete baseline-to-observation execution coverage is required.
+
+The report checks signed fill totals against the actual position, fill identity,
+size ceilings, native filled-size/history equality, orphan orders/fills, missing
+owned open orders, terminal orders still present, unresolved operations and foreign
+instrument activity. Matching net quantities cannot conceal external trades.
+Edited-order effective terms still require recovery and produce a discrepancy.
+
+Reports bind the baseline, observation and current control-state hash; journal
+replay recomputes them from raw sources and persisted intents. Any later capture
+or control event invalidates the latest report pointer. CLI output provides the
+report hash, reconciliation boolean and issue count; detailed private evidence
+stays in the journal. A quantity match still has `authorizes_execution=false`,
+`actual_costs_verified=false` and no verified net PnL. Freshness/risk gates,
+effective-term verification, account-log costs/funding and sending orchestration
+remain necessary. All verification so far uses isolated synthetic clients, not
+real demo credentials or placed orders.

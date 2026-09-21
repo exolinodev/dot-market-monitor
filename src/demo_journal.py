@@ -73,8 +73,18 @@ def transition(state, event):
     """Replay the control state; an acknowledgement is not a resolved mutation."""
     result = deepcopy(state)
     payload, kind = event['payload'], event['type']
+    if kind != 'reconciliation' and 'latest_reconciliation' in result:
+        result['latest_reconciliation'] = None
     if kind == 'capture':
         result['latest_capture'] = payload['artifact_sha256']
+    elif kind == 'baseline':
+        if result.get('baseline_capture') is not None or result['operations'] or result['ownership']:
+            raise ExecutionError('Baseline cannot be reset after operations')
+        if payload['capture_sha256'] != result['latest_capture']:
+            raise ExecutionError('Baseline must bind latest capture')
+        result['baseline_capture'] = payload['capture_sha256']
+    elif kind == 'reconciliation':
+        result['latest_reconciliation'] = payload['artifact_sha256']
     elif kind == 'prepare':
         action = payload['action']
         ident = action['operation_id']
@@ -233,6 +243,13 @@ class Journal:
                     previous = self._read_artifact(self._state['latest_capture'])
                     if reference < utc(previous['reference_utc']):
                         raise ExecutionError('Capture predates previous observation')
+        if event['type'] == 'baseline':
+            from demo_position import validate_baseline
+            validate_baseline(self, payload['capture_sha256'])
+        if event['type'] == 'reconciliation':
+            from demo_position import position_report
+            if self._read_artifact(payload['artifact_sha256']) != position_report(self):
+                raise ExecutionError('Reconciliation differs from journal and acquired evidence')
         if event['type'] == 'resolve_send':
             self._validate_presence(payload)
         if event['type'] == 'order_filled':
@@ -506,3 +523,13 @@ class Journal:
         return self.append('trigger_cancelled', {'client_id': client_id, 'capture_sha256': capture_sha256,
                            'history_sha256': history_sha256, 'event_id': event_id,
                            'exchange_order_id': exchange_order_id, 'reason': 'cancelled'})
+
+    def establish_flat_baseline(self):
+        return self.append('baseline', {'capture_sha256': self._state['latest_capture']})
+
+    def reconcile_position(self):
+        from demo_position import position_report
+        report = position_report(self)
+        ident = self.artifact(report)
+        self.append('reconciliation', {'artifact_sha256': ident})
+        return ident, report
