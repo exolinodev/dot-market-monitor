@@ -75,7 +75,8 @@ def validate_paths(kind, base, head='HEAD'):
 
 
 # Runtime paths a data commit exercises; the full suite runs on code pushes to main.
-FOCUSED_TESTS = ['tests/test_intraday.py', 'tests/test_ledger_runtime.py', 'tests/test_ledger_market.py']
+FOCUSED_TESTS = ['tests/test_intraday.py', 'tests/test_intraday_recovery.py',
+                 'tests/test_ledger_runtime.py', 'tests/test_ledger_market.py']
 VALIDATION = {
     'light': 'light validation: intraday schema, immutable market evidence, ledger replay and focused tests',
     'collector': 'Archive integrity (intraday, ledger replay, Oracle archive), snapshot schema, focused runtime tests and scheduler tests',
