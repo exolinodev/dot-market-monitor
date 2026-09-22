@@ -26,10 +26,22 @@ test("old, future, false freshness, error and invalid timestamps need collection
     assert.equal(choice({ snapshot: value }).action, "dispatch");
   }
 });
-test("all GitHub active states prevent another dispatch, including old runs", () => {
+test("recent GitHub active states prevent another dispatch", () => {
   for (const status of ["queued", "in_progress", "waiting", "pending", "requested"]) {
-    assert.equal(choice({ runs: [run(status, -60)] }).action, "already_running");
+    assert.equal(choice({ runs: [run(status, -10)] }).action, "already_running");
   }
+});
+test("phantom waiting runs expire but running or recently updated jobs still block", () => {
+  for (const status of ["queued", "waiting", "pending", "requested"]) {
+    const result = choice({runs: [run(status, -600, 35652866974)]});
+    assert.equal(result.action, "dispatch");
+    assert.deepEqual(result.stale_waiting_run_ids, [35652866974]);
+    assert.equal(choice({runs: [{...run(status, -600), updated_at: at(0)}]}).action, "already_running");
+    assert.equal(choice({runs: [run(status, -25)]}).action, "already_running");
+  }
+  assert.equal(choice({runs: [run("in_progress", -600)]}).action, "already_running");
+  assert.equal(choice({runs: [run("queued", -600), run("queued", 0, 2)]}).action, "already_running");
+  assert.equal(choice({runs: [run("queued", -600), run("completed", 0, 2), run("completed", 1, 3)]}).action, "attempt_limit");
 });
 test("initial delivery is idempotent once an attempt exists; verifier permits one recovery", () => {
   const runs = [run("completed")];

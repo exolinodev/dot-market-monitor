@@ -31,6 +31,11 @@ def main(data_dir=None, run_kind=None, boundary=None):
         from common import utcnow
         from intraday import collect as collect_intraday
         run_kind, point = resolve(utcnow(), run_kind, boundary, 'workflow_dispatch')
+        if ledger_active:
+            from intraday_recovery import recover_missing_quarters
+            recovered = recover_missing_quarters(target, point)
+            if recovered:
+                print(f'Recovered {recovered} missing quarters from historical trade/mark candles')
         started = utcnow()
         quarter_error = None
         try:

@@ -8,6 +8,8 @@ const MINUTE = 60_000;
 const QUARTER = 15 * MINUTE;
 const PREWARM = 2 * MINUTE;
 const ACTIVE = new Set(["queued", "in_progress", "waiting", "pending", "requested"]);
+const WAITING = new Set(["queued", "waiting", "pending", "requested"]);
+const WAIT_LIMIT = 30 * MINUTE;
 const iso = (time) => new Date(time).toISOString();
 
 export function cycleStart(time) {
@@ -33,12 +35,18 @@ export function decide({ runs, snapshot, start, now, phase }) {
   const fresh = Date.parse(snapshot?.cycle_boundary_utc) === boundary && snapshot?.run_kind === run_kind &&
     Number.isFinite(generated) && generated >= boundary && generated <= now + MINUTE &&
     snapshot?.fresh === true && ["ok", "partial"].includes(snapshot?.status);
-  const active = runs.find((r) => ACTIVE.has(r.status));
+  // GitHub can retain phantom queued runs whose cancellation endpoint reports
+  // already completed. A stale waiting record must not disable every new cycle.
+  // Running jobs always block; workflow concurrency still serializes collectors.
+  const staleWaiting = (r) => WAITING.has(r.status) &&
+    now - Math.max(Date.parse(r.created_at), Date.parse(r.updated_at) || 0) > WAIT_LIMIT;
+  const active = runs.find((r) => ACTIVE.has(r.status) && !staleWaiting(r));
   const attempts = runs.filter((r) => Date.parse(r.created_at) >= start).length;
   const detail = {
     run_kind, cycle_boundary_utc: iso(boundary), cycle_started_at_utc: iso(start), checked_at_utc: iso(now), phase, attempts,
     snapshot_generated_at_utc: Number.isFinite(generated) ? iso(generated) : null,
     snapshot_status: snapshot?.status ?? null, fresh,
+    stale_waiting_run_ids: runs.filter(staleWaiting).map((r) => r.id),
   };
   if (fresh) return { ...detail, action: "fresh", run_id: active?.id ?? null };
   if (active) return { ...detail, action: "already_running", run_id: active.id };
