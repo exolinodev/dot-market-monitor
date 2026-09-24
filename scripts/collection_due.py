@@ -8,8 +8,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from cycles import resolve, utc, iso
 
 
-def collection_due(document, now, event, run_attempt=1, kind=None, boundary=None):
+def ledger_passed_boundary(state, point, now):
+    """An old full snapshot cannot rewind a paper account advanced by light runs."""
+    try:
+        return point <= utc(state['last_candle_utc']) < utc(now)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
+
+
+def collection_due(document, now, event, run_attempt=1, kind=None, boundary=None, ledger_state=None):
     kind, point = resolve(now, kind, boundary, event)
+    if kind == 'full' and ledger_passed_boundary(ledger_state, point, now):
+        return False
     try:
         meta = document['meta']
         generated = utc(meta['generated_at_utc'])
@@ -32,8 +42,14 @@ def main():
         document = json.loads(Path(path).read_text())
     except (OSError, ValueError):
         document = None
-    due = collection_due(document, now, event, kind=kind, boundary=iso(point))
-    print(f'{kind} {iso(point)}: ' + ('collect' if due else 'already published'))
+    try:
+        ledger_state = json.loads(Path('data/ledger/state.json').read_text())
+    except (OSError, ValueError):
+        ledger_state = None
+    due = collection_due(document, now, event, kind=kind, boundary=iso(point), ledger_state=ledger_state)
+    deferred = kind == 'full' and ledger_passed_boundary(ledger_state, point, now)
+    reason = 'deferred until next hour: ledger already beyond this boundary' if deferred else 'already published'
+    print(f'{kind} {iso(point)}: ' + ('collect' if due else reason))
     if output := os.environ.get('GITHUB_OUTPUT'):
         with open(output, 'a') as handle:
             handle.write(f'due={str(due).lower()}\nrun_kind={kind}\nboundary_utc={iso(point)}\n')
