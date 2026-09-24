@@ -30,3 +30,13 @@ unveränderten Journal-Präfix, den unveränderten Cash-Bestand, fortbestehende
 Funding-Lücken, Replay und Idempotenz. Eine zweite Regression beweist, dass ein
 rückdatierter Spread weiter fehlschlägt. Die bestehende Suite deckt zeitgerechtes
 Funding sowie Forecast-Publikation, Fills, Stops und Exit-Buchungen ab.
+
+## Deployment nach einem bereits verarbeiteten Light-Lauf
+
+Ein Code-Push um 15:21 UTC versuchte nochmals die fehlende volle 15:00-Stunde,
+obwohl das Journal bereits bis 15:14 UTC reichte. Auch hier darf das Konto nicht
+zurückgesetzt werden. Die vorgeschaltete `collection_due`-Prüfung erkennt diesen
+Fall nun am veröffentlichten `last_candle_utc` und protokolliert ausdrücklich
+`deferred until next hour`. Sie markiert den alten Snapshot nicht als frisch.
+Die nächste volle Stunde und fehlende Light-Runden bleiben fällig. Fehlende,
+ungültige oder zukünftige Ledger-Zeitangaben unterdrücken keinen Lauf.

@@ -74,3 +74,48 @@ def test_two_minute_prewarm_waits_until_boundary_plus_eight():
     assert delays == [128]
     with pytest.raises(ValueError):
         resolve(now.replace(minute=57), 'full', '2026-09-21T00:00:00Z')
+
+
+@pytest.mark.parametrize('event', ['push', 'workflow_dispatch', 'schedule'])
+def test_missing_full_snapshot_is_deferred_after_light_advanced_ledger(event):
+    now = datetime(2026, 9, 24, 15, 21, tzinfo=timezone.utc)
+    state = {'last_candle_utc': '2026-09-24T15:14:00Z'}
+    assert not module.collection_due(None, now, event, kind='full',
+                                     boundary='2026-09-24T15:00:00Z', ledger_state=state)
+    # Next hour and missing light quarters must still run. No data is made fresh
+    # and no existing account state is replaced just to regenerate an old hour.
+    assert module.collection_due(None, now.replace(hour=16, minute=0), event,
+                                  kind='full', ledger_state=state)
+    assert module.collection_due(None, now.replace(minute=30), event,
+                                  kind='light', ledger_state=state)
+
+
+@pytest.mark.parametrize('state', [None, {}, {'last_candle_utc': None},
+    {'last_candle_utc': 'invalid'}, {'last_candle_utc': '2026-09-24T14:59:00Z'},
+    {'last_candle_utc': '2026-09-25T15:14:00Z'}])
+def test_ledger_deferral_does_not_hide_due_or_invalid_state(state):
+    now = datetime(2026, 9, 24, 15, 21, tzinfo=timezone.utc)
+    assert module.collection_due(None, now, 'push', ledger_state=state)
+
+
+def test_workflow_outputs_defer_obsolete_full_without_changing_data(tmp_path, monkeypatch, capsys):
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 9, 24, 15, 21, tzinfo=timezone.utc)
+    state = tmp_path / 'data/ledger/state.json'
+    state.parent.mkdir(parents=True)
+    raw = '{"last_candle_utc":"2026-09-24T15:14:00Z"}'
+    state.write_text(raw)
+    output = tmp_path / 'output'
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(module, 'datetime', Clock)
+    monkeypatch.setenv('GITHUB_EVENT_NAME', 'push')
+    monkeypatch.setenv('GITHUB_OUTPUT', str(output))
+    monkeypatch.delenv('RUN_KIND', raising=False)
+    monkeypatch.delenv('BOUNDARY_UTC', raising=False)
+    module.main()
+    assert output.read_text() == 'due=false\nrun_kind=full\nboundary_utc=2026-09-24T15:00:00Z\n'
+    assert 'deferred until next hour' in capsys.readouterr().out
+    assert state.read_text() == raw
+    assert not (tmp_path / 'data/llm_snapshot.json').exists()
