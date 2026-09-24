@@ -1,6 +1,6 @@
 # Oracle v4 prompt rollout
 
-`CHATGPT_MONITOR_PROMPT.md` is prompt 4.0.1, matched to
+`CHATGPT_MONITOR_PROMPT.md` is prompt 4.0.2, matched to
 `schema/oracle_forecast_v4.schema.json`. `docs/CHATGPT_DAILY_CHECK_PROMPT.md` is
 read-only daily operations prompt 1.1.0. Runtime execution context now supplies
 the five most recently closed trades in deterministic close-time/ID order,
@@ -18,10 +18,10 @@ No actual model-run evaluation or profitability result is claimed by unit tests.
 
 ## Task copy and production rollout
 
-`docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.1.
+`docs/CHATGPT_HOURLY_TASK_PROMPT.md` is the compact task copy of prompt 4.0.2.
 It preserves the v4 order/management, binding, sizing, cost, REFLOOP and immutable
 writer rules, while condensing explanatory feature examples and repeated writer
-instructions from the canonical file. It has 18,829 characters. The existing
+instructions from the canonical file. It has 19,915 characters. The existing
 ChatGPT editor rejected a 20,822-character v3-plus-guard prompt and accepted an
 equivalent integrated version of 19,939 characters; no published product-wide
 limit is inferred from that observation. Keep private legacy context separate
@@ -94,3 +94,28 @@ for the saved task; the task's schedule must be moved from :05 to :03 in the
 ChatGPT editor separately and read back. Until the schedule is moved, the :05
 task keeps working with the new prompt; it merely wastes two minutes of the
 900-second quote window.
+
+## Writeback recovery, 24 September 2026
+
+The 16:00 UTC collector succeeded, but the hourly model created only its analysis
+branch and then reported an execution-environment block. On direct diagnosis in
+the same task chat, it corrected that statement: no create-file or create-PR call
+had been made, and there was no actual GitHub error. The branch remained at its
+analysis SHA and no submission or PR existed. It had also paused its own schedule.
+
+Prompt 4.0.2 makes the existing public paper-simulation writeback authorization
+explicit, requires actual calls for a valid round, distinguishes not attempted,
+tool error, submitted and persisted, and requires an actual tool error before
+claiming a permissions or environment block. Real denials remain binding. The
+hourly analysis is forbidden from changing its own schedule/status without an
+explicit user request. Forecast schema, strategy, writer checks and trading mode
+are unchanged.
+
+A transport test in the original task chat exercised create-branch, create-file,
+create-draft-PR and readback successfully. Diagnostic PR #678 contained exactly
+one harmless docs JSON file, no production inbox or ledger changes; it was closed
+without merge. Independent GitHub readback confirmed commit
+674bd9f44cf7c0db7d0c3befba7b1567fd5f2957 and blob
+e43c2e2d04d0a79cf0009a4ef674f734302261f5. This proves connector transport only;
+a fresh scheduled forecast, writer success, receipt/input verification and ledger
+replay are still required to claim end-to-end recovery.
