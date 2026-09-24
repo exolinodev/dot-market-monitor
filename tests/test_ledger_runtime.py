@@ -7,6 +7,53 @@ from test_ledger import config
 from test_ledger_market import archive
 
 
+def test_late_funding_preserves_journal_and_remains_visible(tmp_path):
+    from test_ledger_market import quarter
+    from perp_data import append_funding
+    epoch, rows = archive(tmp_path)
+    initialize(tmp_path, config(), epoch)
+    # Simulate a missing hourly funding response while light runs keep moving.
+    path = tmp_path / 'funding/2026/09.jsonl'
+    payload = {'result': 'success', 'rates': [json.loads(path.read_text())]}
+    path.write_text('')
+    advance(tmp_path, tmp_path, 'a' * 40, '2026-09-20T20:15:00Z')
+    before = verify(tmp_path)
+    journal = (tmp_path / 'ledger/events/2026/09/20.jsonl').read_bytes()
+    append_funding(tmp_path, payload)
+    row = quarter('2026-09-20T20:15:00Z', '2026-09-20T20:30:00Z',
+                  '2026-09-20T20:30:08Z', 4)
+    with (tmp_path / 'intraday/2026/09/20.jsonl').open('a') as handle:
+        handle.write(json.dumps(row) + '\n')
+    summary = advance(tmp_path, tmp_path, 'a' * 40, '2026-09-20T20:30:00Z')
+    after = verify(tmp_path)
+    assert after['records'][:len(before['records'])] == before['records']
+    assert (tmp_path / 'ledger/events/2026/09/20.jsonl').read_bytes().startswith(journal)
+    assert after['state']['cash_usd'] == before['state']['cash_usd']
+    assert after['state']['last_candle_utc'] == '2026-09-20T20:29:00Z'
+    assert after['performance']['buy_hold']['funding_missing_hours'] == 1
+    assert after['performance']['comparison_provisional'] is True
+    assert summary['late_funding']['latest_intervals_utc'] == ['2026-09-20T20:00:00Z']
+    assert summary['late_funding']['count'] == 1
+    assert json.loads(path.read_text()) == payload['rates'][0]
+    assert advance(tmp_path, tmp_path, 'a' * 40, '2026-09-20T20:30:00Z') == summary
+
+
+def test_late_spread_still_fails_without_mutating_account(tmp_path):
+    epoch, rows = archive(tmp_path)
+    path = tmp_path / 'intraday/2026/09/20.jsonl'
+    path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+    initialize(tmp_path, config(), epoch)
+    advance(tmp_path, tmp_path, 'a' * 40, '2026-09-20T20:15:00Z')
+    before = (tmp_path / 'ledger/state.json').read_bytes()
+    late = deepcopy(rows[0])
+    late['sources']['perp_book']['received_at_utc'] = '2026-09-20T20:05:00Z'
+    rows.append(late)
+    path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+    with pytest.raises(ValueError, match='chronological order'):
+        advance(tmp_path, tmp_path, 'a' * 40, '2026-09-20T20:15:00Z')
+    assert (tmp_path / 'ledger/state.json').read_bytes() == before
+
+
 def test_runtime_advances_closed_evidence_idempotently_without_implicit_account(tmp_path):
     epoch, rows = archive(tmp_path)
     with pytest.raises(FileNotFoundError):
